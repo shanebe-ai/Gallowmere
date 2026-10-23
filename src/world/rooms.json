@@ -1,0 +1,110 @@
+[
+  {
+    "id": "north_gate",
+    "district": "gate",
+    "title": "The North Gate",
+    "description": "A gatehouse of black stone squats over the only road into Gallowmere. The portcullis is raised, rusted in place, and an old gibbet creaks from the arch above it. Beyond the walls the moor is lost in grey fog. The road runs south into town.",
+    "flags": ["start"],
+    "exits": { "south": "gate_road" }
+  },
+  {
+    "id": "gate_road",
+    "district": "gate",
+    "title": "Gate Road",
+    "description": "Cart ruts have worn the cobbles into a muddy trough. Shuttered houses lean over the road as if listening. The watch barracks lie west, steps climb east toward the temple, and the market noise drifts up from the south.",
+    "exits": { "north": "north_gate", "south": "market_square", "west": "barracks_yard", "east": "temple_steps" }
+  },
+  {
+    "id": "barracks_yard",
+    "district": "gate",
+    "title": "Barracks Yard",
+    "description": "A packed dirt yard where the town watch drills when it can be bothered. A notice board is papered with old bounties, most of them torn or rained into pulp. A stocks stands empty in one corner, its wood polished by unhappy necks.",
+    "exits": { "east": "gate_road" }
+  },
+  {
+    "id": "temple_steps",
+    "district": "temple",
+    "title": "Temple Steps",
+    "description": "Worn steps rise toward a squat temple of soot stained stone. Beggars have claimed the lower steps; the upper ones are kept clear by long habit and a short temper. Gate Road lies to the west.",
+    "exits": { "west": "gate_road", "east": "temple_of_ash" }
+  },
+  {
+    "id": "temple_of_ash",
+    "district": "temple",
+    "title": "The Temple of Ash",
+    "description": "Cold air and the smell of old candles. Ash from a thousand offerings lies in drifts beneath a cracked altar, and a painted saint watches from the far wall with her eyes scratched out. Healing is sold here, they say, to those who can pay.",
+    "exits": { "west": "temple_steps" }
+  },
+  {
+    "id": "smithy_row",
+    "district": "market",
+    "title": "Smithy Row",
+    "description": "Heat rolls out of an open forge, and the hammer rings from dawn until well past sensible hours. Half finished blades hang from hooks along the wall. The market lies east.",
+    "exits": { "east": "market_west" }
+  },
+  {
+    "id": "market_west",
+    "district": "market",
+    "title": "Market West",
+    "description": "Stalls of patched canvas crowd the west end of the market, selling rope, lamp oil and things that fell off other people's carts. A painted rat hangs over a low doorway to the south: The Drowned Rat. Smithy Row lies west.",
+    "exits": { "west": "smithy_row", "east": "market_square", "south": "drowned_rat" }
+  },
+  {
+    "id": "market_square",
+    "district": "market",
+    "title": "Market Square",
+    "description": "The heart of Gallowmere, such as it is. A dry fountain holds a statue of some forgotten founder, his nose long since knocked off. Hawkers shout over each other, pickpockets work the crowd, and the town crier's platform stands empty for now. Roads lead in every direction.",
+    "exits": { "north": "gate_road", "south": "wet_lane", "west": "market_west", "east": "market_east" }
+  },
+  {
+    "id": "market_east",
+    "district": "market",
+    "title": "Market East",
+    "description": "Grocers and fishmongers hold the east end of the market, and the smell holds everyone else. Baskets of grey turnips sit beside eels that are still deciding whether to die. Market Square lies west.",
+    "exits": { "west": "market_square" }
+  },
+  {
+    "id": "drowned_rat",
+    "district": "tavern",
+    "title": "The Drowned Rat",
+    "description": "A low ceilinged tavern, warm and loud and sticky underfoot. Smoke hangs under the beams, dice rattle in a corner, and a long scarred bar runs the length of the room. A stained curtain hangs on the west wall, and nobody looks at it for long. The door north leads back to the market.",
+    "flags": ["tavern"],
+    "exits": { "north": "market_west", "west": "back_room" },
+    "hiddenExits": ["west"]
+  },
+  {
+    "id": "back_room",
+    "district": "tavern",
+    "title": "The Back Room",
+    "description": "Behind the curtain, a cramped storeroom of barrels and sacks. One barrel is not like the others: it has a ledger tucked behind it, wrapped in oilcloth. The tavern lies east.",
+    "exits": { "east": "drowned_rat" }
+  },
+  {
+    "id": "wet_lane",
+    "district": "docks",
+    "title": "Wet Lane",
+    "description": "A narrow lane that is never dry, sloping down toward the river. Water drips from every gutter and collects in black puddles. Somebody is always sleeping in a doorway here. The market is north, the docks south.",
+    "exits": { "north": "market_square", "south": "docks_stair" }
+  },
+  {
+    "id": "docks_stair",
+    "district": "docks",
+    "title": "Docks Stair",
+    "description": "Slick stone stairs drop to the riverside. The river is wide and brown and in no hurry. East, boats knock against the docks; west, a rusted grate breathes foul air out of the town wall.",
+    "exits": { "north": "wet_lane", "east": "river_docks", "west": "sewer_grate" }
+  },
+  {
+    "id": "river_docks",
+    "district": "docks",
+    "title": "River Docks",
+    "description": "Rotting piers and fishing boats with names painted over other names. Crates are stacked high and watched closely by men who say they are not watching anything. The harbourmaster's shed is shut up tight.",
+    "exits": { "west": "docks_stair" }
+  },
+  {
+    "id": "sewer_grate",
+    "district": "sewers",
+    "title": "The Sewer Grate",
+    "description": "A great iron grate set into the base of the wall, where the town empties itself into the river. The bars are bent wide enough for a thin person, or a large rat. Something down there is scratching. The stair lies east.",
+    "exits": { "east": "docks_stair" }
+  }
+]

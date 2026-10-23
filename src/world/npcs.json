@@ -1,0 +1,110 @@
+[
+  {
+    "id": "morda",
+    "room": "drowned_rat",
+    "name": "Morda",
+    "kind": "ai",
+    "card": {
+      "keywords": ["morda", "barkeep", "bartender", "keeper"],
+      "short": "Morda the barkeep is wiping down the bar with a rag that has seen better decades.",
+      "look": "A broad, tired woman of middle years with forearms like hams and eyes that miss nothing. Her apron is stained in a dozen colours and a key ring the size of a fist hangs at her belt.",
+      "job": "Barkeep and owner of The Drowned Rat tavern",
+      "personality": "Dry, tired, blunt, misses nothing, quietly fond of regulars who pay and don't bleed on the floor",
+      "speech": "Short sentences, river town slang, calls strangers 'damp one', calls regulars by name",
+      "wants": "Paying customers, quiet nights and no blood on the floor",
+      "secret": "Owes the fence on the docks more than the tavern is worth, and keeps his ledger hidden in the back room",
+      "knows": "Gossip about the town: the watch is lazy and bribable, the temple sells healing, the sewers have rats the size of dogs, the docks smuggle things",
+      "scripted": [
+        "Morda wipes a mug and doesn't look up. \"What'll it be?\"",
+        "\"Not now, damp one. Can't you see I'm busy?\"",
+        "Morda grunts and slides a mug down the bar to someone else.",
+        "\"Drink or don't. Either way, keep it off my floor.\"",
+        "Morda gives you a long look and goes back to her rag."
+      ],
+      "ambient": [
+        "Morda thumps a dripping cask onto the bar.",
+        "Morda shouts at the dice players to keep it down.",
+        "Morda glances at the curtain on the west wall, then back at her rag."
+      ]
+    }
+  },
+  {
+    "id": "gate_guard",
+    "room": "north_gate",
+    "name": "a gate guard",
+    "kind": "scripted",
+    "card": {
+      "keywords": ["guard", "gate guard", "watchman"],
+      "short": "A bored gate guard leans on his spear under the gibbet.",
+      "look": "A thin man in a dented helmet two sizes too big. His spear is mostly for leaning on.",
+      "scripted": [
+        "The guard yawns. \"Toll's waived today. Don't ask why.\"",
+        "\"Move along. Market's south.\"",
+        "The guard eyes your purse, then sighs and looks away."
+      ],
+      "ambient": [
+        "The gate guard spits into the fog.",
+        "The gibbet creaks overhead. The guard does not look up."
+      ]
+    }
+  },
+  {
+    "id": "blacksmith",
+    "room": "smithy_row",
+    "name": "the blacksmith",
+    "kind": "scripted",
+    "card": {
+      "keywords": ["blacksmith", "smith"],
+      "short": "A soot black blacksmith hammers at a glowing blade.",
+      "look": "Thick arms, singed eyebrows and a leather apron scarred by sparks. He has not noticed you, or is pretending not to.",
+      "scripted": [
+        "The blacksmith doesn't stop hammering. \"Not selling yet. Come back when the market's sorted.\"",
+        "\"Mind the sparks.\"",
+        "The blacksmith grunts something lost under the ring of the hammer."
+      ],
+      "ambient": [
+        "The hammer rings out: clang, clang, clang.",
+        "The blacksmith plunges a blade into a barrel, and steam hisses up."
+      ]
+    }
+  },
+  {
+    "id": "beggar",
+    "room": "wet_lane",
+    "name": "a beggar",
+    "kind": "scripted",
+    "card": {
+      "keywords": ["beggar", "sleeper"],
+      "short": "A beggar huddles in a dripping doorway.",
+      "look": "A bundle of wet rags with a face somewhere inside it. One eye is open and watching you.",
+      "scripted": [
+        "\"Spare a copper? No? Didn't think so.\"",
+        "The beggar mumbles about rats in the walls.",
+        "\"Saw the watch take a bribe this morning. Saw it. Nobody listens to me.\""
+      ],
+      "ambient": [
+        "The beggar coughs wetly and pulls his rags tighter.",
+        "The beggar watches the market road with one open eye."
+      ]
+    }
+  },
+  {
+    "id": "rats",
+    "room": "sewer_grate",
+    "name": "some rats",
+    "kind": "scripted",
+    "card": {
+      "keywords": ["rat", "rats"],
+      "short": "A few fat rats nose through the filth by the grate.",
+      "look": "Big ones. Bigger than rats should be. They regard you without fear.",
+      "scripted": [
+        "The rats squeak and ignore you.",
+        "One rat stands on its hind legs and stares at you until you look away."
+      ],
+      "ambient": [
+        "Something scratches behind the grate.",
+        "A rat drags a fish head into the dark."
+      ]
+    }
+  }
+]

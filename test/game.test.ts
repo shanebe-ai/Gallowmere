@@ -1,0 +1,270 @@
+import type { AddressInfo } from 'node:net';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { io as ioClient, type Socket } from 'socket.io-client';
+import { pool, query } from '../src/db/pool.js';
+import { migrate } from '../src/db/migrate.js';
+import { createApp } from '../src/app.js';
+import { stripAnsi } from '../src/game/text.js';
+import { FakeProvider, reply } from './fakes.js';
+import type { ChatRequest } from '../src/ai/types.js';
+
+let url = '';
+let app: Awaited<ReturnType<typeof createApp>>;
+let morda: (req: ChatRequest) => string = () => reply('Aye.');
+const groq = new FakeProvider('groq', (req) => morda(req), 2000);
+const sockets: Socket[] = [];
+
+class Player {
+  socket: Socket;
+  buf = '';
+  token: string | null = null;
+  mode = { echo: true, prompt: '' };
+  status: any = null;
+
+  constructor(token?: string | null) {
+    this.socket = ioClient(url, { transports: ['websocket'], reconnection: false, forceNew: true });
+    sockets.push(this.socket);
+    this.socket.on('out', (t: string) => (this.buf += stripAnsi(t)));
+    this.socket.on('session', (t: string | null) => (this.token = t));
+    this.socket.on('mode', (m) => (this.mode = m));
+    this.socket.on('status', (s) => (this.status = s));
+    this.socket.on('connect', () => this.socket.emit('hello', { token: token ?? null, cols: 100 }));
+  }
+
+  send(line: string) {
+    this.socket.emit('line', line);
+  }
+
+  async waitFor(re: RegExp, timeout = 4000): Promise<string> {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      const m = this.buf.match(re);
+      if (m) {
+        const end = (m.index ?? 0) + m[0].length;
+        const seen = this.buf.slice(0, end);
+        this.buf = this.buf.slice(end);
+        return seen;
+      }
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    throw new Error(`Timed out waiting for ${re}. Buffer:\n${this.buf}`);
+  }
+
+  async do(line: string, re: RegExp) {
+    this.send(line);
+    return this.waitFor(re);
+  }
+
+  /** Drops the connection without quitting, like a network blip. */
+  drop() {
+    this.socket.disconnect();
+  }
+
+  /** Quits cleanly and waits for the server to save. */
+  async close() {
+    if (this.socket.connected) {
+      this.send('quit');
+      await new Promise((r) => this.socket.once('disconnect', r));
+    }
+  }
+}
+
+async function create(name: string, password = 'secret1') {
+  const p = new Player();
+  await p.waitFor(/By what name/);
+  await p.do(name, /Make a new character/);
+  await p.do('y', /Choose a password/);
+  expect(p.mode.echo).toBe(false);
+  await p.do(password, /Once more/);
+  await p.do(password, /Exits:/);
+  return p;
+}
+
+async function login(name: string, room?: string, password = 'secret1') {
+  if (room) await query('UPDATE players SET room_id=$2 WHERE lower(name)=lower($1)', [name, room]);
+  const p = new Player();
+  await p.waitFor(/By what name/);
+  await p.do(name, /Welcome back/);
+  await p.do(password, /Exits:/);
+  return p;
+}
+
+beforeAll(async () => {
+  await query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
+  await migrate();
+  app = await createApp({ providers: [{ provider: groq, rpm: 1000 }] });
+  await new Promise<void>((r) => app.server.listen(0, r));
+  url = `http://localhost:${(app.server.address() as AddressInfo).port}`;
+});
+
+beforeEach(() => {
+  morda = () => reply('Aye.');
+  groq.calls = [];
+});
+
+afterAll(async () => {
+  for (const s of sockets) s.disconnect();
+  app.game.stop();
+  app.io.close();
+  await new Promise((r) => app.server.close(r));
+  await pool.end();
+});
+
+describe('Gallowmere end to end', () => {
+  it('serves the health check and the client page', async () => {
+    const health = await (await fetch(`${url}/health`)).json();
+    expect(health.ok).toBe(true);
+    const page = await (await fetch(url)).text();
+    expect(page).toContain('GALLOWMERE');
+  });
+
+  it('two players see each other walk and talk', async () => {
+    const a = await create('Shane');
+    const b = await create('Bob');
+    await a.waitFor(/Bob steps out of the fog/);
+    await a.do('look', /Bob is here/);
+
+    b.send('say evening');
+    await a.waitFor(/Bob says, "evening"/);
+    b.send(': tips his hat');
+    await a.waitFor(/Bob tips his hat/);
+
+    b.send('s');
+    await a.waitFor(/Bob leaves south/);
+    a.send('s');
+    await b.waitFor(/Shane arrives from the north/);
+
+    await a.do('who', /Bob\s+Gate Road[\s\S]*Shane\s+Gate Road/);
+    expect(a.status.online).toBe(2);
+    expect(a.status.exits).toEqual(['north', 'south', 'east', 'west']);
+    await a.close();
+    await b.close();
+  });
+
+  it('rejects bad names, wrong passwords and bad moves', async () => {
+    const p = new Player();
+    await p.waitFor(/By what name/);
+    await p.do('x1', /3 to 16 letters/);
+    await p.do('morda', /taken by someone/);
+    await p.do('Shane', /Welcome back/);
+    await p.do('wrongpass', /Wrong password/);
+    await p.do('secret1', /Exits:/);
+    await p.do('u', /can't go that way/);
+    await p.do('dance wildly', /Huh\?|What\?|doesn't mean|fog swallows/);
+    await p.close();
+  });
+
+  it('saves aliases per character', async () => {
+    const p = await login('Shane');
+    await p.do('alias hi say Hello there', /Alias set/);
+    await p.do('hi friend', /You say, "Hello there friend"/);
+    await p.close();
+    const q = await login('Shane');
+    await q.do('alias', /hi\s+say Hello there/);
+    await q.do('unalias hi', /removed/);
+    await q.close();
+  });
+
+  it('Morda remembers what you told her after you log out and back in', async () => {
+    morda = (req) =>
+      req.user.includes('tanner')
+        ? reply('A tanner. Thought I smelled it.', { type: 'remember', note: 'works as a tanner' }, 'wrinkles her nose')
+        : reply('What will it be?');
+
+    const p = await login('Shane', 'drowned_rat');
+    expect(p.status.room).toBe('The Drowned Rat');
+    await p.do('talk morda I am a tanner by trade', /Morda wrinkles her nose[\s\S]*Morda says to you, "A tanner\. Thought I smelled it\."/);
+    await p.close();
+
+    const { rows } = await query("SELECT notes FROM npc_memory WHERE npc_id='morda'");
+    expect(rows[0].notes).toEqual(['works as a tanner']);
+
+    groq.calls = [];
+    const q = await login('Shane');
+    expect(q.status.room).toBe('The Drowned Rat');
+    await q.do('say evening Morda', /Morda says to you, "What will it be\?"/);
+    expect(groq.calls[0].system).toContain('works as a tanner');
+    await q.close();
+  });
+
+  it('naming the barkeep in a say reaches her, and others in the room hear the reply', async () => {
+    const a = await login('Shane', 'drowned_rat');
+    const b = await login('Bob', 'drowned_rat');
+    morda = () => reply('Keep it down.');
+    a.send('say barkeep, two ales');
+    await b.waitFor(/Morda says to Shane, "Keep it down\."/);
+    await a.waitFor(/Morda says to you, "Keep it down\."/);
+    await a.close();
+    await b.close();
+  });
+
+  it('falls back to scripted lines when the AI is down', async () => {
+    morda = () => {
+      throw new Error('503');
+    };
+    const p = await login('Shane', 'drowned_rat');
+    await p.do('ask morda about the sewers', /You ask Morda about the sewers/);
+    await p.waitFor(/What'll it be|Not now, damp one|slides a mug|keep it off my floor|long look/);
+    const { rows } = await query("SELECT provider, fallback_used FROM ai_usage ORDER BY id DESC LIMIT 1");
+    expect(rows[0]).toEqual({ provider: 'scripted', fallback_used: true });
+    await p.close();
+  });
+
+  it('a refusal makes Morda ignore you for a while', async () => {
+    morda = () => reply('Out of my sight.', { type: 'refuse' });
+    const p = await login('Shane', 'drowned_rat');
+    await p.do('talk morda you water down the ale', /Out of my sight/);
+    await p.do('talk morda come on', /Morda turns her back on Shane/);
+    expect(groq.calls).toHaveLength(1);
+    await p.close();
+  });
+
+  it('blocks flagged player text', async () => {
+    const p = await login('Bob');
+    const slur = Buffer.from('cmV0YXJk', 'base64').toString();
+    await p.do(`say you ${slur}`, /words catch in your throat/);
+    const { rows } = await query("SELECT count(*)::int AS n FROM flagged_lines WHERE source='player'");
+    expect(rows[0].n).toBe(1);
+    await p.close();
+  });
+
+  it('resumes a dropped connection with its token, quietly', async () => {
+    const a = await login('Shane');
+    const b = await login('Bob');
+    const token = a.token;
+    expect(token).toBeTruthy();
+    a.drop();
+    await new Promise((r) => setTimeout(r, 200));
+    const a2 = new Player(token);
+    await a2.waitFor(/\[Reconnected\][\s\S]*Exits:/);
+    await new Promise((r) => setTimeout(r, 200));
+    expect(b.buf).not.toMatch(/Shane fades/);
+    await a2.close();
+    await b.close();
+  });
+
+  it('a second login pushes the first connection out', async () => {
+    const a = await login('Bob');
+    const a2 = await login('Bob');
+    await a.waitFor(/stepped into your boots/);
+    await a2.do('who', /Bob/);
+    await a2.close();
+  });
+
+  it('aistats is admin only and reports usage', async () => {
+    const bob = await login('Bob');
+    await bob.do('aistats', /Huh\?|What\?|doesn't mean|fog swallows/);
+    await bob.close();
+    const shane = await login('Shane');
+    await shane.do('aistats', /NPC lines, last 24 hours[\s\S]*Shane/);
+    await shane.close();
+  });
+
+  it('caps player input at 300 characters and strips escape codes', async () => {
+    const p = await login('Bob');
+    await p.do(`say \x1b[31m${'a'.repeat(400)}`, /You say,\s+"a{290,300}"/);
+    await p.close();
+    const { rows } = await query("SELECT 1");
+    expect(rows).toHaveLength(1);
+  });
+});

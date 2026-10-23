@@ -1,0 +1,27 @@
+name: Deploy to production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server 1
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            set -e
+            cd /home/gallowmere
+            git fetch origin main
+            git reset --hard origin/main
+            npm ci
+            npm run build
+            npm run db:migrate:prod
+            pm2 startOrRestart ecosystem.config.cjs
+            sleep 5
+            curl -sf http://localhost:3004/health

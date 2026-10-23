@@ -1,0 +1,43 @@
+{
+  "name": "gallowmere",
+  "version": "0.1.0",
+  "description": "Gallowmere: a dark fantasy text MUD with NPCs that remember you",
+  "private": true,
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "npm run build:client && tsx watch src/server.ts",
+    "build": "npm run build:server && npm run build:client",
+    "build:server": "tsc -p tsconfig.json && mkdir -p dist/db dist/world && cp src/db/schema.sql dist/db/ && cp src/world/*.json dist/world/",
+    "build:client": "esbuild client/main.ts --bundle --minify --sourcemap --target=es2020 --outfile=public/build/app.js",
+    "start": "node dist/server.js",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate:prod": "node dist/db/migrate.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p client/tsconfig.json",
+    "test": "vitest run"
+  },
+  "author": "shanebe-ai",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "pg": "^8.23.1",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "esbuild": "^0.28.2",
+    "socket.io-client": "^4.8.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
