@@ -44,9 +44,9 @@ const BANNER_NARROW = [
 const HELP: Record<string, string> = {
   look: 'look (l): look around.  look <someone> (l <someone>): look at a player or NPC.',
   move: 'north, south, east, west, up, down (n s e w u d): walk through an exit. Exits in the room text can be clicked.',
-  say: "say <text> (or ' <text>): speak to everyone in the room. Say an NPC's name and they will answer.",
+  say: "say <text> (or ' <text>): speak to everyone in the room. Name someone in it and they answer: say hi guard. A bare greeting works too: hello Morda.",
   emote: 'emote <text> (or : <text>): act it out. ": leans on the bar" shows "Shane leans on the bar".',
-  talk: 'talk <npc> <text>: speak to an NPC directly.',
+  talk: 'talk <npc> <text> (or say to <npc> <text>): speak to someone directly. talk guard on its own just says hello.',
   ask: 'ask <npc> about <topic>: ask an NPC about something.',
   who: 'who: everyone in Gallowmere right now.',
   alias: 'alias: list your aliases.  alias <name> <command>: create one.  unalias <name>: remove one.',
@@ -366,7 +366,27 @@ export class Game {
         if (DIR_SHORT[rest.toLowerCase()]) return this.move(s, DIR_SHORT[rest.toLowerCase()]);
         return s.out('Go where? Try north, south, east, west, up or down.');
       case 'say':
+        // "say to guard hello" is the same as "talk guard hello".
+        if (/^to\s+\S+\s+\S/i.test(rest) && this.world.findNpc(s.player!.roomId, rest.split(' ')[1])) return this.talk(s, rest);
         return this.say(s, rest);
+      case 'hi':
+      case 'hello':
+      case 'hey':
+      case 'howdy':
+      case 'greetings':
+      case 'evening':
+      case 'morning':
+      case 'oi':
+        // A bare greeting is spoken out loud: "hi guard" says "hi guard".
+        return this.say(s, line);
+      case 'attack':
+      case 'kill':
+      case 'hit':
+      case 'fight':
+      case 'punch':
+      case 'stab':
+      case 'k':
+        return this.attack(s, rest);
       case 'emote':
       case 'me':
         return this.emote(s, rest);
@@ -452,10 +472,36 @@ export class Game {
     s.out(`You say, ${c.speech(`"${text}"`)}`);
     this.toRoom(p.roomId, `${c.player(p.name)} says, ${c.speech(`"${text}"`)}`, s);
 
-    // Naming an NPC in the room counts as talking to them.
-    const words = text.toLowerCase().match(/[a-z]+/g) ?? [];
-    const npc = this.world.npcsIn(p.roomId).find((n) => n.kind === 'ai' && words.some((w) => n.card.keywords.includes(w)));
+    // Naming someone in the room counts as talking to them. AI characters win a tie.
+    const npc = this.mentionedNpc(p.roomId, text);
     if (npc) void this.npcRespond(s, npc, text);
+  }
+
+  /** The NPC in the room whose name or keyword appears in the text, if any. */
+  mentionedNpc(roomId: string, text: string): Npc | undefined {
+    const lower = ` ${text.toLowerCase().replace(/[^a-z ]+/g, ' ')} `;
+    const hits = this.world
+      .npcsIn(roomId)
+      .filter((n) => n.card.keywords.some((k) => lower.includes(` ${k} `)));
+    return hits.find((n) => n.kind === 'ai') ?? hits[0];
+  }
+
+  private attack(s: Session, rest: string): void {
+    const target = rest.replace(/^(the|at)\s+/i, '').trim();
+    const roomId = s.player!.roomId;
+    const npc = target ? this.world.findNpc(roomId, target.split(' ')[0]) : undefined;
+    const other = target
+      ? this.playersIn(roomId, s).find((o) => o.player!.name.toLowerCase().startsWith(target.toLowerCase()))
+      : undefined;
+    const who = npc ? npc.name : other ? other.player!.name : '';
+    if (target && !who) return s.out("There's nobody like that here.");
+    s.out(
+      who
+        ? `You size up ${who} and think better of it. Steel and blood come to Gallowmere soon, but not today.`
+        : 'Attack what? Not that it matters yet: steel and blood come to Gallowmere soon, but not today.',
+    );
+    if (npc) this.toRoom(roomId, c.dim(`${s.player!.name} eyes ${npc.name} with murder in mind, then thinks better of it.`), s);
+    if (other) other.out(c.dim(`${s.player!.name} eyes you with murder in mind, then thinks better of it.`));
   }
 
   private emote(s: Session, text: string): void {
@@ -477,11 +523,11 @@ export class Game {
   private talk(s: Session, rest: string): void {
     const parts = rest.replace(/^to\s+/i, '').split(' ');
     const who = parts.shift() ?? '';
-    const text = parts.join(' ').trim();
-    if (!who) return s.out('Talk to whom? Try: talk morda hello');
+    let text = parts.join(' ').trim();
+    if (!who) return s.out('Talk to whom? Try: talk guard hello');
     const npc = this.world.findNpc(s.player!.roomId, who);
     if (!npc) return s.out("There's nobody like that here.");
-    if (!text) return s.out(`Say what to ${npc.name}?`);
+    if (!text) text = 'Hello.';
     if (this.blockIfFlagged(s, text)) return;
     const p = s.player!;
     s.out(`You say to ${c.npc(npc.name)}, ${c.speech(`"${text}"`)}`);

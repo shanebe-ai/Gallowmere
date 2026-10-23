@@ -267,4 +267,27 @@ describe('Gallowmere end to end', () => {
     const { rows } = await query("SELECT 1");
     expect(rows).toHaveLength(1);
   });
+  it('talking to the guard works the natural ways', async () => {
+    const guard = /Toll's waived|Move along|eyes your purse/;
+    const p = await login('Bob', 'north_gate');
+    await p.do('say hi guard', /You say, "hi guard"/);
+    await p.waitFor(guard);
+    await p.do('hello guard', /You say, "hello guard"/);
+    await p.waitFor(guard);
+    await p.do('talk guard', /You say to a gate guard, "Hello\."/);
+    await p.waitFor(guard);
+    await p.do('say to guard nice weather', /You say to a gate guard, "nice weather"/);
+    await p.waitFor(guard);
+    await p.do('say lovely fog today', /You say, "lovely fog today"/);
+    await new Promise((r) => setTimeout(r, 700));
+    expect(p.buf).not.toMatch(guard);
+    await p.close();
+  });
+
+  it('attacking is turned away for now', async () => {
+    const p = await login('Bob', 'north_gate');
+    await p.do('attack guard', /size up a gate guard and think better of it/);
+    await p.do('kill nobody', /nobody like that here/);
+    await p.close();
+  });
 });
