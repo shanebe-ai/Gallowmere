@@ -23,6 +23,8 @@ export interface NpcTurnInput {
   room: { title: string; others: string[] };
   recent: string[];
   playerLine: string;
+  /** 'event' means playerLine describes something the player did, written by the engine. */
+  kind?: 'say' | 'event';
   allowedActions: ActionType[];
 }
 
@@ -97,7 +99,10 @@ export function buildPrompt(input: NpcTurnInput): { system: string; user: string
     .filter((l) => l !== null)
     .join('\n');
 
-  const user = `${player.name} says to you: "${input.playerLine}"`;
+  const user =
+    input.kind === 'event'
+      ? `Right in front of you, ${player.name} ${input.playerLine}. React in character, briefly.`
+      : `${player.name} says to you: "${input.playerLine}"`;
   return { system, user };
 }
 

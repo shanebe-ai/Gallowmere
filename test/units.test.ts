@@ -109,3 +109,31 @@ describe('prompt', () => {
     expect(p.system).toContain('none, remember, refuse');
   });
 });
+
+import { readFileSync } from 'node:fs';
+import { cleanTarget } from '../src/game/world.js';
+
+describe('world data', () => {
+  const rooms = JSON.parse(readFileSync(new URL('../src/world/rooms.json', import.meta.url), 'utf8'));
+
+  it('gives every listed thing its own actions beyond look', () => {
+    for (const r of rooms) {
+      for (const f of r.features) expect(Object.keys(f.actions ?? {}).length, `${r.id}: ${f.name}`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('lets the last word of every listed name find it, since clicks use that', () => {
+    for (const r of rooms) {
+      for (const f of r.features) {
+        const last = f.name.split(' ').pop().replace(/'s$/, '');
+        expect(f.keywords.some((k: string) => k === last || k.startsWith(last)), `${r.id}: ${f.name}`).toBe(true);
+      }
+    }
+  });
+
+  it('strips filler words from targets', () => {
+    expect(cleanTarget('at the curtain')).toBe('curtain');
+    expect(cleanTarget('on the stocks!')).toBe('stocks');
+    expect(cleanTarget('The Stained Curtain')).toBe('stained curtain');
+  });
+});

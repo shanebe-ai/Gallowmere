@@ -21,7 +21,7 @@ class Player {
   mode = { echo: true, prompt: '' };
   status: any = null;
 
-  constructor(token?: string | null, cols = 100) {
+  constructor(token?: string | null, cols = 200) {
     this.socket = ioClient(url, { transports: ['websocket'], reconnection: false, forceNew: true });
     sockets.push(this.socket);
     this.socket.on('out', (t: string) => (this.buf += stripAnsi(t)));
@@ -51,6 +51,8 @@ class Player {
   }
 
   async do(line: string, re: RegExp) {
+    // Stay under the server's flood guard of 10 lines a second.
+    await new Promise((r) => setTimeout(r, 110));
     this.send(line);
     return this.waitFor(re);
   }
@@ -349,5 +351,38 @@ describe('Gallowmere end to end', () => {
     await new Promise((r) => setTimeout(r, 300));
     expect(groq.calls).toHaveLength(1);
     await p.close();
+  });
+  it('things in a room can be looked at and used in plain words', async () => {
+    morda = (req) =>
+      req.user.includes('yank') ? reply('Hands off my curtain, damp one.', { type: 'none' }, 'slaps the bar') : reply('What?');
+    await (await create('Dana')).close();
+    const p = await login('Dana', 'drowned_rat');
+    await p.do('look at the curtain', /heavy curtain[\s\S]*You could: open, take, touch\./);
+    await p.do('x the stained curtain', /heavy curtain/);
+    await p.do('take the curtain', /good yank/);
+    await p.waitFor(/Morda slaps the bar\.[\s\S]*Morda says to you, "Hands off my curtain, damp one\."/);
+    expect(groq.calls.at(-1)!.user).toContain('Right in front of you, Dana grabs your stained curtain');
+    await p.do('pull curtain', /You could slip\s+through to the west/);
+    await p.do('play dice', /Locals only/);
+    await p.do('smell the dice', /smells like the rest of Gallowmere/);
+    await p.do('w', /The Back Room/);
+    await p.do('pick up the ledger', /put it\s+back exactly where it was/);
+    await p.do('read ledger', /The Drowned Rat,\s+everything/);
+    await p.do('dance with the barrels', /Huh\?|What\?|doesn't mean|fog swallows/);
+    await p.do('take the moon', /don't see that here/);
+    await p.close();
+  });
+
+  it('verbs work on people too', async () => {
+    morda = (req) => (req.user.includes('pokes you') ? reply('Poke me again and lose the finger.') : reply('What?'));
+    const a = await login('Dana', 'drowned_rat');
+    const b = await login('Bob', 'drowned_rat');
+    await a.do('poke morda', /You poke Morda the barkeep\./);
+    await a.waitFor(/lose the finger/);
+    await b.waitFor(/Dana pokes Morda the barkeep\./);
+    await a.do('poke bob', /You poke Bob\./);
+    await b.waitFor(/Dana pokes you\./);
+    await a.close();
+    await b.close();
   });
 });

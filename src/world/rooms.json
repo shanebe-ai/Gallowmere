@@ -17,7 +17,12 @@
           "gibbet",
           "cage"
         ],
-        "look": "An iron cage hangs from a chain over the arch. Whoever was in it last has been gone a while. Mostly."
+        "look": "An iron cage hangs from a chain over the arch. Whoever was in it last has been gone a while. Mostly.",
+        "actions": {
+          "touch": "The cage swings at your touch and creaks loud enough to make the guard look up.",
+          "take": "It's chained to the arch, twenty feet up. Even if you could reach it, where would you put it?",
+          "climb": "You get a hand on the arch stones and think better of it. The guard is watching, and the cage is not quite empty enough."
+        }
       },
       {
         "name": "the portcullis",
@@ -25,7 +30,12 @@
           "portcullis",
           "gate"
         ],
-        "look": "Rust has welded the portcullis open. Nobody has closed this gate in years, and nobody seems keen to try."
+        "look": "Rust has welded the portcullis open. Nobody has closed this gate in years, and nobody seems keen to try.",
+        "actions": {
+          "touch": "Cold iron, rough with rust. It hasn't moved in years.",
+          "push": "You heave at the portcullis. It doesn't so much as rattle.",
+          "climb": "You climb a few bars, see nothing but fog in every direction, and climb back down."
+        }
       }
     ]
   },
@@ -48,7 +58,11 @@
           "shutters",
           "house"
         ],
-        "look": "Tall narrow houses with every shutter closed. One shutter twitches as you look, then goes still."
+        "look": "Tall narrow houses with every shutter closed. One shutter twitches as you look, then goes still.",
+        "actions": {
+          "push": "You knock on a shutter. Inside, someone holds their breath until you leave.",
+          "open": "The shutters are barred from the inside. Of course they are."
+        }
       }
     ]
   },
@@ -69,14 +83,23 @@
           "bounties",
           "bounty"
         ],
-        "look": "Old bounties, mostly rotted to pulp. One fresh notice reads: WANTED, the rat that ate the captain's boots. Reward negotiable."
+        "look": "Old bounties, mostly rotted to pulp. One fresh notice reads: WANTED, the rat that ate the captain's boots. Reward negotiable.",
+        "actions": {
+          "read": "WANTED: the rat that ate the captain's boots. WANTED: whoever keeps writing on this board. NOTICE: the watch does not take bribes. Under that, in another hand: ask for Dace.",
+          "take": "You tear the fresh notice down, feel the eyes of the empty barracks on your back, and pin it up again."
+        }
       },
       {
         "name": "the stocks",
         "keywords": [
           "stocks"
         ],
-        "look": "A wooden stocks with holes for head and hands, polished smooth by the unlucky. Somebody has carved WORTH IT into the frame."
+        "look": "A wooden stocks with holes for head and hands, polished smooth by the unlucky. Somebody has carved WORTH IT into the frame.",
+        "actions": {
+          "sit": "You settle into the stocks and rest your neck in the groove. It's oddly comfortable. That's the worrying part.",
+          "touch": "The wood is smooth as glass from all the necks.",
+          "take": "It's bolted to the yard. And heavy. And a stocks."
+        }
       }
     ]
   },
@@ -95,7 +118,12 @@
         "keywords": [
           "beggars"
         ],
-        "look": "A row of beggars in grey rags, rattling cups at anyone who climbs past. They watch the temple doors more than they watch you."
+        "look": "A row of beggars in grey rags, rattling cups at anyone who climbs past. They watch the temple doors more than they watch you.",
+        "actions": {
+          "touch": "The nearest beggar flinches away. \"Coin, not hands,\" he says.",
+          "search": "Rummaging through beggars is a good way to get stabbed with a spoon. You leave it.",
+          "take": "Take a beggar? Nobody in this town comes that cheap."
+        }
       }
     ]
   },
@@ -113,7 +141,12 @@
         "keywords": [
           "altar"
         ],
-        "look": "A cracked stone altar heaped with grey ash. A brass bowl beside it is marked OFFERINGS, and it is chained down."
+        "look": "A cracked stone altar heaped with grey ash. A brass bowl beside it is marked OFFERINGS, and it is chained down.",
+        "actions": {
+          "touch": "Ash coats your fingers. It's softer than it should be.",
+          "search": "You sift the ash. A tooth, two buttons and a copper so worn the face is gone. You leave them be. It feels like the right thing.",
+          "take": "The ash is the saint's, the bowl is chained, and the altar weighs as much as a horse."
+        }
       },
       {
         "name": "the painted saint",
@@ -122,7 +155,11 @@
           "painting",
           "mural"
         ],
-        "look": "A faded saint in a blue robe, her eyes scratched out long ago. Someone has painted a small smile back onto her mouth."
+        "look": "A faded saint in a blue robe, her eyes scratched out long ago. Someone has painted a small smile back onto her mouth.",
+        "actions": {
+          "touch": "The paint is cold and a little tacky, as if someone touched up that smile recently.",
+          "take": "She's painted on the wall. She isn't going anywhere, and neither are her eyes."
+        }
       }
     ]
   },
@@ -141,7 +178,11 @@
           "forge",
           "fire"
         ],
-        "look": "A roaring forge, hot enough to make your eyes water from the doorway."
+        "look": "A roaring forge, hot enough to make your eyes water from the doorway.",
+        "actions": {
+          "touch": "You reach toward the forge and the heat slaps your hand back. Good call.",
+          "use": "You give the bellows one pump. The fire roars. The blacksmith's look says do that again and lose the hand."
+        }
       },
       {
         "name": "the half finished blades",
@@ -150,7 +191,11 @@
           "blade",
           "swords"
         ],
-        "look": "Rough blades waiting for edges and hilts. None of them are for sale. Yet."
+        "look": "Rough blades waiting for edges and hilts. None of them are for sale. Yet.",
+        "actions": {
+          "take": "You reach for a blade. The hammer stops. You put it back. The hammer starts again.",
+          "touch": "No edge on them yet. Give it a week."
+        }
       }
     ]
   },
@@ -171,7 +216,11 @@
           "stalls",
           "stall"
         ],
-        "look": "Rope, lamp oil, bent nails, a single boot. Every stallholder swears their goods came by honestly."
+        "look": "Rope, lamp oil, bent nails, a single boot. Every stallholder swears their goods came by honestly.",
+        "actions": {
+          "search": "You poke through the stalls: rope, oil, a single boot. The stallholder watches you like you're the thief.",
+          "take": "The stallholder's hand lands on yours before you've lifted anything. \"Coin first.\""
+        }
       },
       {
         "name": "the painted rat sign",
@@ -179,7 +228,11 @@
           "sign",
           "rat sign"
         ],
-        "look": "A wooden sign of a rat with its paws crossed over its chest, floating belly up. THE DROWNED RAT, it says, in case you missed the point."
+        "look": "A wooden sign of a rat with its paws crossed over its chest, floating belly up. THE DROWNED RAT, it says, in case you missed the point.",
+        "actions": {
+          "push": "You swat the sign. It swings, and for a second the drowned rat seems to wink at you.",
+          "take": "You'd need a ladder, and a much better reason."
+        }
       }
     ]
   },
@@ -202,7 +255,12 @@
           "statue",
           "founder"
         ],
-        "look": "A dry fountain choked with rubbish. The founder's statue has lost its nose, and pigeons have claimed the rest."
+        "look": "A dry fountain choked with rubbish. The founder's statue has lost its nose, and pigeons have claimed the rest.",
+        "actions": {
+          "search": "You dig through the rubbish in the bowl: a bent spoon, a letter too wet to read and one very surprised frog.",
+          "climb": "You clamber onto the founder's shoulders. The view is fog, roofs and more fog. A hawker applauds anyway.",
+          "use": "You try to drink from the fountain. It's dry, unless you count the rubbish."
+        }
       },
       {
         "name": "the crier's platform",
@@ -210,7 +268,11 @@
           "platform",
           "crier"
         ],
-        "look": "An empty wooden platform where the town crier shouts the news. A scrap of paper nailed to it says BACK SOON."
+        "look": "An empty wooden platform where the town crier shouts the news. A scrap of paper nailed to it says BACK SOON.",
+        "actions": {
+          "climb": "You climb onto the crier's platform. A few faces turn up, hoping for news. You have none. They turn away.",
+          "read": "BACK SOON, says the note. Someone has scratched a date under it. Three years ago."
+        }
       }
     ]
   },
@@ -230,7 +292,12 @@
           "eel",
           "fish"
         ],
-        "look": "A barrel of river eels, still twitching. The fishmonger insists that means they are fresh."
+        "look": "A barrel of river eels, still twitching. The fishmonger insists that means they are fresh.",
+        "actions": {
+          "take": "You grab an eel. The eel disagrees, strongly, and wins.",
+          "touch": "Slimy, cold and very much alive.",
+          "smell": "Fresh, the fishmonger says. Your nose says otherwise."
+        }
       }
     ]
   },
@@ -255,7 +322,22 @@
         "keywords": [
           "curtain"
         ],
-        "look": "A heavy curtain, stained with things best left unnamed. A draught stirs it now and then, as if there were a room behind it."
+        "look": "A heavy curtain, stained with things best left unnamed. A draught stirs it now and then, as if there were a room behind it.",
+        "actions": {
+          "open": {
+            "text": "You pull the curtain aside. Behind it, a cramped storeroom of barrels and sacks. You could slip through to the west.",
+            "room": "pulls the stained curtain aside and peers behind it.",
+            "event": "pulls your stained curtain aside and peers into your back room",
+            "react": true
+          },
+          "take": {
+            "text": "You grab a fistful of curtain and give it a good yank. It holds. Every head in the tavern turns.",
+            "room": "yanks hard on the stained curtain.",
+            "event": "grabs your stained curtain and tries to yank it down",
+            "react": true
+          },
+          "touch": "Heavy, stiff with old spills and smoke. A cold draught leaks through from the west."
+        }
       },
       {
         "name": "the dice game",
@@ -264,7 +346,19 @@
           "game",
           "players"
         ],
-        "look": "A knot of drinkers hunched over a battered cup of dice. They stop talking when you get close."
+        "look": "A knot of drinkers hunched over a battered cup of dice. They stop talking when you get close.",
+        "actions": {
+          "use": {
+            "text": "You lean in to join the game. The players close ranks without looking up. Locals only, apparently.",
+            "room": "tries to join the dice game and gets frozen out."
+          },
+          "take": {
+            "text": "You scoop up the dice. Every player at the table goes very still. You put them back.",
+            "room": "scoops up the dice from the game, then puts them back.",
+            "event": "snatches the dice off your regulars' table, then puts them back",
+            "react": true
+          }
+        }
       }
     ]
   },
@@ -284,7 +378,11 @@
           "book",
           "oilcloth"
         ],
-        "look": "A ledger wrapped in oilcloth, full of neat columns of debts. Most of the pages are signed with a small drawing of a hook."
+        "look": "A ledger wrapped in oilcloth, full of neat columns of debts. Most of the pages are signed with a small drawing of a hook.",
+        "actions": {
+          "read": "Columns of debts, all owed to someone who signs with a small hook. The biggest line on the last page is in a heavy hand: The Drowned Rat, everything.",
+          "take": "You tuck the ledger under your arm, think about Morda, the docks and that little hook, and put it back exactly where it was."
+        }
       },
       {
         "name": "the barrels",
@@ -293,7 +391,12 @@
           "barrel",
           "sacks"
         ],
-        "look": "Ale barrels, flour sacks and a crate marked TURNIPS that is suspiciously heavy."
+        "look": "Ale barrels, flour sacks and a crate marked TURNIPS that is suspiciously heavy.",
+        "actions": {
+          "search": "Ale, flour and a crate marked TURNIPS full of something wrapped in sacking that is definitely not turnips. You decide you never saw it.",
+          "open": "You lever the lid off the turnip crate. Not turnips. You put the lid back very carefully.",
+          "use": "You put your mouth under an ale tap. Warm, flat, and still better than the river."
+        }
       }
     ]
   },
@@ -313,7 +416,11 @@
           "puddles",
           "puddle"
         ],
-        "look": "Puddles of black water that never dry. Something glints at the bottom of one, then it is gone."
+        "look": "Puddles of black water that never dry. Something glints at the bottom of one, then it is gone.",
+        "actions": {
+          "search": "You reach into the black water. Your fingers close on something small and round, then it slips away. A coin. Probably.",
+          "touch": "Colder than it should be."
+        }
       }
     ]
   },
@@ -334,7 +441,11 @@
           "river",
           "water"
         ],
-        "look": "Wide, brown and slow. Things float by now and then, and it is best not to look too closely at them."
+        "look": "Wide, brown and slow. Things float by now and then, and it is best not to look too closely at them.",
+        "actions": {
+          "touch": "Cold, brown and slow. Something brushes your fingers and you pull back fast.",
+          "use": "You cup your hands, look at the water, and think better of drinking it. Wise."
+        }
       }
     ]
   },
@@ -353,7 +464,12 @@
           "crates",
           "crate"
         ],
-        "look": "Crates stamped with the marks of a dozen ports, several of them crossed out. A man nearby suddenly finds the sky very interesting."
+        "look": "Crates stamped with the marks of a dozen ports, several of them crossed out. A man nearby suddenly finds the sky very interesting.",
+        "actions": {
+          "open": "You get a fingernail under a lid. A man appears at your elbow. \"Wrong crate, friend.\" You agree that it is.",
+          "read": "Port stamps from everywhere, half of them crossed out. One crate says FRAGILE in three languages and has been dropped in all of them.",
+          "take": "Too heavy to lift alone, and far too watched to try with help."
+        }
       },
       {
         "name": "the harbourmaster's shed",
@@ -361,7 +477,11 @@
           "shed",
           "harbourmaster"
         ],
-        "look": "A tarred wooden shed, locked tight. A sign on the door says CLOSED in large letters and BRIBES TUESDAYS in small ones."
+        "look": "A tarred wooden shed, locked tight. A sign on the door says CLOSED in large letters and BRIBES TUESDAYS in small ones.",
+        "actions": {
+          "open": "Locked. Bribes are Tuesdays, says the sign. Today is not Tuesday.",
+          "push": "You knock. Something heavy shifts inside, then goes very quiet."
+        }
       }
     ]
   },
@@ -381,7 +501,11 @@
           "bars",
           "sewer"
         ],
-        "look": "Thick iron bars, bent apart by something strong or someone stubborn. A foul warm breath rises from the dark beyond."
+        "look": "Thick iron bars, bent apart by something strong or someone stubborn. A foul warm breath rises from the dark beyond.",
+        "actions": {
+          "touch": "Slimy bars, bent wide enough for someone thin. The air coming through is warm and foul.",
+          "climb": "You get a shoulder between the bars. Below, something squeals, then a lot of somethings. Not today. Not without a light and a blade."
+        }
       }
     ]
   }

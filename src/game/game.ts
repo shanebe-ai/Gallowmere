@@ -7,7 +7,7 @@ import { addNote, getMemory } from '../npc/memory.js';
 import { isFlagged } from './filter.js';
 import { Session, type Connection } from './session.js';
 import { c, capitalize, listJoin, sanitize, stripAnsi } from './text.js';
-import { DIR_SHORT, OPPOSITE, World, type Direction, type Npc } from './world.js';
+import { DIR_SHORT, OPPOSITE, World, cleanTarget, type Direction, type Feature, type Npc } from './world.js';
 
 const MAX_INPUT = 300;
 const MAX_ALIASES = 30;
@@ -42,6 +42,49 @@ const BANNER_NARROW = [
   '',
 ];
 
+/** Verbs for doing things to people and things, mapped to the action names rooms.json uses. */
+const VERBS: Record<string, string> = {
+  take: 'take', get: 'take', grab: 'take', steal: 'take', pick: 'take', pocket: 'take', yank: 'take',
+  touch: 'touch', feel: 'touch', pat: 'touch', stroke: 'touch', poke: 'touch', rub: 'touch', prod: 'touch',
+  open: 'open', pull: 'open', draw: 'open', part: 'open', move: 'open', lift: 'open', unlock: 'open',
+  push: 'push', shove: 'push', knock: 'push', bang: 'push', swat: 'push',
+  read: 'read',
+  search: 'search', rummage: 'search', check: 'search', dig: 'search',
+  smell: 'smell', sniff: 'smell',
+  sit: 'sit', rest: 'sit',
+  climb: 'climb',
+  use: 'use', play: 'use', drink: 'use', pump: 'use',
+  kick: 'kick',
+};
+
+/** How the room sees each verb when a thing has no line of its own. */
+const VERB_SEEN: Record<string, string> = {
+  take: 'tries to take', touch: 'touches', open: 'pulls at', push: 'pushes', read: 'reads', search: 'searches',
+  smell: 'sniffs', sit: 'sits on', climb: 'tries to climb', use: 'fiddles with', kick: 'kicks',
+};
+
+/** The same verbs done to a person: what you see, what others see. */
+const VERB_PERSON: Record<string, [string, string]> = {
+  take: ['grab at', 'grabs at'], touch: ['poke', 'pokes'], open: ['tug at', 'tugs at'], push: ['shove', 'shoves'],
+  read: ['study', 'studies'], search: ['pat down', 'pats down'], smell: ['sniff', 'sniffs'], sit: ['sit on', 'sits on'],
+  climb: ['try to climb', 'tries to climb'], use: ['try to use', 'tries to use'], kick: ['kick', 'kicks'],
+};
+
+/** Fallback lines, so anything listed in a room answers every verb. */
+const VERB_DEFAULT: Record<string, (name: string) => string> = {
+  take: (n) => `You can't take ${n}. Not today, anyway.`,
+  touch: (n) => `You touch ${n}. Damp, like everything in Gallowmere.`,
+  open: (n) => `${capitalize(n)} doesn't open.`,
+  push: (n) => `You push ${n}. Nothing happens.`,
+  read: (n) => `There's nothing written on ${n}.`,
+  search: (n) => `You search ${n} and find nothing worth having.`,
+  smell: (n) => `${capitalize(n)} smells like the rest of Gallowmere: damp.`,
+  sit: (n) => `You can't sit on ${n}.`,
+  climb: (n) => `You can't climb ${n}.`,
+  use: (n) => `You can't think of a use for ${n}.`,
+  kick: (n) => `You kick ${n}. Your toe regrets it.`,
+};
+
 const HELP: Record<string, string> = {
   look: 'look (l): look around.  look <someone> (l <someone>): look at a player or NPC.',
   move: 'north, south, east, west, up, down (n s e w u d): walk through an exit. Exits in the room text can be clicked.',
@@ -49,6 +92,7 @@ const HELP: Record<string, string> = {
   emote: 'emote <text> (or : <text>): act it out. ": leans on the bar" shows "Shane leans on the bar".',
   talk: 'talk <npc> <text> (or say to <npc> <text>): speak to someone directly. talk guard on its own just says hello.',
   ask: 'ask <npc> about <topic>: ask an NPC about something.',
+  things: 'Things listed under You see can be used: look, touch, take, open, push, read, search, smell, sit, climb, use, kick. Looking at something shows what it responds to.',
   who: 'who: everyone in Gallowmere right now.',
   alias: 'alias: list your aliases.  alias <name> <command>: create one.  unalias <name>: remove one.',
   score: 'score: who you are and where you stand.',
@@ -315,8 +359,8 @@ export class Game {
     return [...this.byPlayer.values()].filter((p) => p.player!.roomId === roomId && p !== except);
   }
 
-  private toRoom(roomId: string, text: string, except?: Session): void {
-    for (const p of this.playersIn(roomId, except)) p.out(text);
+  private toRoom(roomId: string, text: string, except?: Session, except2?: Session): void {
+    for (const p of this.playersIn(roomId, except)) if (p !== except2) p.out(text);
   }
 
   private updateStatus(s: Session): void {
@@ -437,6 +481,7 @@ export class Game {
         if (this.isAdmin(s)) return this.aiStats(s);
         break;
     }
+    if (VERBS[verb]) return this.interact(s, VERBS[verb], verb, rest);
     const huh = ['Huh?', 'What?', "That doesn't mean anything here.", 'The fog swallows your words. Try help.'];
     s.out(huh[Math.floor(this.rand() * huh.length)]);
   }
@@ -470,10 +515,10 @@ export class Game {
   }
 
   private look(s: Session, target: string): void {
-    const t = target.replace(/^(at|the)\s+/i, '').trim().toLowerCase();
+    const t = cleanTarget(target);
     if (!t) return this.showRoom(s);
     const roomId = s.player!.roomId;
-    if (t === 'me' || t === 'self' || t === s.player!.name.toLowerCase()) {
+    if (t === 'me' || t === 'self' || t === 'myself' || t === s.player!.name.toLowerCase()) {
       return s.out('You look like someone who just walked out of the fog. Damp, mostly.');
     }
     const npc = this.world.findNpc(roomId, t);
@@ -483,11 +528,67 @@ export class Game {
       return s.out(c.dim(`To talk: talk ${npc.card.keywords[0]} <words>, or say something with "${npc.card.keywords[0]}" in it.`));
     }
     const feature = this.world.findFeature(roomId, t);
-    if (feature) return s.out(feature.look);
-    const other = this.playersIn(roomId, s).find((p) => p.player!.name.toLowerCase().startsWith(t));
+    if (feature) {
+      s.out(feature.look);
+      return s.out(c.dim(`You could: ${this.featureVerbs(feature).join(', ')}.`));
+    }
+    const other = this.findPlayerHere(s, t);
     if (other) {
       other.out(`${c.player(s.player!.name)} looks you over.`);
       return s.out(`${c.player(other.player!.name)} is a stranger to these streets, still damp from the fog.`);
+    }
+    s.out("You don't see that here.");
+  }
+
+  private findPlayerHere(s: Session, cleaned: string): Session | undefined {
+    if (!cleaned) return undefined;
+    const first = cleaned.split(' ')[0];
+    return this.playersIn(s.player!.roomId, s).find((o) => o.player!.name.toLowerCase().startsWith(first));
+  }
+
+  /** The verbs a thing has its own lines for, shown after looking at it. */
+  private featureVerbs(f: Feature): string[] {
+    return Object.keys(f.actions ?? {}).sort();
+  }
+
+  /** take, touch, open and friends, on things, NPCs or players. Code decides what happens. */
+  private interact(s: Session, action: string, typed: string, rest: string): void {
+    const p = s.player!;
+    const t = cleanTarget(rest.replace(/^(up|down|out|over|around)\s+/i, ''));
+    if (!t) return s.out(`${capitalize(typed)} what?`);
+
+    const feature = this.world.findFeature(p.roomId, t);
+    if (feature) {
+      const a = feature.actions?.[action];
+      const text = typeof a === 'string' ? a : a?.text ?? VERB_DEFAULT[action](feature.name);
+      s.out(text);
+      const seen = typeof a === 'object' && a.room ? a.room : `${VERB_SEEN[action]} ${feature.name}.`;
+      this.toRoom(p.roomId, `${c.player(p.name)} ${seen}`, s);
+      if (typeof a === 'object' && a.react) {
+        const event = a.event ?? `${VERB_SEEN[action]} ${feature.name}`;
+        const witness = this.world.npcsIn(p.roomId).find((n) => n.kind === 'ai');
+        if (witness) void this.npcRespond(s, witness, event, 'event');
+      }
+      return;
+    }
+
+    const [mine, theirs] = VERB_PERSON[action];
+    const npc = this.world.findNpc(p.roomId, t);
+    if (npc) {
+      const name = npc.card.listName ?? npc.name;
+      s.out(`You ${mine} ${name}.`);
+      this.toRoom(p.roomId, `${c.player(p.name)} ${theirs} ${name}.`, s);
+      if (npc.kind === 'ai') void this.npcRespond(s, npc, `${theirs} you`, 'event');
+      else void this.npcRespond(s, npc, typed);
+      return;
+    }
+
+    const other = this.findPlayerHere(s, t);
+    if (other) {
+      s.out(`You ${mine} ${other.player!.name}.`);
+      other.out(`${c.player(p.name)} ${theirs} you.`);
+      this.toRoom(p.roomId, `${c.player(p.name)} ${theirs} ${other.player!.name}.`, s, other);
+      return;
     }
     s.out("You don't see that here.");
   }
@@ -563,7 +664,7 @@ export class Game {
   }
 
   private talk(s: Session, rest: string): void {
-    const parts = rest.replace(/^to\s+/i, '').split(' ');
+    const parts = rest.replace(/^(to|with)\s+/i, '').replace(/^(the|a|an)\s+/i, '').split(' ');
     const who = parts.shift() ?? '';
     let text = parts.join(' ').trim();
     if (!who) return s.out('Talk to whom? Try: talk guard hello');
@@ -598,7 +699,7 @@ export class Game {
   }
 
   /** Runs one NPC reply. Code decides what happens; the brain only supplies words and a suggested action. */
-  async npcRespond(s: Session, npc: Npc, playerLine: string): Promise<void> {
+  async npcRespond(s: Session, npc: Npc, playerLine: string, kind: 'say' | 'event' = 'say'): Promise<void> {
     const p = s.player!;
     const roomId = npc.roomId;
 
@@ -640,10 +741,11 @@ export class Game {
         room: { title: this.world.room(roomId).title, others },
         recent: this.recent.get(key) ?? [],
         playerLine,
+        kind,
         allowedActions: allowed,
       });
 
-      this.pushRecent(key, `${p.name}: ${playerLine}`);
+      this.pushRecent(key, kind === 'event' ? `(${p.name} ${playerLine})` : `${p.name}: ${playerLine}`);
 
       if (out.scriptedLine) {
         this.chatting.set(p.id, { npcId: npc.id, at: Date.now() });

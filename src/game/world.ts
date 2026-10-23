@@ -18,10 +18,34 @@ export interface Exit {
   hidden: boolean;
 }
 
+export type FeatureAction = string | { text: string; room?: string; event?: string; react?: boolean };
+
 export interface Feature {
   name: string;
   keywords: string[];
   look: string;
+  actions?: Record<string, FeatureAction>;
+}
+
+const FILLER = /^(at|the|a|an|on|in|into|to|with|behind|under|from|through|some|my|your|that|this)\s+/;
+
+/** Lowercases and drops leading filler words: "at the curtain" becomes "curtain". */
+export function cleanTarget(text: string): string {
+  let t = text.toLowerCase().replace(/[^a-z' ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  for (let i = 0; i < 5 && FILLER.test(t); i++) t = t.replace(FILLER, '');
+  return t;
+}
+
+/** True when a cleaned phrase names something with this name and these keywords. */
+function matches(phrase: string, name: string, keywords: string[]): boolean {
+  if (!phrase) return false;
+  const n = name.toLowerCase();
+  const padded = ` ${phrase} `;
+  return (
+    n === phrase ||
+    n.endsWith(` ${phrase}`) ||
+    keywords.some((k) => k === phrase || padded.includes(` ${k} `) || (phrase.length >= 3 && k.startsWith(phrase)))
+  );
 }
 
 export interface Room {
@@ -86,19 +110,13 @@ export class World {
   }
 
   findFeature(roomId: string, words: string): Feature | undefined {
-    const w = words.toLowerCase();
-    if (!w) return undefined;
-    return this.room(roomId).features.find(
-      (f) => f.name.toLowerCase() === w || f.keywords.some((k) => k === w || (w.length >= 3 && k.startsWith(w))),
-    );
+    const w = cleanTarget(words);
+    return this.room(roomId).features.find((f) => matches(w, f.name, f.keywords));
   }
 
   /** Finds an NPC in a room by name or keyword prefix. */
   findNpc(roomId: string, word: string): Npc | undefined {
-    const w = word.toLowerCase();
-    if (!w) return undefined;
-    return this.npcsIn(roomId).find(
-      (n) => n.name.toLowerCase() === w || n.card.keywords.some((k) => k === w || (w.length >= 3 && k.startsWith(w))),
-    );
+    const w = cleanTarget(word);
+    return this.npcsIn(roomId).find((n) => matches(w, n.card.listName ?? n.name, [n.name.toLowerCase(), ...n.card.keywords]));
   }
 }

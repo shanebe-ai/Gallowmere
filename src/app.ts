@@ -100,7 +100,10 @@ export async function createApp(opts: { providers?: Array<{ provider: ChatProvid
         lastSecond = sec;
         inSecond = 0;
       }
-      if (++inSecond > 10) return;
+      if (++inSecond > 10) {
+        if (inSecond === 11) socket.emit('out', 'Slow down, the fog can only take so much at once.\n');
+        return;
+      }
       chain = chain
         .then(() => session && game.input(session, line.slice(0, 1000)))
         .catch((err) => {
