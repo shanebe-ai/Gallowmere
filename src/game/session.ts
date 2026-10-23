@@ -5,7 +5,7 @@ export interface Connection {
   ip: string;
   send(text: string): void;
   setMode(mode: { echo: boolean; prompt: string }): void;
-  setStatus(status: { name: string; room: string; online: number; exits: string[] }): void;
+  setStatus(status: { name: string; room: string; online: number; exits: string[]; coin: number }): void;
   setToken(token: string | null): void;
   close(): void;
 }

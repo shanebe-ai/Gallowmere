@@ -170,10 +170,11 @@ socket.on('session', (token: string | null) => {
   }
 });
 
-socket.on('status', (s: { name: string; room: string; online: number; exits: string[] }) => {
+socket.on('status', (s: { name: string; room: string; online: number; exits: string[]; coin?: number }) => {
   const name = document.createElement('b');
   name.textContent = s.name;
-  statusInfo.replaceChildren(name, document.createTextNode(` · ${s.room} · ${s.online} online`));
+  const coin = typeof s.coin === 'number' ? ` · ${s.coin} coin` : '';
+  statusInfo.replaceChildren(name, document.createTextNode(`${coin} · ${s.room} · ${s.online} online`));
   renderExits(s.exits);
 });
 

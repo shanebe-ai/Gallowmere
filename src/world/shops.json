@@ -1,0 +1,152 @@
+[
+  {
+    "npc": "morda",
+    "room": "drowned_rat",
+    "haggle": true,
+    "sells": {
+      "ale": 20,
+      "stew": 10,
+      "bread": 10
+    },
+    "buys": [],
+    "purse": 0,
+    "sellBand": [
+      1.0,
+      1.5
+    ],
+    "buyBand": [
+      0.3,
+      0.6
+    ]
+  },
+  {
+    "npc": "maud",
+    "room": "maud_shop",
+    "haggle": true,
+    "sells": {
+      "bread": 10,
+      "turnip": 10,
+      "apple": 6,
+      "salt_fish": 6,
+      "cheese": 4,
+      "rope": 4,
+      "lamp": 3,
+      "lamp_oil": 6,
+      "candle": 10,
+      "tinderbox": 3,
+      "sack": 6
+    },
+    "buys": [
+      "food",
+      "tool",
+      "junk"
+    ],
+    "purse": 30,
+    "sellBand": [
+      1.0,
+      1.5
+    ],
+    "buyBand": [
+      0.3,
+      0.6
+    ]
+  },
+  {
+    "npc": "hamo",
+    "room": "smithy_row",
+    "haggle": true,
+    "sells": {
+      "knife": 4,
+      "hammer": 3,
+      "crowbar": 2,
+      "cudgel": 3,
+      "hand_axe": 2,
+      "shortsword": 1
+    },
+    "buys": [
+      "tool",
+      "weapon",
+      "junk"
+    ],
+    "purse": 40,
+    "sellBand": [
+      1.0,
+      1.5
+    ],
+    "buyBand": [
+      0.3,
+      0.6
+    ]
+  },
+  {
+    "npc": "osmund",
+    "room": "nave",
+    "haggle": true,
+    "sells": {
+      "candle": 10,
+      "bandage": 8,
+      "holy_water": 6,
+      "prayer_beads": 4
+    },
+    "buys": [],
+    "purse": 0,
+    "sellBand": [
+      1.0,
+      1.5
+    ],
+    "buyBand": [
+      0.3,
+      0.6
+    ]
+  },
+  {
+    "npc": "tilly",
+    "room": "curio_shop",
+    "haggle": false,
+    "sells": {
+      "tin_ring": 2,
+      "brass_locket": 1,
+      "silver_spoon": 1,
+      "bone_dice": 2
+    },
+    "buys": [
+      "junk",
+      "valuable"
+    ],
+    "purse": 25,
+    "sellBand": [
+      1.3,
+      1.3
+    ],
+    "buyBand": [
+      0.4,
+      0.4
+    ]
+  },
+  {
+    "npc": "hook",
+    "room": "hook_den",
+    "haggle": true,
+    "sells": {
+      "lockpicks": 2,
+      "silver_spoon": 1,
+      "brass_locket": 1
+    },
+    "buys": [
+      "food",
+      "tool",
+      "weapon",
+      "junk",
+      "valuable"
+    ],
+    "purse": 80,
+    "sellBand": [
+      1.2,
+      1.8
+    ],
+    "buyBand": [
+      0.4,
+      0.7
+    ]
+  }
+]

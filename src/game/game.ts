@@ -2,7 +2,9 @@ import { randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { query } from '../db/pool.js';
 import { config } from '../config.js';
-import { NpcBrain, type ActionType } from '../npc/brain.js';
+import { NpcBrain, TRADE_ACTIONS, type ActionType, type NpcTurnOutput, type TradeContext } from '../npc/brain.js';
+import { Commerce } from './commerce.js';
+import { balances, Catalog, groupNames, restockShops, sweepRooms } from './economy.js';
 import { addNote, getMemory } from '../npc/memory.js';
 import { isFlagged } from './filter.js';
 import { Session, type Connection } from './session.js';
@@ -23,7 +25,10 @@ const LOGIN_TIMEOUT_MS = 2 * 60_000;
 const CLEANUP_EVERY_MS = 10 * 60_000;
 const AMBIENT_EVERY_MS = 20_000;
 
-const RESERVED = new Set(['admin', 'god', 'morda', 'guard', 'beggar', 'blacksmith', 'rats', 'rat', 'someone', 'self', 'me', 'all', 'here']);
+const RESERVED = new Set([
+  'admin', 'god', 'morda', 'guard', 'beggar', 'blacksmith', 'rats', 'rat', 'someone', 'self', 'me', 'all', 'here',
+  'dace', 'hamo', 'maud', 'osmund', 'father', 'hook', 'tilly', 'ingelram', 'butcher', 'gerald',
+]);
 
 const BANNER = [
   '',
@@ -51,20 +56,29 @@ const VERBS: Record<string, string> = {
   take: 'take', get: 'take', grab: 'take', steal: 'take', pick: 'take', pocket: 'take', yank: 'take',
   touch: 'touch', feel: 'touch', pat: 'touch', stroke: 'touch', poke: 'touch', rub: 'touch', prod: 'touch',
   open: 'open', pull: 'open', draw: 'open', part: 'open', move: 'open', lift: 'open', unlock: 'open',
-  push: 'push', shove: 'push', knock: 'push', bang: 'push', swat: 'push',
+  push: 'push', shove: 'push', bang: 'push', swat: 'push',
+  knock: 'knock', rap: 'knock',
   read: 'read',
   search: 'search', rummage: 'search', check: 'search', dig: 'search',
   smell: 'smell', sniff: 'smell',
   sit: 'sit', rest: 'sit',
   climb: 'climb',
-  use: 'use', play: 'use', drink: 'use', pump: 'use',
+  use: 'use', play: 'use', pump: 'use', ring: 'use',
+  drink: 'drink', sip: 'drink', quaff: 'drink',
+  eat: 'eat', chew: 'eat',
+  light: 'light',
+  listen: 'listen', hear: 'listen',
   kick: 'kick',
 };
+
+/** When a thing has no line for a verb, try this one before the generic fallback. */
+const VERB_FALLBACK: Record<string, string> = { knock: 'push', drink: 'use' };
 
 /** How the room sees each verb when a thing has no line of its own. */
 const VERB_SEEN: Record<string, string> = {
   take: 'tries to take', touch: 'touches', open: 'pulls at', push: 'pushes', read: 'reads', search: 'searches',
   smell: 'sniffs', sit: 'sits on', climb: 'tries to climb', use: 'fiddles with', kick: 'kicks',
+  knock: 'knocks on', drink: 'drinks from', eat: 'tries to eat', light: 'tries to light', listen: 'listens at',
 };
 
 /** The same verbs done to a person: what you see, what others see. */
@@ -72,6 +86,8 @@ const VERB_PERSON: Record<string, [string, string]> = {
   take: ['grab at', 'grabs at'], touch: ['poke', 'pokes'], open: ['tug at', 'tugs at'], push: ['shove', 'shoves'],
   read: ['study', 'studies'], search: ['pat down', 'pats down'], smell: ['sniff', 'sniffs'], sit: ['sit on', 'sits on'],
   climb: ['try to climb', 'tries to climb'], use: ['try to use', 'tries to use'], kick: ['kick', 'kicks'],
+  knock: ['knock on', 'knocks on'], drink: ['offer a drink to', 'offers a drink to'], eat: ['take a bite at', 'takes a bite at'],
+  light: ['wave a light at', 'waves a light at'], listen: ['listen to', 'listens to'],
 };
 
 /** Fallback lines, so anything listed in a room answers every verb. */
@@ -87,6 +103,11 @@ const VERB_DEFAULT: Record<string, (name: string) => string> = {
   climb: (n) => `You can't climb ${n}.`,
   use: (n) => `You can't think of a use for ${n}.`,
   kick: (n) => `You kick ${n}. Your toe regrets it.`,
+  knock: (n) => `You knock on ${n}. Nobody answers.`,
+  drink: (n) => `You can't drink ${n}.`,
+  eat: (n) => `You can't eat ${n}, however hungry Gallowmere makes you.`,
+  light: (n) => `${capitalize(n)} won't light.`,
+  listen: (n) => `You listen to ${n}. Nothing but the town: dripping, muttering, somewhere a dog.`,
 };
 
 const HELP: Record<string, string> = {
@@ -96,7 +117,12 @@ const HELP: Record<string, string> = {
   emote: 'emote <text> (or : <text>): act it out. ": leans on the bar" shows "Shane leans on the bar".',
   talk: 'talk <npc> <text> (or say to <npc> <text>): speak to someone directly. talk guard on its own just says hello.',
   ask: 'ask <npc> about <topic>: ask an NPC about something.',
-  things: 'Things listed under You see can be used: look, touch, take, open, push, read, search, smell, sit, climb, use, kick. Looking at something shows what it responds to.',
+  things: 'Things listed under You see can be used: look, touch, take, open, push, knock, read, search, smell, listen, sit, climb, use, kick. Looking at something shows what it responds to.',
+  items: 'inventory (i): what you carry.  take <item>, drop <item>, give <item or coins> to <someone>.  eat, drink, light, read, use, open things you carry.',
+  shops: 'list: what a shopkeeper sells.  buy <item>, or haggle: buy rope for 3.  sell <item>, or sell lamp for 5.  appraise <item>.  During a haggle: offer <amount>, accept, walk away.',
+  bank: 'At the counting house: deposit <amount or all>, withdraw <amount or all> (one copper in twenty), balance.',
+  work: 'work: ask Maud at Market East for an odd job.  bribe <someone> <amount>: some people can be bought.',
+  hint: 'hint: a nudge toward what to try next.',
   who: 'who: everyone in Gallowmere right now.',
   alias: 'alias: list your aliases.  alias <name> <command>: create one.  unalias <name>: remove one.',
   score: 'score: who you are and where you stand.',
@@ -123,12 +149,25 @@ export class Game {
   private chatting = new Map<number, { npcId: string; at: number }>();
   private linkdead = new Map<number, { timer: NodeJS.Timeout; roomId: string; name: string }>();
   private ambientTimer: NodeJS.Timeout | null = null;
+  catalog: Catalog;
+  commerce: Commerce;
+  private stockDay = '';
 
   constructor(
     public world: World,
     private brain: NpcBrain,
     private opts: { random?: () => number; scriptedDelayMs?: number } = {},
-  ) {}
+  ) {
+    this.catalog = new Catalog();
+    this.catalog.load();
+    this.commerce = new Commerce(this, this.catalog);
+  }
+
+  /** Stocks the shops and fills their purses. Runs at start and again each new day. */
+  async init(): Promise<void> {
+    await restockShops(this.catalog);
+    this.stockDay = new Date().toISOString().slice(0, 10);
+  }
 
   private rand(): number {
     return (this.opts.random ?? Math.random)();
@@ -143,6 +182,10 @@ export class Game {
 
   /** Drops expired tokens and stale rate limit entries so memory stays flat. */
   cleanup(now = Date.now()): void {
+    const today = new Date(now).toISOString().slice(0, 10);
+    if (this.stockDay && today !== this.stockDay) void this.init().catch((err) => console.error('restock failed:', err));
+    void sweepRooms().catch((err) => console.error('sweep failed:', err));
+    for (const [k, h] of this.commerce.haggles) if (h.expires <= now) this.commerce.haggles.delete(k);
     for (const [k, t] of this.tokens) if (t.expires <= now) this.tokens.delete(k);
     const prune = (m: Map<string, number[]>, windowMs: number) => {
       for (const [k, list] of m) {
@@ -410,44 +453,52 @@ export class Game {
     const quietly = resumed && (ld !== undefined || old !== undefined);
     if (resumed) s.out(c.dim('[Reconnected]'));
     if (!quietly && !old) this.toRoom(player.roomId, `${c.player(player.name)} steps out of the fog.`, s);
-    this.showRoom(s);
+    await this.showRoom(s);
     if (isNew) s.out(c.dim("Type help for commands. The Drowned Rat is south and west of the market, if you're thirsty."));
     this.updateStatusAll();
   }
 
   // ---------------------------------------------------------------- output helpers
 
-  private playersIn(roomId: string, except?: Session): Session[] {
+  playersIn(roomId: string, except?: Session): Session[] {
     return [...this.byPlayer.values()].filter((p) => p.player!.roomId === roomId && p !== except);
   }
 
-  private toRoom(roomId: string, text: string, except?: Session, except2?: Session): void {
+  toRoom(roomId: string, text: string, except?: Session, except2?: Session): void {
     for (const p of this.playersIn(roomId, except)) if (p !== except2) p.out(text);
   }
 
-  private updateStatus(s: Session): void {
+  updateStatus(s: Session): void {
     if (!s.player) return;
-    const room = this.world.room(s.player.roomId);
-    s.conn.setStatus({
-      name: s.player.name,
-      room: room.title,
-      online: this.byPlayer.size,
-      exits: room.exits.filter((e) => !e.hidden).map((e) => e.direction),
-    });
+    const p = s.player;
+    void balances(p.id)
+      .then(({ coin }) => {
+        if (s.player !== p || s.state === 'closed') return;
+        const room = this.world.room(p.roomId);
+        s.conn.setStatus({
+          name: p.name,
+          room: room.title,
+          online: this.byPlayer.size,
+          exits: room.exits.filter((e) => !e.hidden).map((e) => e.direction),
+          coin,
+        });
+      })
+      .catch(() => undefined);
   }
 
   private updateStatusAll(): void {
     for (const s of this.byPlayer.values()) this.updateStatus(s);
   }
 
-  private showRoom(s: Session): void {
+  private async showRoom(s: Session): Promise<void> {
     const room = this.world.room(s.player!.roomId);
+    const floor = await this.commerce.roomItems(room.id);
     s.out(c.title(room.title));
     s.out(room.description);
     // Who and what is here, one scannable line each. Every name can be clicked to look at it.
     const npcs = this.world.npcsIn(room.id).map((n) => n.card.listName ?? n.name);
     const players = this.playersIn(room.id, s).map((p) => p.player!.name);
-    const things = room.features.map((f) => f.name);
+    const things = [...room.features.map((f) => f.name), ...groupNames(floor)];
     this.listLine(s, 'People:', npcs, c.npc);
     this.listLine(s, 'Players:', players, c.player);
     this.listLine(s, 'You see:', things, c.thing);
@@ -517,6 +568,53 @@ export class Game {
       case 'emote':
       case 'me':
         return this.emote(s, rest);
+      case 'i':
+      case 'inv':
+      case 'inventory':
+        return this.commerce.inventory(s);
+      case 'drop':
+        return this.commerce.drop(s, rest);
+      case 'give':
+      case 'hand':
+        return this.commerce.give(s, rest);
+      case 'list':
+      case 'wares':
+        return this.commerce.list(s);
+      case 'buy':
+      case 'purchase':
+        return this.commerce.buy(s, rest);
+      case 'sell':
+        return this.commerce.sell(s, rest);
+      case 'offer':
+      case 'counter':
+        return this.commerce.offer(s, rest);
+      case 'accept':
+      case 'deal':
+        return this.commerce.accept(s);
+      case 'walk':
+        if (/^away/i.test(rest)) return this.commerce.walkAway(s);
+        break;
+      case 'decline':
+      case 'refuse':
+        return this.commerce.walkAway(s);
+      case 'appraise':
+      case 'value':
+        return this.commerce.appraise(s, rest);
+      case 'deposit':
+        return this.commerce.deposit(s, rest);
+      case 'withdraw':
+        return this.commerce.withdraw(s, rest);
+      case 'balance':
+      case 'bank':
+        return this.commerce.balance(s);
+      case 'bribe':
+        return this.commerce.bribe(s, rest);
+      case 'work':
+      case 'job':
+        return this.commerce.work(s);
+      case 'hint':
+      case 'hints':
+        return this.commerce.hint(s);
       case 'talk':
       case 'tell':
         return this.talk(s, rest);
@@ -543,7 +641,13 @@ export class Game {
         if (this.isAdmin(s)) return this.aiStats(s);
         break;
     }
-    if (VERBS[verb]) return this.interact(s, VERBS[verb], verb, rest);
+    if (VERBS[verb]) {
+      const action = VERBS[verb];
+      // Your own things first, then things on the floor, then the room.
+      if (action === 'take' && rest && (await this.commerce.take(s, rest))) return;
+      if (['eat', 'drink', 'light', 'read', 'use', 'open', 'smell'].includes(action) && (await this.commerce.itemAction(s, action, rest))) return;
+      return this.interact(s, action, verb, rest);
+    }
     const huh = ['Huh?', 'What?', "That doesn't mean anything here.", 'The fog swallows your words. Try help.'];
     s.out(huh[Math.floor(this.rand() * huh.length)]);
   }
@@ -565,20 +669,24 @@ export class Game {
     const p = s.player!;
     const room = this.world.room(p.roomId);
     const exit = room.exits.find((e) => e.direction === dir);
-    if (!exit) return s.out("You can't go that way.");
+    if (!exit) {
+      if (dir === 'north' && room.id === 'moor_road') return s.out('The fog swallows the road. Not yet. Something is out there, and the town is not ready to meet it.');
+      return s.out("You can't go that way.");
+    }
+    this.commerce.closeHaggle(p.id);
     this.toRoom(room.id, `${c.player(p.name)} leaves ${dir}.`, s);
     p.roomId = exit.to;
     await query('UPDATE players SET room_id=$2 WHERE id=$1', [p.id, p.roomId]);
     const from = OPPOSITE[dir];
     const fromText = from === 'up' ? 'above' : from === 'down' ? 'below' : `the ${from}`;
     this.toRoom(p.roomId, `${c.player(p.name)} arrives from ${fromText}.`, s);
-    this.showRoom(s);
+    await this.showRoom(s);
     this.updateStatus(s);
   }
 
-  private look(s: Session, target: string): void {
+  private async look(s: Session, target: string): Promise<void> {
     const t = cleanTarget(target);
-    if (!t) return this.showRoom(s);
+    if (!t) return await this.showRoom(s);
     const roomId = s.player!.roomId;
     if (t === 'me' || t === 'self' || t === 'myself' || t === s.player!.name.toLowerCase()) {
       return s.out('You look like someone who just walked out of the fog. Damp, mostly.');
@@ -594,6 +702,7 @@ export class Game {
       s.out(feature.look);
       return s.out(c.dim(`You could: ${this.featureVerbs(feature).join(', ')}.`));
     }
+    if (await this.commerce.lookItem(s, target)) return;
     const other = this.findPlayerHere(s, t);
     if (other) {
       other.out(`${c.player(s.player!.name)} looks you over.`);
@@ -614,14 +723,19 @@ export class Game {
   }
 
   /** take, touch, open and friends, on things, NPCs or players. Code decides what happens. */
-  private interact(s: Session, action: string, typed: string, rest: string): void {
+  private async interact(s: Session, action: string, typed: string, rest: string): Promise<void> {
     const p = s.player!;
     const t = cleanTarget(rest.replace(/^(up|down|out|over|around)\s+/i, ''));
     if (!t) return s.out(`${capitalize(typed)} what?`);
 
     const feature = this.world.findFeature(p.roomId, t);
     if (feature) {
-      const a = feature.actions?.[action];
+      const a = feature.actions?.[action] ?? (VERB_FALLBACK[action] ? feature.actions?.[VERB_FALLBACK[action]] : undefined);
+      if (typeof a === 'object' && Array.isArray(a.scavenge)) {
+        const spot = `${p.roomId}:${feature.keywords[0]}`;
+        this.toRoom(p.roomId, `${c.player(p.name)} ${VERB_SEEN[action]} ${feature.name}.`, s);
+        return void (await this.commerce.scavenge(s, spot, a.text, a.scavenge));
+      }
       const text = typeof a === 'string' ? a : a?.text ?? VERB_DEFAULT[action](feature.name);
       s.out(text);
       const seen = typeof a === 'object' && a.room ? a.room : `${VERB_SEEN[action]} ${feature.name}.`;
@@ -664,7 +778,7 @@ export class Game {
 
     // Naming someone in the room counts as talking to them. AI characters win a tie.
     const npc = this.mentionedNpc(p.roomId, text) ?? this.conversationPartner(s, text);
-    if (npc) void this.npcRespond(s, npc, text);
+    if (npc) void this.respondOrHaggle(s, npc, text);
   }
 
   /**
@@ -737,7 +851,7 @@ export class Game {
     const p = s.player!;
     s.out(`You say to ${c.npc(npc.name)}, ${c.speech(`"${text}"`)}`);
     this.toRoom(p.roomId, `${c.player(p.name)} says to ${c.npc(npc.name)}, ${c.speech(`"${text}"`)}`, s);
-    void this.npcRespond(s, npc, text);
+    void this.respondOrHaggle(s, npc, text);
   }
 
   private ask(s: Session, rest: string): void {
@@ -753,6 +867,12 @@ export class Game {
     void this.npcRespond(s, npc, `What can you tell me about ${topic}?`);
   }
 
+  /** Mid haggle, talk to the shopkeeper goes through the haggle so they can answer with a price. */
+  private async respondOrHaggle(s: Session, npc: Npc, text: string): Promise<void> {
+    if (await this.commerce.haggleTalk(s, npc, text)) return;
+    await this.npcRespond(s, npc, text);
+  }
+
   private pushRecent(key: string, line: string): void {
     const list = this.recent.get(key) ?? [];
     list.push(line);
@@ -761,20 +881,30 @@ export class Game {
   }
 
   /** Runs one NPC reply. Code decides what happens; the brain only supplies words and a suggested action. */
-  async npcRespond(s: Session, npc: Npc, playerLine: string, kind: 'say' | 'event' = 'say'): Promise<void> {
+  async npcRespond(
+    s: Session,
+    npc: Npc,
+    playerLine: string,
+    kind: 'say' | 'event' = 'say',
+    trade?: TradeContext,
+  ): Promise<NpcTurnOutput | null> {
     const p = s.player!;
     const roomId = npc.roomId;
 
     if (npc.kind === 'scripted') {
       const line = this.brain.scripted(npc.id, npc.card);
       setTimeout(() => this.toRoom(roomId, c.npc(line)), this.opts.scriptedDelayMs ?? 400).unref();
-      return;
+      return null;
     }
 
-    if (s.aiPending) return s.out(c.dim(`${npc.name} is still working out what to say to you.`));
+    if (s.aiPending) {
+      s.out(c.dim(`${npc.name} is still working out what to say to you.`));
+      return null;
+    }
     const key = `${npc.id}:${p.id}`;
     if ((this.refusals.get(key) ?? 0) > Date.now()) {
-      return this.toRoom(roomId, c.npc(`${npc.name} turns her back on ${p.name}.`));
+      this.toRoom(roomId, c.npc(`${npc.name} turns away from ${p.name}.`));
+      return null;
     }
 
     s.aiPending = true;
@@ -785,7 +915,7 @@ export class Game {
         ...this.world.npcsIn(roomId).filter((n) => n.id !== npc.id).map((n) => n.name),
       ];
       const card = npc.card as any;
-      const allowed: ActionType[] = ['none', 'remember', 'refuse'];
+      const allowed: ActionType[] = ['none', 'remember', 'refuse', ...(trade ? TRADE_ACTIONS : [])];
       const out = await this.brain.turn({
         npcId: npc.id,
         npc: {
@@ -796,6 +926,7 @@ export class Game {
           wants: card.wants,
           secret: card.secret,
           knows: card.knows,
+          tradeStyle: card.tradeStyle,
           scripted: card.scripted,
         },
         player: { id: p.id, name: p.name },
@@ -804,6 +935,7 @@ export class Game {
         recent: this.recent.get(key) ?? [],
         playerLine,
         kind,
+        trade,
         allowedActions: allowed,
       });
 
@@ -813,7 +945,7 @@ export class Game {
         this.chatting.set(p.id, { npcId: npc.id, at: Date.now() });
         this.toRoom(roomId, c.npc(out.scriptedLine));
         this.pushRecent(key, `${npc.name}: ${stripAnsi(out.scriptedLine)}`);
-        return;
+        return out;
       }
 
       if (out.emote) {
@@ -837,9 +969,11 @@ export class Game {
       }
       if (out.action.type === 'refuse') this.chatting.delete(p.id);
       else this.chatting.set(p.id, { npcId: npc.id, at: Date.now() });
+      return out;
     } catch (err) {
       console.error('npcRespond failed:', err);
       this.toRoom(roomId, c.npc(this.brain.scripted(npc.id, npc.card)));
+      return null;
     } finally {
       s.aiPending = false;
     }
@@ -895,12 +1029,14 @@ export class Game {
     if (this.isAdmin(s)) s.out('  aistats: AI calls, latency and fallbacks per player, last 24 hours.');
   }
 
-  private score(s: Session): void {
+  private async score(s: Session): Promise<void> {
     const p = s.player!;
     const days = Math.floor((Date.now() - new Date(p.createdAt).getTime()) / 86_400_000);
     const when = days === 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`;
     s.out(`You are ${c.player(p.name)}, who came out of the fog ${when}.`);
     s.out(`You stand in ${this.world.room(p.roomId).title}.`);
+    const { coin, bank } = await balances(p.id);
+    s.out(`Coin: ${coin} in your purse, ${bank} in the counting house.`);
   }
 
   private quit(s: Session): void {
@@ -939,6 +1075,12 @@ export class Game {
       );
     }
     s.out(c.dim('  Free tier means $0 actual; the last column is what it would cost on paid Groq.'));
+    const byNpc = await query(
+      `SELECT npc_id, count(*)::int AS calls, count(*) FILTER (WHERE provider <> 'scripted')::int AS ai_calls
+         FROM ai_usage WHERE created_at > now() - interval '24 hours' GROUP BY npc_id ORDER BY calls DESC`,
+    );
+    s.out(c.title('By character'));
+    for (const r of byNpc.rows) s.out(`  ${String(r.npc_id).padEnd(16)} ${String(r.calls).padStart(5)} lines, ${r.ai_calls} from the AI`);
   }
 
   // ---------------------------------------------------------------- ambience

@@ -73,3 +73,65 @@ CREATE TABLE IF NOT EXISTS flagged_lines (
   text       TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Milestone 2: coin, items, shops, standing.
+
+ALTER TABLE players ADD COLUMN IF NOT EXISTS coin INTEGER NOT NULL DEFAULT 10 CHECK (coin >= 0);
+ALTER TABLE players ADD COLUMN IF NOT EXISTS bank_coin INTEGER NOT NULL DEFAULT 0 CHECK (bank_coin >= 0);
+ALTER TABLE npc_memory ADD COLUMN IF NOT EXISTS standing INTEGER NOT NULL DEFAULT 0 CHECK (standing BETWEEN -5 AND 5);
+
+CREATE TABLE IF NOT EXISTS item_templates (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  keywords   TEXT[] NOT NULL,
+  kind       TEXT NOT NULL,
+  weight     INTEGER NOT NULL,
+  price      INTEGER NOT NULL,
+  card_json  JSONB NOT NULL
+);
+
+-- Every real item. owner_type: player, room or shop. owner_id: player id, room id or npc id.
+CREATE TABLE IF NOT EXISTS items (
+  id          BIGSERIAL PRIMARY KEY,
+  template_id TEXT NOT NULL REFERENCES item_templates(id),
+  owner_type  TEXT NOT NULL CHECK (owner_type IN ('player', 'room', 'shop')),
+  owner_id    TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS items_owner ON items (owner_type, owner_id);
+
+CREATE TABLE IF NOT EXISTS shops (
+  npc_id      TEXT PRIMARY KEY,
+  purse       INTEGER NOT NULL DEFAULT 0 CHECK (purse >= 0),
+  purse_day   DATE NOT NULL DEFAULT CURRENT_DATE
+);
+
+-- Every coin movement, for audit and to catch duplication.
+CREATE TABLE IF NOT EXISTS coin_ledger (
+  id            BIGSERIAL PRIMARY KEY,
+  player_id     INTEGER REFERENCES players(id) ON DELETE SET NULL,
+  change        INTEGER NOT NULL,
+  bank_change   INTEGER NOT NULL DEFAULT 0,
+  reason        TEXT NOT NULL,
+  balance_after INTEGER NOT NULL,
+  bank_after    INTEGER NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS coin_ledger_player ON coin_ledger (player_id, created_at);
+
+-- Scavenging cooldowns, one row per player per spot.
+CREATE TABLE IF NOT EXISTS scavenges (
+  player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  spot      TEXT NOT NULL,
+  at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (player_id, spot)
+);
+
+-- Once a day standing bumps and odd job cooldowns.
+CREATE TABLE IF NOT EXISTS player_flags (
+  player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  flag      TEXT NOT NULL,
+  value     TEXT NOT NULL DEFAULT '',
+  at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (player_id, flag)
+);

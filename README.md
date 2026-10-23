@@ -20,16 +20,25 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 ## What's in it now
 
 **The world**
-* 15 rooms across the gate, market, temple, tavern, docks and sewers
+* 41 rooms across the gate, market, temple, tavern, docks and sewers, plus the road north, closed for now
 * Every room lists its People, Players and the things You see, and everything listed can be used
-* Plain word verbs on things and people: look, take, touch, open, pull, push, knock, read, search, smell, sit, climb, play, drink, kick, and more
-* Scripted townsfolk for flavour: a gate guard, a blacksmith, a beggar, the rats
+* Plain word verbs on things and people: look, take, touch, open, pull, push, knock, read, search, smell, listen, sit, climb, play, drink, kick, and more
+* A hidden fence behind a door the locals hint at, a sealed iron door under the sewers, and a few secrets for players who talk to people
 
-**The AI barkeep**
-* Morda of The Drowned Rat, played by Llama 3.1 8B on Groq
-* Per player memory in PostgreSQL: short notes, folded into a summary as they pile up
-* Remembers you across logins, carries a conversation without being named every line, and reacts in character when you mess with her tavern
-* Can decide she's done with you and turn her back for a while
+**Six AI townsfolk**
+* Morda the barkeep, Dace the gate guard, Hamo the blacksmith, Maud the grocer, Father Osmund and Hook the fence, played by Llama 3.1 8B on Groq
+* Per player memory in PostgreSQL: short notes, folded into a summary as they pile up, plus a standing score from minus 5 to plus 5 that only code moves
+* They remember you across logins, carry a conversation without being named every line, react in character when you mess with their things, and can turn you away
+* Scripted extras for flavour: Tilly the pawnbroker, Ingelram the bank clerk, a butcher, a beggar, the rats
+
+**The economy**
+* Coin, items and a 20 weight pack. Every character starts with 10 coin
+* Six shops with daily restocking and a daily buying purse, so prices can't be farmed
+* Haggling: the AI argues in character, the engine holds the price band and moves the coin
+* A bank with a withdrawal fee, ready for the plague cart in milestone 3
+* Honest ways to earn: Maud's odd job, scavenging spots with hourly cooldowns, selling junk
+* Bribes that buy real information
+* Every coin movement written to a ledger, every trade in one database transaction
 
 **Playing**
 * Multiplayer: everyone shares one world, in the browser and over telnet
@@ -37,17 +46,20 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 * Real telnet door for Mudlet and other MUD clients, with window size negotiation and hidden password entry
 * Accounts, aliases, `who`, `score`, `help`
 
-**Not yet:** items, inventory, money and combat. See [Roadmap](#roadmap).
+**Playing**
+* A `hint` command with directions to wherever you need to go next
+
+**Not yet:** combat and death. See [Roadmap](#roadmap).
 
 ## How an NPC line happens
 
 1. A player says something to Morda, or does something in front of her.
 2. The NPC brain gathers her character card, her notes on this player, the room and the last few lines of the exchange.
 3. The system prompt holds only the card and the rules. Everything that came from players, directly or through earlier replies, goes in the user message, so it can't pose as instructions.
-4. The model replies with JSON: `say`, `emote` and one `action` from `none`, `remember` or `refuse`.
+4. The model replies with JSON: `say`, `emote` and one `action` from an allow list. Talk gets `none`, `remember` or `refuse`. A haggle adds `offer_price`, `accept_price`, `end_haggle` and `refuse_service`.
 5. The engine parses and validates the reply, strips escape codes, caps the lengths and runs a word filter. A bad reply gets one retry.
 6. Groq answers first. If it's slow, rate limited or down, Gemini Flash Lite takes over. If both are out, Morda falls back to scripted lines. The game never goes silent.
-7. The engine applies the action: a `remember` note is saved, a `refuse` makes her ignore that player for a minute.
+7. The engine applies the action: a `remember` note is saved, a `refuse` makes them ignore that player for a minute. A price is clamped to the band the engine set for this haggle, and anything the model tried outside it is logged. Coin and items move only through code, in a transaction, after the player accepts.
 
 Every NPC line is logged to `ai_usage` with provider, tokens, latency and whether a fallback was used. The admin can type `aistats` in game to see lines per player per hour, fallback rate, latency and what it would cost on paid Groq.
 
@@ -55,7 +67,7 @@ Every NPC line is logged to `ai_usage` with provider, tokens, latency and whethe
 
 Built to run on free tiers. Groq's free tier allows roughly 30 requests a minute and 14,400 a day on Llama 3.1 8B, Gemini Flash Lite adds a backup pool, and scripted lines cover anything past that. Caps keep it there:
 
-* 200 AI lines per player per day
+* 200 AI lines per player per day, across all six characters
 * 5,000 AI lines across all players per day
 * Rate guards set just under each provider's per minute limit
 
@@ -95,7 +107,7 @@ public/              page and styles
 test/                unit and end to end tests
 ```
 
-The world lives in `src/world/rooms.json` and `src/world/npcs.json`. The migration loads them into PostgreSQL on every deploy, so changing the world is a JSON edit and a push.
+The world lives in `src/world/`: rooms, NPCs, items and shops, all JSON. The migration loads them into PostgreSQL on every deploy, so changing the world is a JSON edit and a push.
 
 ## Running locally
 
@@ -116,7 +128,7 @@ Then open `http://localhost:3004`, or `telnet localhost 4004`. AI keys are optio
 npm test
 ```
 
-They cover the command parser, verbs, the NPC brain's validation, provider fallback and timeouts, a 20 line prompt injection set, memory across logins, multiplayer, telnet, and the security limits.
+They cover the command parser, verbs, the NPC brain's validation, provider fallback and timeouts, two 20 line prompt injection sets (one aimed at rules, one at prices), memory across logins, multiplayer, telnet, the security limits, price bands, haggling, the bank, item duplication races and the ledger balancing to the copper.
 
 ## Configuration
 
@@ -154,8 +166,8 @@ First time setup on a new server:
 ## Roadmap
 
 1. **Walk the town.** 15 rooms, one AI barkeep with memory, browser and telnet. *Done.*
-2. **A living market.** 40 rooms, all six districts, six AI townsfolk, items and inventory, haggling inside code set price ranges, a bank.
-3. **Fight and bleed.** Sewer monsters, limb based combat, death and the temple, and a nightly plague cart that takes whatever you haven't banked.
+2. **A living market.** 41 rooms, six AI townsfolk, items and inventory, haggling inside code set price ranges, a bank, odd jobs, scavenging, bribes. *Done.*
+3. **Fight and bleed.** Sewer monsters, limb based combat, and a nightly plague cart that takes whatever you haven't banked. Death means waking at the temple with a grave chill, and a corpse run for what you carried. New players keep their things.
 4. **Gossip and law.** A rumour board the townsfolk read and spread, guards who remember crimes, bounties. Then an admin only MCP server, so the world can be run from Claude.
 5. **See where it goes.** Guilds, more NPCs, a second area, real players.
 

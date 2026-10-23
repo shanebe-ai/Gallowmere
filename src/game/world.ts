@@ -18,7 +18,7 @@ export interface Exit {
   hidden: boolean;
 }
 
-export type FeatureAction = string | { text: string; room?: string; event?: string; react?: boolean };
+export type FeatureAction = string | { text: string; room?: string; event?: string; react?: boolean; scavenge?: string[] };
 
 export interface Feature {
   name: string;
@@ -112,6 +112,29 @@ export class World {
   findFeature(roomId: string, words: string): Feature | undefined {
     const w = cleanTarget(words);
     return this.room(roomId).features.find((f) => matches(w, f.name, f.keywords));
+  }
+
+  /** Shortest walk between two rooms, as directions, using only exits players can see. */
+  path(from: string, to: string): string[] | null {
+    if (from === to) return [];
+    const prev = new Map<string, { room: string; dir: string }>();
+    const queue = [from];
+    const seen = new Set([from]);
+    while (queue.length) {
+      const cur = queue.shift()!;
+      for (const e of this.room(cur).exits) {
+        if (e.hidden || seen.has(e.to)) continue;
+        seen.add(e.to);
+        prev.set(e.to, { room: cur, dir: e.direction });
+        if (e.to === to) {
+          const dirs: string[] = [];
+          for (let at = to; at !== from; at = prev.get(at)!.room) dirs.unshift(prev.get(at)!.dir);
+          return dirs;
+        }
+        queue.push(e.to);
+      }
+    }
+    return null;
   }
 
   /** Finds an NPC in a room by name or keyword prefix. */

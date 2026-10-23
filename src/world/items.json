@@ -1,0 +1,536 @@
+[
+  {
+    "id": "bread",
+    "name": "a heel of black bread",
+    "keywords": [
+      "bread",
+      "heel",
+      "loaf"
+    ],
+    "kind": "food",
+    "weight": 1,
+    "price": 1,
+    "look": "Dense, dark and a day past fresh. It would stop a door or a hunger, not both.",
+    "actions": {
+      "eat": {
+        "text": "You chew through the bread. It fights back. You win, mostly.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "turnip",
+    "name": "a grey turnip",
+    "keywords": [
+      "turnip"
+    ],
+    "kind": "food",
+    "weight": 1,
+    "price": 1,
+    "look": "Gallowmere's finest. Grey, hard and faintly bitter, like the town.",
+    "actions": {
+      "eat": {
+        "text": "You gnaw the turnip raw. It tastes of mud and endurance.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "apple",
+    "name": "a wrinkled apple",
+    "keywords": [
+      "apple"
+    ],
+    "kind": "food",
+    "weight": 1,
+    "price": 1,
+    "look": "Last autumn's apple, soft and wrinkled, still sweet in the middle.",
+    "actions": {
+      "eat": {
+        "text": "Soft, sweet and a little boozy. The best thing you've eaten here.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "salt_fish",
+    "name": "a strip of salt fish",
+    "keywords": [
+      "fish",
+      "salt",
+      "strip"
+    ],
+    "kind": "food",
+    "weight": 1,
+    "price": 2,
+    "look": "Dried, salted river fish, stiff as a plank.",
+    "actions": {
+      "eat": {
+        "text": "Salty enough to make your eyes water. You'll want an ale after that.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "cheese",
+    "name": "a wedge of hard cheese",
+    "keywords": [
+      "cheese",
+      "wedge"
+    ],
+    "kind": "food",
+    "weight": 1,
+    "price": 3,
+    "look": "A pale wedge with a dark rind and a smell that arrives before it does.",
+    "actions": {
+      "eat": {
+        "text": "Sharp, crumbly and far better than it smells. For a moment Gallowmere is bearable.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "stew",
+    "name": "a bowl of Morda's stew",
+    "keywords": [
+      "stew",
+      "bowl"
+    ],
+    "kind": "food",
+    "weight": 1,
+    "price": 2,
+    "look": "Brown, hot and thick, with lumps that might be mutton. Nobody asks.",
+    "actions": {
+      "eat": {
+        "text": "You spoon down the stew. Warmth spreads from your belly out. You stop wondering what the lumps were.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "ale",
+    "name": "a mug of ale",
+    "keywords": [
+      "ale",
+      "mug",
+      "beer"
+    ],
+    "kind": "drink",
+    "weight": 1,
+    "price": 1,
+    "look": "Brown ale with a thin head, in a mug that has been washed at some point.",
+    "actions": {
+      "drink": {
+        "text": "You drink it down. Flat, warm and exactly what you needed.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "rope",
+    "name": "a coil of rope",
+    "keywords": [
+      "rope",
+      "coil"
+    ],
+    "kind": "tool",
+    "weight": 3,
+    "price": 4,
+    "look": "Thirty feet of hemp rope, stiff with tar. Good for climbing, binding or hanging.",
+    "actions": {
+      "use": "You test the rope with a hard tug. It'll hold. What for, you'll decide later."
+    }
+  },
+  {
+    "id": "lamp",
+    "name": "a tin lamp",
+    "keywords": [
+      "lamp",
+      "lantern"
+    ],
+    "kind": "tool",
+    "weight": 2,
+    "price": 6,
+    "look": "A dented tin lamp with a horn window. Takes oil.",
+    "actions": {
+      "light": "You light the lamp. A small yellow circle pushes the dark back an arm's length."
+    }
+  },
+  {
+    "id": "lamp_oil",
+    "name": "a flask of lamp oil",
+    "keywords": [
+      "oil",
+      "flask"
+    ],
+    "kind": "tool",
+    "weight": 1,
+    "price": 2,
+    "look": "Lamp oil in a stoppered clay flask. Smells thin. Maud waters it, people say.",
+    "actions": {
+      "smell": "Thin and sharp. There's water in this, no question."
+    }
+  },
+  {
+    "id": "candle",
+    "name": "a tallow candle",
+    "keywords": [
+      "candle"
+    ],
+    "kind": "tool",
+    "weight": 1,
+    "price": 1,
+    "look": "A stubby tallow candle. Smoky, cheap, better than the dark.",
+    "actions": {
+      "light": "You light the candle. It smokes and sputters and gives you a little room to see."
+    }
+  },
+  {
+    "id": "tinderbox",
+    "name": "a tinderbox",
+    "keywords": [
+      "tinderbox",
+      "tinder",
+      "flint"
+    ],
+    "kind": "tool",
+    "weight": 1,
+    "price": 3,
+    "look": "Flint, steel and dry tinder in a small tin box.",
+    "actions": {
+      "use": "Strike, spark, a curl of smoke. You could light anything now. Careful."
+    }
+  },
+  {
+    "id": "sack",
+    "name": "an empty sack",
+    "keywords": [
+      "sack",
+      "bag"
+    ],
+    "kind": "tool",
+    "weight": 1,
+    "price": 1,
+    "look": "A rough hemp sack. Holds things. That's all you can say about it.",
+    "actions": {}
+  },
+  {
+    "id": "bandage",
+    "name": "a roll of bandages",
+    "keywords": [
+      "bandage",
+      "bandages",
+      "roll"
+    ],
+    "kind": "tool",
+    "weight": 1,
+    "price": 3,
+    "look": "Clean linen boiled in vinegar. The temple's best seller.",
+    "actions": {
+      "use": {
+        "text": "You bind a scrape you didn't know you had. It stings, then it's better.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "knife",
+    "name": "a small knife",
+    "keywords": [
+      "knife",
+      "blade"
+    ],
+    "kind": "tool",
+    "weight": 1,
+    "price": 5,
+    "look": "A plain knife with a wooden handle. For bread, rope and the odd argument.",
+    "actions": {
+      "use": "You cut a thread off your sleeve. Sharp enough."
+    }
+  },
+  {
+    "id": "hammer",
+    "name": "a claw hammer",
+    "keywords": [
+      "hammer"
+    ],
+    "kind": "tool",
+    "weight": 2,
+    "price": 4,
+    "look": "Hamo's work: a good iron head on an ash handle.",
+    "actions": {}
+  },
+  {
+    "id": "crowbar",
+    "name": "an iron crowbar",
+    "keywords": [
+      "crowbar",
+      "bar",
+      "pry"
+    ],
+    "kind": "tool",
+    "weight": 4,
+    "price": 8,
+    "look": "Three feet of iron with a hooked end. Opens crates, doors and conversations.",
+    "actions": {}
+  },
+  {
+    "id": "lockpicks",
+    "name": "a roll of lockpicks",
+    "keywords": [
+      "lockpicks",
+      "picks",
+      "roll"
+    ],
+    "kind": "tool",
+    "weight": 1,
+    "price": 10,
+    "look": "Slim steel picks in an oiled leather roll. Illegal to own. Very useful. Not yet.",
+    "actions": {
+      "use": "You practise on your own belt buckle. You're not good at this yet."
+    }
+  },
+  {
+    "id": "cudgel",
+    "name": "an oak cudgel",
+    "keywords": [
+      "cudgel",
+      "club"
+    ],
+    "kind": "weapon",
+    "weight": 3,
+    "price": 6,
+    "look": "Knotted oak, heavier at one end. Steel and blood come to Gallowmere soon. For now it's a heavy stick.",
+    "actions": {}
+  },
+  {
+    "id": "hand_axe",
+    "name": "a hand axe",
+    "keywords": [
+      "axe",
+      "hatchet"
+    ],
+    "kind": "weapon",
+    "weight": 3,
+    "price": 15,
+    "look": "A short axe with a bearded head. Steel and blood come to Gallowmere soon. For now it splits kindling.",
+    "actions": {}
+  },
+  {
+    "id": "shortsword",
+    "name": "a shortsword",
+    "keywords": [
+      "shortsword",
+      "sword"
+    ],
+    "kind": "weapon",
+    "weight": 4,
+    "price": 25,
+    "look": "A plain, honest blade. Hamo's best. Steel and blood come to Gallowmere soon. For now it's just a promise.",
+    "actions": {}
+  },
+  {
+    "id": "holy_water",
+    "name": "a vial of holy water",
+    "keywords": [
+      "vial",
+      "water",
+      "holy"
+    ],
+    "kind": "valuable",
+    "weight": 1,
+    "price": 4,
+    "look": "River water, blessed by Father Osmund. He insists the river part doesn't matter.",
+    "actions": {
+      "drink": {
+        "text": "It tastes like river. You feel no holier. You feel slightly worse.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "prayer_beads",
+    "name": "a string of prayer beads",
+    "keywords": [
+      "beads",
+      "prayer"
+    ],
+    "kind": "valuable",
+    "weight": 1,
+    "price": 3,
+    "look": "Wooden beads on a cord, worn smooth by somebody else's worries.",
+    "actions": {
+      "use": "You count the beads. It helps less than you hoped, more than you expected."
+    }
+  },
+  {
+    "id": "bent_nail",
+    "name": "a bent nail",
+    "keywords": [
+      "nail"
+    ],
+    "kind": "junk",
+    "weight": 0,
+    "price": 1,
+    "look": "A square iron nail, bent double. Hamo might take it for scrap.",
+    "actions": {}
+  },
+  {
+    "id": "rusty_buckle",
+    "name": "a rusty buckle",
+    "keywords": [
+      "buckle"
+    ],
+    "kind": "junk",
+    "weight": 0,
+    "price": 1,
+    "look": "A belt buckle rusted almost through. There's a faint crest on it, nobody's anymore.",
+    "actions": {}
+  },
+  {
+    "id": "cracked_mug",
+    "name": "a cracked mug",
+    "keywords": [
+      "mug",
+      "cup"
+    ],
+    "kind": "junk",
+    "weight": 1,
+    "price": 1,
+    "look": "A clay mug with a crack down one side. Holds ale for about four seconds.",
+    "actions": {}
+  },
+  {
+    "id": "tallow_stub",
+    "name": "a stub of tallow",
+    "keywords": [
+      "stub",
+      "tallow"
+    ],
+    "kind": "junk",
+    "weight": 0,
+    "price": 1,
+    "look": "The end of somebody's candle. Still lights.",
+    "actions": {
+      "light": "It sputters into life, a thumb's worth of light."
+    }
+  },
+  {
+    "id": "bone_dice",
+    "name": "a pair of bone dice",
+    "keywords": [
+      "dice",
+      "bones"
+    ],
+    "kind": "junk",
+    "weight": 0,
+    "price": 2,
+    "look": "Carved bone dice, yellowed. One of them always comes up six. Funny that.",
+    "actions": {
+      "use": "You roll them. Six and six. You roll again. Six and six."
+    }
+  },
+  {
+    "id": "fish_hook",
+    "name": "a rusty fish hook",
+    "keywords": [
+      "hook",
+      "fishhook"
+    ],
+    "kind": "junk",
+    "weight": 0,
+    "price": 1,
+    "look": "A barbed iron hook. Mind your thumb.",
+    "actions": {}
+  },
+  {
+    "id": "cork_float",
+    "name": "a cork float",
+    "keywords": [
+      "float",
+      "cork"
+    ],
+    "kind": "junk",
+    "weight": 0,
+    "price": 1,
+    "look": "A net float, bleached by the river. Light as a promise.",
+    "actions": {}
+  },
+  {
+    "id": "sea_glass",
+    "name": "a piece of river glass",
+    "keywords": [
+      "glass",
+      "piece"
+    ],
+    "kind": "junk",
+    "weight": 0,
+    "price": 2,
+    "look": "Green glass worn smooth and cloudy by the river. Pretty, in a dull light.",
+    "actions": {}
+  },
+  {
+    "id": "old_coin",
+    "name": "an old coin",
+    "keywords": [
+      "coin",
+      "old"
+    ],
+    "kind": "valuable",
+    "weight": 0,
+    "price": 8,
+    "look": "A heavy coin with a king nobody remembers. Gold, maybe, under the muck. Tilly or Hook would know.",
+    "actions": {}
+  },
+  {
+    "id": "tin_ring",
+    "name": "a tin ring",
+    "keywords": [
+      "ring"
+    ],
+    "kind": "valuable",
+    "weight": 0,
+    "price": 5,
+    "look": "A cheap ring with a glass stone. Someone was proposed to with this. It didn't go well.",
+    "actions": {}
+  },
+  {
+    "id": "brass_locket",
+    "name": "a brass locket",
+    "keywords": [
+      "locket"
+    ],
+    "kind": "valuable",
+    "weight": 0,
+    "price": 10,
+    "look": "A brass locket on a cracked chain. Inside, a painted face scratched out.",
+    "actions": {
+      "open": "It opens on a tiny face, scratched out with a pin. Somebody meant it."
+    }
+  },
+  {
+    "id": "silver_spoon",
+    "name": "a silver spoon",
+    "keywords": [
+      "spoon"
+    ],
+    "kind": "valuable",
+    "weight": 0,
+    "price": 12,
+    "look": "A real silver spoon with a monogram filed off. Somebody's grandmother is still looking for this.",
+    "actions": {}
+  },
+  {
+    "id": "turnip_sack",
+    "name": "a sack of Maud's turnips",
+    "keywords": [
+      "sack",
+      "turnips"
+    ],
+    "kind": "job",
+    "weight": 4,
+    "price": 0,
+    "look": "A heavy sack of turnips with MAUD chalked on it. Give it to Maud for your pay.",
+    "actions": {}
+  }
+]

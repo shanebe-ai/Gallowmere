@@ -69,6 +69,8 @@ class Player {
     if (this.socket.connected) {
       this.send('quit');
       await new Promise((r) => this.socket.once('disconnect', r));
+      // The server saves the character after the socket closes; give it a moment.
+      await new Promise((r) => setTimeout(r, 200));
     }
   }
 }
@@ -210,7 +212,7 @@ describe('Gallowmere end to end', () => {
     };
     const p = await login('Shane', 'drowned_rat');
     await p.do('ask morda about the sewers', /You ask Morda about the sewers/);
-    await p.waitFor(/What'll it be|Not now, damp one|slides a mug|keep it off my floor|long look/);
+    await p.waitFor(/What'll it be|Not now, damp one|slides a mug|keep it off my floor|long look|Short of coin/);
     const { rows } = await query("SELECT provider, fallback_used FROM ai_usage ORDER BY id DESC LIMIT 1");
     expect(rows[0]).toEqual({ provider: 'scripted', fallback_used: true });
     await p.close();
@@ -220,7 +222,7 @@ describe('Gallowmere end to end', () => {
     morda = () => reply('Out of my sight.', { type: 'refuse' });
     const p = await login('Shane', 'drowned_rat');
     await p.do('talk morda you water down the ale', /Out of my sight/);
-    await p.do('talk morda come on', /Morda turns her back on Shane/);
+    await p.do('talk morda come on', /Morda turns away from Shane/);
     expect(groq.calls).toHaveLength(1);
     await p.close();
   });
@@ -274,25 +276,30 @@ describe('Gallowmere end to end', () => {
     expect(rows).toHaveLength(1);
   });
   it('talking to the guard works the natural ways', async () => {
-    const guard = /Toll's waived|Move along|eyes your purse/;
+    morda = () => reply('Evening, friend.');
+    const guard = /Dace says to you, "Evening, friend\."/;
     const p = await login('Bob', 'north_gate');
+    // Before any conversation, a plain say with no name in it reaches nobody.
+    await p.do('say lovely fog today', /You say, "lovely fog today"/);
+    await new Promise((r) => setTimeout(r, 700));
+    expect(p.buf).not.toMatch(guard);
     await p.do('say hi guard', /You say, "hi guard"/);
     await p.waitFor(guard);
     await p.do('hello guard', /You say, "hello guard"/);
     await p.waitFor(guard);
-    await p.do('talk guard', /You say to a gate guard, "Hello\."/);
+    await p.do('talk guard', /You say to Dace, "Hello\."/);
     await p.waitFor(guard);
-    await p.do('say to guard nice weather', /You say to a gate guard, "nice weather"/);
+    await p.do('say to guard nice weather', /You say to Dace, "nice weather"/);
     await p.waitFor(guard);
+    // Mid conversation, a plain say carries on with Dace.
     await p.do('say lovely fog today', /You say, "lovely fog today"/);
-    await new Promise((r) => setTimeout(r, 700));
-    expect(p.buf).not.toMatch(guard);
+    await p.waitFor(guard);
     await p.close();
   });
 
   it('attacking is turned away for now', async () => {
     const p = await login('Bob', 'north_gate');
-    await p.do('attack guard', /size up a gate guard and think better of it/);
+    await p.do('attack guard', /size up Dace and think better of it/);
     await p.do('kill nobody', /nobody like that here/);
     await p.close();
   });

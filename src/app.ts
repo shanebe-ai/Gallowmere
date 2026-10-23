@@ -64,6 +64,7 @@ export async function createApp(
   });
 
   const game = new Game(world, brain);
+  await game.init();
 
   const app = express();
   app.disable('x-powered-by');
