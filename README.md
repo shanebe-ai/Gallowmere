@@ -10,7 +10,9 @@ This is a proof of concept. The idea: game code owns every rule, and an LLM only
 * Character creation and login
 * Morda, the barkeep of The Drowned Rat, played by an LLM with per player memory stored in PostgreSQL
 * Scripted townsfolk for flavour (gate guard, blacksmith, beggar, rats)
-* Browser terminal built on xterm.js: colour, scrollback, command history, clickable exits, exit buttons, reconnect, works on phones
+* Browser terminal built on xterm.js: colour, scrollback, command history, clickable exits and names, exit buttons, reconnect, works on phones
+* Real telnet door on port 4004 for Mudlet and other MUD clients, sharing the same world
+* Rooms list their people, players and things, and everything listed can be used: look, take, touch, open, read, search and more
 
 ## How the NPC brain works
 
@@ -21,7 +23,15 @@ This is a proof of concept. The idea: game code owns every rule, and an LLM only
 5. The engine validates everything. Unknown actions become `none`. Lengths are capped, escape codes stripped, a word filter checks the text.
 6. Groq (Llama 3.1 8B) first, Gemini Flash Lite if Groq is slow, rate limited or down, and scripted lines if both are out. The game never goes silent.
 
-Every NPC line is logged to `ai_usage`. Admins can type `aistats` in game to see lines per player per hour, latency, fallback rate and token counts.
+Every NPC line is logged to `ai_usage`. The admin (player 1 by default, set with `ADMIN_PLAYER_IDS`) can type `aistats` in game to see lines per player per hour, latency, fallback rate and token counts.
+
+## Security notes
+
+* Passwords hashed with bcrypt. Wrong passwords are limited per address and per character.
+* New characters limited per address per hour. Connections capped per address. Idle logins time out.
+* Player text never goes into the system prompt, and the engine only applies actions it allows.
+* A per player and a global daily cap keep AI use inside the free tiers.
+* Telnet is plain text by nature, passwords included. Use the browser for anything you care about.
 
 ## Stack
 
@@ -39,7 +49,7 @@ npm test                # needs a gallowmere_test database
 
 ## First time server setup
 
-Server 1 runs it from `/home/gallowmere` on port 3004. One time steps:
+Server 1 runs it from `/home/gallowmere`: the browser on port 3004 and telnet on 4004. One time steps:
 
 1. Create the database user and database in PostgreSQL.
 2. Clone the repo into `/home/gallowmere`.

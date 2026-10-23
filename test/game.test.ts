@@ -1,5 +1,6 @@
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import net from 'node:net';
 import { io as ioClient, type Socket } from 'socket.io-client';
 import { pool, query } from '../src/db/pool.js';
 import { migrate } from '../src/db/migrate.js';
@@ -11,7 +12,8 @@ import type { ChatRequest } from '../src/ai/types.js';
 let url = '';
 let app: Awaited<ReturnType<typeof createApp>>;
 let morda: (req: ChatRequest) => string = () => reply('Aye.');
-const groq = new FakeProvider('groq', (req) => morda(req), 2000);
+// Fake Morda only sees the latest line, the way a test can reason about it; calls keep the full prompt.
+const groq = new FakeProvider('groq', (req) => morda({ ...req, user: req.user.split('[Now]\n').pop()! }), 2000);
 const sockets: Socket[] = [];
 
 class Player {
@@ -94,7 +96,8 @@ async function login(name: string, room?: string, password = 'secret1') {
 beforeAll(async () => {
   await query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
   await migrate();
-  app = await createApp({ providers: [{ provider: groq, rpm: 1000 }] });
+  app = await createApp({ providers: [{ provider: groq, rpm: 1000 }], telnetPort: 0 });
+  await new Promise((r) => (app.telnet!.listening ? r(null) : app.telnet!.once('listening', r)));
   await new Promise<void>((r) => app.server.listen(0, r));
   url = `http://localhost:${(app.server.address() as AddressInfo).port}`;
 });
@@ -108,6 +111,7 @@ afterAll(async () => {
   for (const s of sockets) s.disconnect();
   app.game.stop();
   app.io.close();
+  app.telnet?.close();
   await new Promise((r) => app.server.close(r));
   await pool.end();
 });
@@ -185,7 +189,7 @@ describe('Gallowmere end to end', () => {
     const q = await login('Shane');
     expect(q.status.room).toBe('The Drowned Rat');
     await q.do('say evening Morda', /Morda says to you, "What will it be\?"/);
-    expect(groq.calls[0].system).toContain('works as a tanner');
+    expect(groq.calls[0].user).toContain('works as a tanner');
     await q.close();
   });
 
@@ -384,5 +388,92 @@ describe('Gallowmere end to end', () => {
     await b.waitFor(/Dana pokes you\./);
     await a.close();
     await b.close();
+  });
+  it('serves security headers', async () => {
+    const res = await fetch(url);
+    expect(res.headers.get('content-security-policy')).toContain("frame-ancestors 'none'");
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(res.headers.get('x-powered-by')).toBeNull();
+  });
+
+  it('locks a character after too many wrong passwords from anywhere', async () => {
+    await (await create('Eve')).close();
+    // Simulate ten recent failures from other addresses; the right password is still refused.
+    const g = app.game as any;
+    g.accountFails.set('eve', Array.from({ length: 10 }, () => Date.now()));
+    const p = new Player();
+    await p.waitFor(/By what name/);
+    await p.do('Eve', /Welcome back/);
+    await p.do('secret1', /locked for a few minutes/);
+    g.accountFails.delete('eve');
+    p.drop();
+  });
+
+  it('quitting revokes the saved reconnect token', async () => {
+    const a = await login('Bob');
+    const token = a.token;
+    await a.close();
+    const b = new Player(token);
+    await b.waitFor(/By what name/);
+    b.drop();
+  });
+
+  it('plays over real telnet alongside the browser', async () => {
+    const port = (app.telnet!.address() as AddressInfo).port;
+    const raw: Buffer[] = [];
+    let text = '';
+    const sock = net.connect(port, '127.0.0.1');
+    sock.on('data', (d: Buffer) => {
+      raw.push(d);
+      // Drop telnet commands for the text view.
+      const clean: number[] = [];
+      for (let i = 0; i < d.length; i++) {
+        if (d[i] === 255) {
+          if (d[i + 1] === 250) { while (i < d.length && !(d[i] === 255 && d[i + 1] === 240)) i++; i++; }
+          else i += d[i + 1] >= 251 ? 2 : 1;
+          continue;
+        }
+        clean.push(d[i]);
+      }
+      text += stripAnsi(Buffer.from(clean).toString('utf8'));
+    });
+    const waitText = async (re: RegExp) => {
+      const start = Date.now();
+      while (Date.now() - start < 4000) {
+        const m = text.match(re);
+        if (m) { text = text.slice((m.index ?? 0) + m[0].length); return; }
+        await new Promise((r) => setTimeout(r, 20));
+      }
+      throw new Error(`telnet timed out waiting for ${re}. Got:\n${text}`);
+    };
+    await new Promise((r) => sock.once('connect', r));
+    // Report a 60 column window: IAC SB NAWS 0 60 0 24 IAC SE
+    sock.write(Buffer.from([255, 250, 31, 0, 60, 0, 24, 255, 240]));
+    await waitText(/By what name/);
+    expect(Buffer.concat(raw).includes(Buffer.from([255, 253, 31]))).toBe(true); // asked for window size
+
+    const web = await login('Bob', 'north_gate');
+    await query("UPDATE players SET room_id='north_gate' WHERE name='Shane'");
+    sock.write('Shane\r\n');
+    await waitText(/Welcome back/);
+    expect(Buffer.concat(raw).includes(Buffer.from([255, 251, 1]))).toBe(true); // echo off for the password
+    sock.write('secret1\r\n');
+    await waitText(/The North Gate[\s\S]*Players: Bob[\s\S]*Exits:/);
+    expect(Buffer.concat(raw).includes(Buffer.from([255, 252, 1]))).toBe(true); // echo back on
+    await web.waitFor(/Shane steps out of the fog/);
+
+    sock.write('say evening from telnet\r\n');
+    await web.waitFor(/Shane says, "evening from telnet"/);
+    web.send('say hello telnet');
+    await waitText(/Bob says, "hello telnet"/);
+    sock.write('look at the gibbet\r\n');
+    await waitText(/iron cage/);
+    // Lines are wrapped to the 60 columns the client reported.
+    sock.write('look\r\n');
+    await waitText(/Exits:/);
+    sock.write('quit\r\n');
+    await new Promise((r) => sock.once('close', r));
+    await web.waitFor(/Shane fades into the fog/);
+    await web.close();
   });
 });

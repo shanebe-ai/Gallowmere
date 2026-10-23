@@ -17,6 +17,10 @@ const CHAT_WINDOW_MS = 120_000;
 const LINKDEAD_GRACE_MS = 15_000;
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const LOGIN_TRIES_PER_MIN = 5;
+const ACCOUNT_FAILS_LIMIT = 10; // wrong passwords for one character, from anywhere
+const ACCOUNT_FAILS_WINDOW_MS = 15 * 60_000;
+const LOGIN_TIMEOUT_MS = 2 * 60_000;
+const CLEANUP_EVERY_MS = 10 * 60_000;
 const AMBIENT_EVERY_MS = 20_000;
 
 const RESERVED = new Set(['admin', 'god', 'morda', 'guard', 'beggar', 'blacksmith', 'rats', 'rat', 'someone', 'self', 'me', 'all', 'here']);
@@ -109,6 +113,10 @@ export class Game {
   private byPlayer = new Map<number, Session>();
   private tokens = new Map<string, Token>();
   private loginTries = new Map<string, number[]>();
+  private accountFails = new Map<string, number[]>();
+  private creations = new Map<string, number[]>();
+  private loginTimers = new Map<Session, NodeJS.Timeout>();
+  private cleanupTimer: NodeJS.Timeout | null = null;
   private recent = new Map<string, string[]>();
   private refusals = new Map<string, number>();
   /** The AI character each player is in conversation with, and when they last spoke. */
@@ -129,10 +137,31 @@ export class Game {
   startAmbient(): void {
     this.ambientTimer = setInterval(() => this.ambientTick(), AMBIENT_EVERY_MS);
     this.ambientTimer.unref();
+    this.cleanupTimer = setInterval(() => this.cleanup(), CLEANUP_EVERY_MS);
+    this.cleanupTimer.unref();
+  }
+
+  /** Drops expired tokens and stale rate limit entries so memory stays flat. */
+  cleanup(now = Date.now()): void {
+    for (const [k, t] of this.tokens) if (t.expires <= now) this.tokens.delete(k);
+    const prune = (m: Map<string, number[]>, windowMs: number) => {
+      for (const [k, list] of m) {
+        const keep = list.filter((t) => now - t < windowMs);
+        if (keep.length) m.set(k, keep);
+        else m.delete(k);
+      }
+    };
+    prune(this.loginTries, 60_000);
+    prune(this.accountFails, ACCOUNT_FAILS_WINDOW_MS);
+    prune(this.creations, 60 * 60_000);
+    for (const [k, until] of this.refusals) if (until <= now) this.refusals.delete(k);
+    for (const [k, chat] of this.chatting) if (now - chat.at > CHAT_WINDOW_MS) this.chatting.delete(k);
   }
 
   stop(): void {
     if (this.ambientTimer) clearInterval(this.ambientTimer);
+    if (this.cleanupTimer) clearInterval(this.cleanupTimer);
+    for (const t of this.loginTimers.values()) clearTimeout(t);
     for (const l of this.linkdead.values()) clearTimeout(l.timer);
   }
 
@@ -154,11 +183,23 @@ export class Game {
     conn.setToken(null);
     for (const line of s.cols >= 64 ? BANNER : BANNER_NARROW) s.out(line);
     this.promptName(s);
+    // Nobody gets to sit at the login prompt forever.
+    const timer = setTimeout(() => {
+      if (s.state !== 'playing' && s.state !== 'closed') {
+        s.out(c.dim('The fog closes in. Come back when you remember your name.'));
+        s.conn.close();
+      }
+    }, LOGIN_TIMEOUT_MS);
+    timer.unref();
+    this.loginTimers.set(s, timer);
     return s;
   }
 
   async disconnect(s: Session): Promise<void> {
     this.sessions.delete(s);
+    const lt = this.loginTimers.get(s);
+    if (lt) clearTimeout(lt);
+    this.loginTimers.delete(s);
     const p = s.player;
     s.state = 'closed';
     if (!p || this.byPlayer.get(p.id) !== s) return;
@@ -233,6 +274,12 @@ export class Game {
 
   private async onConfirmNew(s: Session, line: string): Promise<void> {
     if (/^y/i.test(line)) {
+      const now = Date.now();
+      const made = (this.creations.get(s.conn.ip) ?? []).filter((t) => now - t < 60 * 60_000);
+      if (made.length >= config.newCharsPerHour) {
+        s.out(c.error('Too many new characters from here lately. Try again in an hour, or log in with one you have.'));
+        return this.promptName(s);
+      }
       s.state = 'newPassword';
       s.conn.setMode({ echo: false, prompt: 'Password: ' });
       s.out(c.system('Choose a password, 6 characters or more.'));
@@ -269,6 +316,9 @@ export class Game {
         [s.pendingName, hash, this.world.startRoom],
       );
       r = rows[0];
+      const made = this.creations.get(s.conn.ip) ?? [];
+      made.push(Date.now());
+      this.creations.set(s.conn.ip, made);
     } catch {
       s.out(c.error('Someone took that name a moment ago. Try another.'));
       return this.promptName(s);
@@ -292,10 +342,19 @@ export class Game {
       s.out(c.error('Too many wrong passwords. Wait a minute and try again.'));
       return this.promptName(s);
     }
+    const acct = s.pendingName.toLowerCase();
+    const now = Date.now();
+    const acctFails = (this.accountFails.get(acct) ?? []).filter((t) => now - t < ACCOUNT_FAILS_WINDOW_MS);
+    this.accountFails.set(acct, acctFails);
+    if (acctFails.length >= ACCOUNT_FAILS_LIMIT) {
+      s.out(c.error('That character is locked for a few minutes after too many wrong passwords.'));
+      return this.promptName(s);
+    }
     const { rows } = await query('SELECT id, name, password_hash, room_id, created_at FROM players WHERE lower(name)=lower($1)', [s.pendingName]);
     const r = rows[0];
     if (!r || !(await bcrypt.compare(pw, r.password_hash))) {
       failures.push(Date.now());
+      acctFails.push(Date.now());
       s.wrongPasswords++;
       s.out(c.error('Wrong password.'));
       if (s.wrongPasswords >= 3) return this.promptName(s);
@@ -335,6 +394,9 @@ export class Game {
 
     s.player = player;
     s.state = 'playing';
+    const lt = this.loginTimers.get(s);
+    if (lt) clearTimeout(lt);
+    this.loginTimers.delete(s);
     this.byPlayer.set(player.id, s);
 
     const { rows } = await query('SELECT alias, expansion FROM player_aliases WHERE player_id=$1', [player.id]);
@@ -487,7 +549,7 @@ export class Game {
   }
 
   private isAdmin(s: Session): boolean {
-    return !!s.player && config.adminNames.includes(s.player.name.toLowerCase());
+    return !!s.player && config.adminIds.includes(s.player.id);
   }
 
   expandAlias(s: Session, line: string): string {
@@ -843,6 +905,8 @@ export class Game {
 
   private quit(s: Session): void {
     s.quitting = true;
+    // Quitting signs this character out everywhere: saved reconnect tokens stop working.
+    for (const [k, t] of this.tokens) if (t.playerId === s.player!.id) this.tokens.delete(k);
     s.out(c.dim('You pull your collar up and walk back into the fog. Saved.'));
     s.conn.setToken(null);
     s.conn.close();

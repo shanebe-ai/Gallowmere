@@ -11,7 +11,10 @@ export default defineConfig({
       DB_USER: process.env.TEST_DB_USER || process.env.DB_USER || 'gallowmere',
       DB_PASSWORD: process.env.TEST_DB_PASSWORD || process.env.DB_PASSWORD || 'devpass',
       DB_HOST: process.env.DB_HOST || 'localhost',
-      ADMIN_NAMES: 'Shane',
+      ADMIN_PLAYER_IDS: '1',
+      NEW_CHARS_PER_HOUR: '1000',
+      MAX_CONNECTIONS_PER_IP: '1000',
+      TELNET_PORT: '0',
     },
   },
 });
