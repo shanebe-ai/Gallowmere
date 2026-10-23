@@ -21,14 +21,14 @@ class Player {
   mode = { echo: true, prompt: '' };
   status: any = null;
 
-  constructor(token?: string | null) {
+  constructor(token?: string | null, cols = 100) {
     this.socket = ioClient(url, { transports: ['websocket'], reconnection: false, forceNew: true });
     sockets.push(this.socket);
     this.socket.on('out', (t: string) => (this.buf += stripAnsi(t)));
     this.socket.on('session', (t: string | null) => (this.token = t));
     this.socket.on('mode', (m) => (this.mode = m));
     this.socket.on('status', (s) => (this.status = s));
-    this.socket.on('connect', () => this.socket.emit('hello', { token: token ?? null, cols: 100 }));
+    this.socket.on('connect', () => this.socket.emit('hello', { token: token ?? null, cols }));
   }
 
   send(line: string) {
@@ -122,7 +122,7 @@ describe('Gallowmere end to end', () => {
     const a = await create('Shane');
     const b = await create('Bob');
     await a.waitFor(/Bob steps out of the fog/);
-    await a.do('look', /Bob is here/);
+    await a.do('look', /Players:\s+Bob/);
 
     b.send('say evening');
     await a.waitFor(/Bob says, "evening"/);
@@ -288,6 +288,66 @@ describe('Gallowmere end to end', () => {
     const p = await login('Bob', 'north_gate');
     await p.do('attack guard', /size up a gate guard and think better of it/);
     await p.do('kill nobody', /nobody like that here/);
+    await p.close();
+  });
+  it('lists people, players and things under the room, and things can be looked at', async () => {
+    const a = await login('Shane', 'drowned_rat');
+    const b = await login('Bob', 'drowned_rat');
+    const seen = await a.do('look', /Exits:/);
+    expect(seen).toMatch(/People:\s+Morda the barkeep/);
+    expect(seen).toMatch(/Players:\s+Bob/);
+    expect(seen).toMatch(/You see:\s+the stained curtain, the dice game/);
+    await a.do('look curtain', /heavy curtain/);
+    await a.do('l dice', /battered cup of dice/);
+    await a.do('look barkeep', /broad, tired woman[\s\S]*To talk: talk morda/);
+    await a.close();
+    await b.close();
+  });
+
+  it('wraps long lists one name per line on narrow screens', async () => {
+    const p = new Player(null, 38);
+    await p.waitFor(/By what name/);
+    await p.do('Bob', /Welcome back/);
+    await query("UPDATE players SET room_id='river_docks' WHERE name='Bob'");
+    const seen = await p.do('secret1', /Exits:/);
+    expect(seen).toMatch(/You see: the stacked crates,\n {9}the harbourmaster's shed/);
+    await p.close();
+  });
+
+  it('a plain say carries on a conversation with Morda', async () => {
+    await (await create('Cara')).close();
+    morda = (req) =>
+      req.user.includes('whiskey') ? reply('Whiskey it is. Coin first.') : reply('What do you want?');
+    const p = await login('Cara', 'drowned_rat');
+    await p.do('talk morda evening', /Morda says to you, "What do you want\?"/);
+    await p.do('say a whiskey', /Morda says to you, "Whiskey it is\. Coin first\."/);
+    await p.do("' make it a double", /Morda says to you/);
+    expect(groq.calls).toHaveLength(3);
+    await p.close();
+  });
+
+  it('a plain say to another player does not pull Morda in', async () => {
+    morda = () => reply('What do you want?');
+    const a = await login('Cara', 'drowned_rat');
+    const b = await login('Bob', 'drowned_rat');
+    await a.do('talk morda evening', /Morda says to you/);
+    await a.do('say Bob, buy me a drink', /You say/);
+    await a.do("' never mind", /You say/);
+    await new Promise((r) => setTimeout(r, 300));
+    // The second line has no name in it, so Morda answers that one only.
+    expect(groq.calls).toHaveLength(2);
+    await a.close();
+    await b.close();
+  });
+
+  it('a conversation does not follow you out of the room', async () => {
+    morda = () => reply('What do you want?');
+    const p = await login('Cara', 'drowned_rat');
+    await p.do('talk morda evening', /Morda says to you/);
+    await p.do('n', /Exits:/);
+    await p.do('say anyone here?', /You say/);
+    await new Promise((r) => setTimeout(r, 300));
+    expect(groq.calls).toHaveLength(1);
     await p.close();
   });
 });

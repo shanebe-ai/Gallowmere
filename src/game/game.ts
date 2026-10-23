@@ -13,6 +13,7 @@ const MAX_INPUT = 300;
 const MAX_ALIASES = 30;
 const RECENT_LINES = 6;
 const REFUSE_MS = 60_000;
+const CHAT_WINDOW_MS = 120_000;
 const LINKDEAD_GRACE_MS = 15_000;
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const LOGIN_TRIES_PER_MIN = 5;
@@ -66,6 +67,8 @@ export class Game {
   private loginTries = new Map<string, number[]>();
   private recent = new Map<string, string[]>();
   private refusals = new Map<string, number>();
+  /** The AI character each player is in conversation with, and when they last spoke. */
+  private chatting = new Map<number, { npcId: string; at: number }>();
   private linkdead = new Map<number, { timer: NodeJS.Timeout; roomId: string; name: string }>();
   private ambientTimer: NodeJS.Timeout | null = null;
 
@@ -335,10 +338,28 @@ export class Game {
     const room = this.world.room(s.player!.roomId);
     s.out(c.title(room.title));
     s.out(room.description);
-    for (const n of this.world.npcsIn(room.id)) s.out(c.npc(n.card.short));
-    for (const p of this.playersIn(room.id, s)) s.out(`${c.player(p.player!.name)} is here.`);
+    // Who and what is here, one scannable line each. Every name can be clicked to look at it.
+    const npcs = this.world.npcsIn(room.id).map((n) => n.card.listName ?? n.name);
+    const players = this.playersIn(room.id, s).map((p) => p.player!.name);
+    const things = room.features.map((f) => f.name);
+    this.listLine(s, 'People:', npcs, c.npc);
+    this.listLine(s, 'Players:', players, c.player);
+    this.listLine(s, 'You see:', things, c.thing);
     const exits = room.exits.filter((e) => !e.hidden).map((e) => e.direction);
     s.out(c.exits(`Exits: ${exits.length ? exits.join(', ') : 'none'}.`));
+  }
+
+  /** One line per list, or one item per line when it would wrap, so no name is split. */
+  private listLine(s: Session, label: string, items: string[], colour: (t: string) => string): void {
+    if (!items.length) return;
+    const pad = 'You see: '.length;
+    const head = label.padEnd(pad - 1);
+    const one = `${head} ${items.join(', ')}`;
+    if (one.length <= s.cols - 1) return s.out(`${c.label(head)} ${colour(items.join(', '))}`);
+    items.forEach((item, i) => {
+      const lead = i === 0 ? c.label(head) + ' ' : ' '.repeat(pad);
+      s.out(`${lead}${colour(item + (i < items.length - 1 ? ',' : ''))}`);
+    });
   }
 
   // ---------------------------------------------------------------- commands
@@ -456,7 +477,13 @@ export class Game {
       return s.out('You look like someone who just walked out of the fog. Damp, mostly.');
     }
     const npc = this.world.findNpc(roomId, t);
-    if (npc) return s.out(npc.card.look);
+    if (npc) {
+      s.out(c.npc(npc.card.short));
+      s.out(npc.card.look);
+      return s.out(c.dim(`To talk: talk ${npc.card.keywords[0]} <words>, or say something with "${npc.card.keywords[0]}" in it.`));
+    }
+    const feature = this.world.findFeature(roomId, t);
+    if (feature) return s.out(feature.look);
     const other = this.playersIn(roomId, s).find((p) => p.player!.name.toLowerCase().startsWith(t));
     if (other) {
       other.out(`${c.player(s.player!.name)} looks you over.`);
@@ -473,8 +500,23 @@ export class Game {
     this.toRoom(p.roomId, `${c.player(p.name)} says, ${c.speech(`"${text}"`)}`, s);
 
     // Naming someone in the room counts as talking to them. AI characters win a tie.
-    const npc = this.mentionedNpc(p.roomId, text);
+    const npc = this.mentionedNpc(p.roomId, text) ?? this.conversationPartner(s, text);
     if (npc) void this.npcRespond(s, npc, text);
+  }
+
+  /**
+   * Mid conversation, a plain say carries on talking to the same AI character,
+   * unless the player has named another player in the room.
+   */
+  conversationPartner(s: Session, text: string): Npc | undefined {
+    const p = s.player!;
+    const chat = this.chatting.get(p.id);
+    if (!chat || Date.now() - chat.at > CHAT_WINDOW_MS) return undefined;
+    const npc = this.world.npcs.get(chat.npcId);
+    if (!npc || npc.roomId !== p.roomId) return undefined;
+    const lower = text.toLowerCase();
+    if (this.playersIn(p.roomId, s).some((o) => new RegExp(`\\b${o.player!.name.toLowerCase()}\\b`).test(lower))) return undefined;
+    return npc;
   }
 
   /** The NPC in the room whose name or keyword appears in the text, if any. */
@@ -604,6 +646,7 @@ export class Game {
       this.pushRecent(key, `${p.name}: ${playerLine}`);
 
       if (out.scriptedLine) {
+        this.chatting.set(p.id, { npcId: npc.id, at: Date.now() });
         this.toRoom(roomId, c.npc(out.scriptedLine));
         this.pushRecent(key, `${npc.name}: ${stripAnsi(out.scriptedLine)}`);
         return;
@@ -628,6 +671,8 @@ export class Game {
       } else if (out.action.type === 'refuse') {
         this.refusals.set(key, Date.now() + REFUSE_MS);
       }
+      if (out.action.type === 'refuse') this.chatting.delete(p.id);
+      else this.chatting.set(p.id, { npcId: npc.id, at: Date.now() });
     } catch (err) {
       console.error('npcRespond failed:', err);
       this.toRoom(roomId, c.npc(this.brain.scripted(npc.id, npc.card)));

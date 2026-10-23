@@ -18,12 +18,19 @@ export interface Exit {
   hidden: boolean;
 }
 
+export interface Feature {
+  name: string;
+  keywords: string[];
+  look: string;
+}
+
 export interface Room {
   id: string;
   district: string;
   title: string;
   description: string;
   flags: string[];
+  features: Feature[];
   exits: Exit[];
 }
 
@@ -36,6 +43,7 @@ export interface Npc {
     keywords: string[];
     short: string;
     look: string;
+    listName?: string;
     scripted: string[];
     ambient?: string[];
     [k: string]: unknown;
@@ -48,13 +56,13 @@ export class World {
   startRoom = 'north_gate';
 
   async load(): Promise<void> {
-    const rooms = await query('SELECT id, district, title, description, flags FROM rooms');
+    const rooms = await query('SELECT id, district, title, description, flags, features FROM rooms');
     const exits = await query('SELECT room_id, direction, to_room_id, hidden FROM exits');
     const npcs = await query('SELECT id, room_id, name, kind, card_json FROM npcs');
 
     this.rooms.clear();
     for (const r of rooms.rows) {
-      this.rooms.set(r.id, { id: r.id, district: r.district, title: r.title, description: r.description, flags: r.flags, exits: [] });
+      this.rooms.set(r.id, { id: r.id, district: r.district, title: r.title, description: r.description, flags: r.flags, features: r.features ?? [], exits: [] });
       if (r.flags.includes('start')) this.startRoom = r.id;
     }
     for (const e of exits.rows) {
@@ -75,6 +83,14 @@ export class World {
 
   npcsIn(roomId: string): Npc[] {
     return [...this.npcs.values()].filter((n) => n.roomId === roomId);
+  }
+
+  findFeature(roomId: string, words: string): Feature | undefined {
+    const w = words.toLowerCase();
+    if (!w) return undefined;
+    return this.room(roomId).features.find(
+      (f) => f.name.toLowerCase() === w || f.keywords.some((k) => k === w || (w.length >= 3 && k.startsWith(w))),
+    );
   }
 
   /** Finds an NPC in a room by name or keyword prefix. */

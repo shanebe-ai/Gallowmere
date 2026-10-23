@@ -5,7 +5,12 @@
     "name": "Morda",
     "kind": "ai",
     "card": {
-      "keywords": ["morda", "barkeep", "bartender", "keeper"],
+      "keywords": [
+        "morda",
+        "barkeep",
+        "bartender",
+        "keeper"
+      ],
       "short": "Morda the barkeep is wiping down the bar with a rag that has seen better decades.",
       "look": "A broad, tired woman of middle years with forearms like hams and eyes that miss nothing. Her apron is stained in a dozen colours and a key ring the size of a fist hangs at her belt.",
       "job": "Barkeep and owner of The Drowned Rat tavern",
@@ -25,7 +30,8 @@
         "Morda thumps a dripping cask onto the bar.",
         "Morda shouts at the dice players to keep it down.",
         "Morda glances at the curtain on the west wall, then back at her rag."
-      ]
+      ],
+      "listName": "Morda the barkeep"
     }
   },
   {
@@ -34,7 +40,11 @@
     "name": "a gate guard",
     "kind": "scripted",
     "card": {
-      "keywords": ["guard", "gate guard", "watchman"],
+      "keywords": [
+        "guard",
+        "gate guard",
+        "watchman"
+      ],
       "short": "A bored gate guard leans on his spear under the gibbet.",
       "look": "A thin man in a dented helmet two sizes too big. His spear is mostly for leaning on.",
       "scripted": [
@@ -54,7 +64,10 @@
     "name": "the blacksmith",
     "kind": "scripted",
     "card": {
-      "keywords": ["blacksmith", "smith"],
+      "keywords": [
+        "blacksmith",
+        "smith"
+      ],
       "short": "A soot black blacksmith hammers at a glowing blade.",
       "look": "Thick arms, singed eyebrows and a leather apron scarred by sparks. He has not noticed you, or is pretending not to.",
       "scripted": [
@@ -74,7 +87,10 @@
     "name": "a beggar",
     "kind": "scripted",
     "card": {
-      "keywords": ["beggar", "sleeper"],
+      "keywords": [
+        "beggar",
+        "sleeper"
+      ],
       "short": "A beggar huddles in a dripping doorway.",
       "look": "A bundle of wet rags with a face somewhere inside it. One eye is open and watching you.",
       "scripted": [
@@ -94,7 +110,10 @@
     "name": "some rats",
     "kind": "scripted",
     "card": {
-      "keywords": ["rat", "rats"],
+      "keywords": [
+        "rat",
+        "rats"
+      ],
       "short": "A few fat rats nose through the filth by the grate.",
       "look": "Big ones. Bigger than rats should be. They regard you without fear.",
       "scripted": [

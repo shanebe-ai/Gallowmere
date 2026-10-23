@@ -72,23 +72,55 @@ const fit = new FitAddon();
 term.loadAddon(fit);
 
 // Exit names on an "Exits:" line become clickable.
+const LIST_RE = /^(People: +|Players: +|You see: +)/;
+const lineAt = (y: number) => term.buffer.active.getLine(y - 1)?.translateToString(true) ?? '';
+
+/** True when row y is part of a People, Players or You see list (continuation rows are indented). */
+function inList(y: number): boolean {
+  for (let row = y; row > 0 && y - row < 12; row--) {
+    const line = lineAt(row);
+    if (LIST_RE.test(line)) return true;
+    if (!line.startsWith('         ')) return false;
+  }
+  return false;
+}
+
 term.registerLinkProvider({
   provideLinks(y, callback) {
-    const line = term.buffer.active.getLine(y - 1)?.translateToString(true) ?? '';
-    if (!line.startsWith('Exits:')) return callback(undefined);
+    const line = lineAt(y);
     const links: ILink[] = [];
-    const re = /\b(north|south|east|west|up|down)\b/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(line))) {
-      const dir = m[1];
-      links.push({
-        range: { start: { x: m.index + 1, y }, end: { x: m.index + dir.length, y } },
-        text: dir,
-        decorations: { underline: true, pointerCursor: true },
-        activate: () => submit(dir),
-      });
+    if (line.startsWith('Exits:')) {
+      // Exit names become clickable.
+      const re = /\b(north|south|east|west|up|down)\b/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(line))) {
+        const dir = m[1];
+        links.push({
+          range: { start: { x: m.index + 1, y }, end: { x: m.index + dir.length, y } },
+          text: dir,
+          decorations: { underline: true, pointerCursor: true },
+          activate: () => submit(dir),
+        });
+      }
+    } else if (inList(y)) {
+      // Each name in a list becomes clickable and looks at it.
+      const start = line.match(LIST_RE)?.[0].length ?? 9;
+      let x = start;
+      for (const part of line.slice(start).split(', ')) {
+        const name = part.replace(/,$/, '').trimEnd();
+        const target = name.split(' ').pop() ?? '';
+        if (target) {
+          links.push({
+            range: { start: { x: x + 1, y }, end: { x: x + name.length, y } },
+            text: name,
+            decorations: { underline: true, pointerCursor: true },
+            activate: () => submit(`look ${target.toLowerCase()}`),
+          });
+        }
+        x += part.length + 2;
+      }
     }
-    callback(links);
+    callback(links.length ? links : undefined);
   },
 });
 

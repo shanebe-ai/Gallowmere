@@ -12,6 +12,7 @@ interface RoomSeed {
   title: string;
   description: string;
   flags?: string[];
+  features?: Array<{ name: string; keywords: string[]; look: string }>;
   exits: Record<string, string>;
   hiddenExits?: string[];
 }
@@ -40,9 +41,9 @@ export async function migrate(client: pg.Pool | pg.PoolClient = pool): Promise<v
   try {
     for (const r of rooms) {
       await client.query(
-        `INSERT INTO rooms (id, district, title, description, flags) VALUES ($1,$2,$3,$4,$5)
-         ON CONFLICT (id) DO UPDATE SET district=$2, title=$3, description=$4, flags=$5`,
-        [r.id, r.district, r.title, r.description, r.flags ?? []],
+        `INSERT INTO rooms (id, district, title, description, flags, features) VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT (id) DO UPDATE SET district=$2, title=$3, description=$4, flags=$5, features=$6`,
+        [r.id, r.district, r.title, r.description, r.flags ?? [], JSON.stringify(r.features ?? [])],
       );
     }
     await client.query('DELETE FROM exits');
