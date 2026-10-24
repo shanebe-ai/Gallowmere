@@ -3,7 +3,20 @@ import { sanitize, stripAnsi, wrap, c } from '../src/game/text.js';
 import { isFlagged } from '../src/game/filter.js';
 import { RateBucket } from '../src/ai/service.js';
 import { foldNote, MAX_NOTES } from '../src/npc/memory.js';
-import { buildPrompt, intentOf, NpcBrain, parseReply } from '../src/npc/brain.js';
+import { buildPrompt, intentOf, NpcBrain, parseReply, undash } from '../src/npc/brain.js';
+
+describe('no dashes in what townsfolk say', () => {
+  it('turns dashes into commas and leaves hyphenated words alone', () => {
+    expect(undash('Come in, come in\u2014mind the stoat.')).toBe('Come in, come in, mind the stoat.');
+    expect(undash('drawing breath \u2013 never loses a number')).toBe('drawing breath, never loses a number');
+    expect(undash('a long memory, dearie\u2014I saw it')).toBe('a long memory, dearie, I saw it');
+    expect(undash('Gone.\u2014 Off you go')).toBe('Gone. Off you go');
+    expect(undash('well -- fine')).toBe('well, fine');
+    expect(undash('a one-eyed, moth-eaten heron')).toBe('a one-eyed, moth-eaten heron');
+    expect(undash('\u2014Who sent you?')).toBe('Who sent you?');
+    expect(parseReply('{"say":"Mind Gerald\u2014he bites.","emote":"pats him\u2014gently"}', ['none'])).toMatchObject({ say: 'Mind Gerald, he bites.', emote: 'pats him, gently' });
+  });
+});
 
 describe('what the player said', () => {
   it('sorts lines into greetings, questions, thanks and goodbyes', () => {

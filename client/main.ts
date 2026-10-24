@@ -274,15 +274,23 @@ function fitTerm() {
 }
 
 // Keep the input above the on screen keyboard on phones.
+let lastHeight = 0;
 function fitViewport() {
   const vv = window.visualViewport;
   const app = $('app');
+  const buf = term.buffer.active;
+  // Only follow the bottom if the player was already there; scrolling back to read stays put.
+  const atBottom = buf.viewportY >= buf.baseY;
+  const height = vv ? vv.height : window.innerHeight;
+  // The address bar sliding away while scrolling nudges the height a little; the keyboard opening is a big drop.
+  const keyboardOpened = lastHeight > 0 && lastHeight - height > 120;
+  lastHeight = height;
   if (vv) {
     app.style.height = `${vv.height}px`;
     app.style.top = `${vv.offsetTop}px`;
   }
   fitTerm();
-  term.scrollToBottom();
+  if (atBottom || keyboardOpened) term.scrollToBottom();
 }
 
 window.addEventListener('resize', fitViewport);

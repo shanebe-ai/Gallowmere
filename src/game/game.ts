@@ -4,6 +4,7 @@ import { query } from '../db/pool.js';
 import { config } from '../config.js';
 import { NpcBrain, TRADE_ACTIONS, type ActionType, type NpcTurnOutput, type Replies, type TradeContext } from '../npc/brain.js';
 import { Commerce } from './commerce.js';
+import type { AIService } from '../ai/service.js';
 import { avg, BENCH_DEFAULTS, BENCH_LINES, runBench, type LiveModel } from '../ai/bench.js';
 import { balances, Catalog, groupNames, restockShops, sweepRooms } from './economy.js';
 import { addNote, getMemory } from '../npc/memory.js';
@@ -159,7 +160,7 @@ export class Game {
   constructor(
     public world: World,
     private brain: NpcBrain,
-    private opts: { random?: () => number; scriptedDelayMs?: number; aiand?: LiveModel } = {},
+    private opts: { random?: () => number; scriptedDelayMs?: number; aiand?: LiveModel; ai?: Pick<AIService, 'status' | 'ping'> } = {},
   ) {
     this.catalog = new Catalog();
     this.catalog.load();
@@ -651,6 +652,9 @@ export class Game {
         break;
       case 'aimodel':
         if (this.isAdmin(s)) return this.aiModel(s, rest);
+        break;
+      case 'aiping':
+        if (this.isAdmin(s)) return this.aiPing(s);
         break;
     }
     if (VERBS[verb]) {
@@ -1157,6 +1161,7 @@ export class Game {
       s.out('  aistats: AI calls, latency and fallbacks per player, last 24 hours.');
       s.out('  aibench [models | model ...]: time the same chat with Tilly on ai& models.');
       s.out('  aimodel [model]: show or switch the ai& model until restart.');
+      s.out('  aiping: one tiny request to each AI provider, to see which work.');
     }
   }
 
@@ -1224,6 +1229,16 @@ export class Game {
   }
   private benchRunning = false;
 
+  /** Admin: one tiny request to each AI provider, to see which answer and how fast. */
+  private async aiPing(s: Session): Promise<void> {
+    if (!this.opts.ai) return s.out('No AI service.');
+    s.out('Pinging each AI provider...');
+    for (const r of await this.opts.ai.ping()) {
+      const state = !r.configured ? c.error('no key set') : r.ok ? `ok, ${r.latencyMs} ms` : c.error(`failed after ${r.latencyMs} ms: ${r.error}`);
+      s.out(`  ${r.name.padEnd(7)} ${r.model}  ${state}`);
+    }
+  }
+
   /** Admin: shows or switches the ai& model in use, until the next restart (AIAND_MODEL in .env makes it stick). */
   private aiModel(s: Session, rest: string): void {
     const aiand = this.opts.aiand;
@@ -1248,6 +1263,21 @@ export class Game {
         WHERE u.created_at > now() - interval '24 hours'
         GROUP BY p.name ORDER BY calls DESC`,
     );
+    // Which AI providers are set up, in the order they're tried, and how each last went.
+    const providers = this.opts.ai?.status() ?? [];
+    if (providers.length) {
+      s.out(c.title('AI providers, in the order tried'));
+      for (const pr of providers) {
+        const state = !pr.configured
+          ? c.error('no key set')
+          : !pr.last
+            ? c.dim('not called since the last restart')
+            : pr.last.ok
+              ? `ok, ${pr.last.latencyMs} ms, ${Math.round((Date.now() - pr.last.at) / 60000)} min ago`
+              : c.error(`failed ${Math.round((Date.now() - pr.last.at) / 60000)} min ago: ${pr.last.error}`);
+        s.out(`  ${pr.name.padEnd(7)} ${pr.model}  ${state}`);
+      }
+    }
     if (!rows.length) return s.out('No NPC conversations in the last 24 hours.');
     s.out(c.title('NPC lines, last 24 hours'));
     s.out(c.dim('  player           lines  ai  per hr  fallback  avg ms  tokens in/out   cost at paid rates'));
@@ -1260,7 +1290,7 @@ export class Game {
         `  ${String(r.name).padEnd(16)} ${String(r.calls).padStart(5)} ${String(r.ai_calls).padStart(3)} ${perHour.padStart(7)} ${`${fb}%`.padStart(9)} ${String(r.avg_ms).padStart(7)}  ${`${r.tin}/${r.tout}`.padStart(13)}   $${cost.toFixed(5)}`,
       );
     }
-    s.out(c.dim('  Free tier means $0 actual; the last column is what it would cost on paid Groq.'));
+    s.out(c.dim('  ai& and free tiers cost $0; the last column is what it would cost at paid Groq rates, for reference.'));
     const byNpc = await query(
       `SELECT npc_id, count(*)::int AS calls, count(*) FILTER (WHERE provider <> 'scripted')::int AS ai_calls
          FROM ai_usage WHERE created_at > now() - interval '24 hours' GROUP BY npc_id ORDER BY calls DESC`,

@@ -281,6 +281,7 @@ describe('Gallowmere end to end', () => {
         return { text: reply('Mind Gerald, dearie.', { type: 'none' }, 'pats the heron'), tokensIn: 1, tokensOut: 1 };
       },
     };
+    const origAi = (app.game as any).opts.ai;
     (app.game as any).opts.aiand = fake;
     try {
       const bob = await login('Bob');
@@ -298,9 +299,25 @@ describe('Gallowmere end to end', () => {
       await shane.do('aimodel openai/gpt-oss-120b', /ai& model is now openai\/gpt-oss-120b/);
       expect(fake.model).toBe('openai/gpt-oss-120b');
       await shane.do('aimodel', /ai& model in use: openai\/gpt-oss-120b/);
+      // aistats leads with each provider: whether it has a key, and how its last call went.
+      (app.game as any).opts.ai = {
+        status: () => [
+          { name: 'aiand', model: 'deepseek-ai/deepseek-v4-flash', configured: true, last: { ok: true, at: Date.now(), latencyMs: 2100 } },
+          { name: 'groq', model: 'llama-3.1-8b-instant', configured: false },
+          { name: 'gemini', model: 'gemini-2.5-flash-lite', configured: true, last: { ok: false, at: Date.now(), error: 'Gemini API error 403: key revoked', latencyMs: 90 } },
+        ],
+      };
+      (app.game as any).opts.ai.ping = async () => [
+        { name: 'aiand', model: 'deepseek-ai/deepseek-v4-flash', configured: true, ok: true, latencyMs: 900 },
+        { name: 'groq', model: 'llama-3.1-8b-instant', configured: true, ok: false, latencyMs: 120, error: 'Groq API error 401: Invalid API Key' },
+        { name: 'gemini', model: 'gemini-2.5-flash-lite', configured: false },
+      ];
+      await shane.do('aiping', /aiand +deepseek-ai\/deepseek-v4-flash  ok, 900 ms[\s\S]*groq +llama-3.1-8b-instant  failed after 120 ms: Groq API error 401: Invalid API Key[\s\S]*gemini +gemini-2.5-flash-lite  no key set/);
+      await shane.do('aistats', /AI providers, in the order tried[\s\S]*aiand +deepseek-ai\/deepseek-v4-flash  ok, 2100 ms[\s\S]*groq +llama-3.1-8b-instant  no key set[\s\S]*gemini +gemini-2.5-flash-lite  failed 0 min ago: Gemini API error 403: key revoked/);
       await shane.close();
     } finally {
       (app.game as any).opts.aiand = undefined;
+      (app.game as any).opts.ai = origAi;
     }
   });
 

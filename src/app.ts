@@ -72,7 +72,7 @@ export async function createApp(
     },
   });
 
-  const game = new Game(world, brain, { aiand: aiand && 'models' in aiand ? aiand : undefined });
+  const game = new Game(world, brain, { aiand: aiand && 'models' in aiand ? aiand : undefined, ai });
   await game.init();
 
   const app = express();
