@@ -11,7 +11,7 @@ import { addNote, getMemory } from '../npc/memory.js';
 import { isFlagged } from './filter.js';
 import { Session, type Connection } from './session.js';
 import { c, capitalize, listJoin, sanitize, stripAnsi } from './text.js';
-import { DIR_SHORT, OPPOSITE, World, cleanTarget, looseMatch, type Candidate, type Direction, type Feature, type Npc } from './world.js';
+import { DIR_SHORT, OPPOSITE, World, cleanTarget, distance, looseMatch, type Candidate, type Direction, type Feature, type Npc } from './world.js';
 import { findItem } from './commerce.js';
 import { listJoin as orList } from './text.js';
 
@@ -56,6 +56,24 @@ const BANNER_NARROW = [
 ];
 
 /** Verbs for doing things to people and things, mapped to the action names rooms.json uses. */
+/**
+ * Commands a typo may be read as. Only harmless ones: a slip should never buy, sell, give,
+ * drop, fight or quit for you.
+ */
+const FORGIVING = [
+  'look', 'examine', 'say', 'ask', 'talk', 'tell', 'list', 'wares', 'inventory', 'help', 'score', 'who', 'hint',
+  'appraise', 'balance', 'emote', 'north', 'south', 'east', 'west', 'down',
+  'read', 'search', 'smell', 'listen', 'touch', 'knock', 'climb', 'hello', 'greetings',
+];
+
+/** The one harmless command a typed word is a single slip away from, if there is exactly one. */
+export function forgiveCommand(word: string): string | null {
+  const w = word.toLowerCase();
+  if (w.length < 3) return null;
+  const close = FORGIVING.filter((c) => c !== w && distance(w, c) <= 1);
+  return close.length === 1 ? close[0] : null;
+}
+
 const VERBS: Record<string, string> = {
   take: 'take', get: 'take', grab: 'take', steal: 'take', pick: 'take', pocket: 'take', yank: 'take',
   touch: 'touch', feel: 'touch', pat: 'touch', stroke: 'touch', poke: 'touch', rub: 'touch', prod: 'touch',
@@ -120,7 +138,7 @@ const HELP: Record<string, string> = {
   say: "say <text> (or ' <text>): speak to everyone in the room. Name someone in it and they answer: say hi guard. A bare greeting works too: hello Morda.",
   emote: 'emote <text> (or : <text>): act it out. ": leans on the bar" shows "Shane leans on the bar".',
   talk: 'talk <npc> <text> (or say to <npc> <text>): speak to someone directly. talk guard on its own just says hello.',
-  ask: 'ask <npc> about <topic>: ask an NPC about something.',
+  ask: 'ask <npc> about <topic>, or ask <npc> <question>: ask someone something. Alone with someone, the name can be left off.',
   things: 'Things listed under You see can be used: look, touch, take, open, push, knock, read, search, smell, listen, sit, climb, use, kick. Looking at something shows what it responds to.',
   items: 'inventory (i): what you carry.  take <item>, drop <item>, give <item or coins> to <someone>.  eat, drink, light, read, use, open things you carry.',
   shops: 'list: what a shopkeeper sells.  buy <item>, or haggle: buy rope for 3.  sell <item>, or sell lamp for 5.  appraise <item>.  During a haggle: offer <amount>, accept, walk away.',
@@ -525,7 +543,7 @@ export class Game {
 
   // ---------------------------------------------------------------- commands
 
-  async command(s: Session, line: string): Promise<void> {
+  async command(s: Session, line: string, retried = false): Promise<void> {
     if (!line) return;
     line = this.expandAlias(s, line);
 
@@ -562,6 +580,12 @@ export class Game {
       case 'evening':
       case 'morning':
       case 'oi':
+      case 'bye':
+      case 'goodbye':
+      case 'farewell':
+      case 'thanks':
+      case 'thank':
+      case 'cheers':
         // A bare greeting is spoken out loud: "hi guard" says "hi guard".
         return this.say(s, line);
       case 'attack':
@@ -669,6 +693,9 @@ export class Game {
       if (['eat', 'drink', 'light', 'read', 'use', 'open', 'smell'].includes(action) && (await this.commerce.itemAction(s, action, rest))) return;
       return this.interact(s, action, verb, rest);
     }
+    // One small slip in a harmless command ("lok", "aks", "inventroy") is read as what was meant.
+    const fix = retried ? null : forgiveCommand(verb);
+    if (fix) return this.command(s, rest ? `${fix} ${rest}` : fix, true);
     const huh = ['Huh?', 'What?', "That doesn't mean anything here.", 'The fog swallows your words. Try help.'];
     s.out(huh[Math.floor(this.rand() * huh.length)]);
   }
@@ -974,18 +1001,54 @@ export class Game {
     void this.respondOrHaggle(s, npc, text);
   }
 
+  /**
+   * "ask tilly who runs the docks?", "ask old tilly about the heron", or just "ask who runs the docks?"
+   * when there's only one person to ask. A question is passed on word for word.
+   */
   private ask(s: Session, rest: string): void {
-    const m = rest.match(/^(\S+)\s+(?:about\s+)?(.+)$/i);
-    if (!m) return s.out('Try: ask morda about the town');
-    const npc = this.world.findNpc(s.player!.roomId, m[1]);
-    if (!npc) return s.out("There's nobody like that here.");
-    const topic = m[2].trim();
-    if (this.blockIfFlagged(s, topic)) return;
     const p = s.player!;
-    s.out(`You ask ${c.npc(npc.name)} about ${topic}.`);
-    this.toRoom(p.roomId, `${c.player(p.name)} asks ${c.npc(npc.name)} about ${topic}.`, s);
-    void this.npcRespond(s, npc, `What can you tell me about ${topic}?`);
+    const words = rest.replace(/^(to|the)\s+/i, '').trim().split(' ').filter(Boolean);
+    if (!words.length) return s.out('Ask whom what? Try: ask tilly about the heron, or ask tilly who runs the docks?');
+
+    // Whoever the opening words name: "old tilly", "tilly," or a near miss like "tily".
+    let npc: Npc | undefined;
+    let used = 0;
+    const here = this.world.npcsIn(p.roomId);
+    const bare = (w: string) => w.toLowerCase().replace(/[,:;.!?]+$/, '');
+    for (let n = Math.min(3, words.length); n >= 1 && !npc; n--) {
+      const phrase = words.slice(0, n).map(bare).join(' ');
+      npc = here.find((x) => [x.name, x.card.listName, ...x.card.keywords].some((k) => k && k.toLowerCase() === phrase));
+      if (npc) used = n;
+    }
+    if (!npc) {
+      const hit = looseMatch(bare(words[0]), here.map((x) => ({ name: x.name, keywords: [x.name, ...x.card.keywords].filter((k) => !k.includes(' ')), ref: x })));
+      if (hit && 'ref' in hit) {
+        npc = hit.ref;
+        used = 1;
+      }
+    }
+    // No name: the person you're talking to, or the only one here.
+    if (!npc) npc = this.conversationPartner(s, rest) ?? this.onlyListener(s);
+    if (!npc) {
+      return s.out(here.length > 1 ? `Ask whom? Name them: ask ${here[0].card.keywords[0]} ...` : "There's nobody here to ask.");
+    }
+
+    const rem = words.slice(used).join(' ').replace(/^[,:;]\s*/, '').trim();
+    const who = capitalize(npc.card.listName ?? npc.name);
+    if (!rem) return s.out(`Ask ${who} what?`);
+    if (this.blockIfFlagged(s, rem)) return;
+    const about = rem.match(/^about\s+(.+)$/i);
+    if (about) {
+      const topic = about[1].replace(/[?.!]+$/, '');
+      s.out(`You ask ${c.npc(who)} about ${topic}.`);
+      this.toRoom(p.roomId, `${c.player(p.name)} asks ${c.npc(who)} about ${topic}.`, s);
+      return void this.respondOrHaggle(s, npc, `What can you tell me about ${topic}?`);
+    }
+    s.out(`You ask ${c.npc(who)}, ${c.speech(`"${rem}"`)}`);
+    this.toRoom(p.roomId, `${c.player(p.name)} asks ${c.npc(who)}, ${c.speech(`"${rem}"`)}`, s);
+    void this.respondOrHaggle(s, npc, rem);
   }
+
 
   /** Mid haggle, talk to the shopkeeper goes through the haggle so they can answer with a price. */
   private async respondOrHaggle(s: Session, npc: Npc, text: string): Promise<void> {

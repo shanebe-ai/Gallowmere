@@ -58,7 +58,7 @@ function words(text: string): string[] {
 }
 
 /** Edit distance counting a swapped pair of letters as one typo ("sing" for "sign"). */
-function distance(a: string, b: string): number {
+export function distance(a: string, b: string): number {
   if (Math.abs(a.length - b.length) > 2) return 3;
   const d: number[][] = Array.from({ length: a.length + 1 }, (_, i) => Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)));
   for (let i = 1; i <= a.length; i++) {

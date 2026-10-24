@@ -496,6 +496,34 @@ describe('Gallowmere economy end to end', () => {
     await p.close();
   });
 
+  it('ask works with or without a name, passes the question on as typed, and forgives a slip', async () => {
+    npcFn = () => say('Ask the watch, dearie.');
+    const p = await create('Abe', 'curio_shop');
+    const heard = () => now(groq.calls.at(-1)!);
+    await p.do('ask tilly who is the captain?', /You ask Old Tilly, "who is the captain\?"/);
+    await p.waitFor(/Tilly says to you, "Ask the watch, dearie\."/);
+    expect(heard()).toContain('says to you: "who is the captain?"');
+    await p.do('ask old tilly, who runs the docks?', /You ask Old Tilly, "who runs the docks\?"/);
+    await p.waitFor(/Ask the watch/);
+    await p.do('ask tily what is gerald', /You ask Old Tilly, "what is gerald"/);
+    await p.waitFor(/Ask the watch/);
+    await p.do('ask who keeps the bridge?', /You ask Old Tilly, "who keeps the bridge\?"/);
+    await p.waitFor(/Ask the watch/);
+    await p.do('ask tilly about the heron', /You ask Old Tilly about the heron\./);
+    await p.waitFor(/Ask the watch/);
+    expect(heard()).toContain('What can you tell me about the heron?');
+    await p.do('aks tilly who is the captain?', /You ask Old Tilly, "who is the captain\?"/);
+    await p.waitFor(/Ask the watch/);
+    await p.do('ask tilly', /Ask Old Tilly what\?/);
+    await p.do('lok', /Tilly's Curios/);
+    await p.do('bye', /You say, "bye"/);
+    await p.waitFor(/Ask the watch/);
+    // A slip is never read as something with consequences.
+    await p.do('atack tilly', /Huh\?|What\?|doesn't mean|fog swallows/);
+    await p.do('bu rope', /Huh\?|What\?|doesn't mean|fog swallows/);
+    await p.close();
+  });
+
   it('the rats answer with actions only, never words', async () => {
     npcFn = () => JSON.stringify({ say: 'Hello, human.', emote: 'sniffs at your boot', action: { type: 'none' } });
     const p = await create('Zed', 'sewer_grate');

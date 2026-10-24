@@ -74,9 +74,10 @@ hello guard
 say to guard nice weather
 talk morda I'm looking for work
 ask morda about the docks
+ask morda who runs the docks?
 ```
 
-Once you've got Morda talking, you can keep going without her name. Just `say` it, and she'll know it's for her. Walk away, or start talking to someone else by name, and she'll let you go.
+Once you've got Morda talking, you can keep going without her name. Just `say` it, or `ask` it, and she'll know it's for her. If she's the only soul in the room, she'll assume you mean her anyway. Walk away, or start talking to someone else by name, and she'll let you go.
 
 **Act it out:** `emote leans on the bar`, or `: leans on the bar`. The room sees *"Shane leans on the bar."*
 
@@ -218,7 +219,7 @@ Gallowmere isn't a nice town, but it has rules.
 | Move | `n` `s` `e` `w` `u` `d`, or the full word |
 | Say | `say hello`, `' hello` |
 | Talk to someone | `' evening Morda`, `hello guard`, `talk morda ...` |
-| Ask about something | `ask morda about the docks` |
+| Ask about something | `ask morda about the docks` or `ask morda who runs the docks?` |
 | Act | `: leans on the bar`, `emote ...` |
 | Use things | `take`, `touch`, `open`, `pull`, `push`, `knock`, `read`, `search`, `smell`, `sit`, `climb`, `play`, `drink`, `kick` |
 | Your pack | `i`, `take`, `drop`, `give bread to bob`, `give 2 coins to morda` |

@@ -5,6 +5,17 @@ import { RateBucket } from '../src/ai/service.js';
 import { foldNote, MAX_NOTES } from '../src/npc/memory.js';
 import { buildPrompt, intentOf, NpcBrain, parseReply, undash } from '../src/npc/brain.js';
 
+describe('forgiving command typos', () => {
+  it('reads one slip in a harmless command as what was meant, and nothing risky', async () => {
+    const { forgiveCommand } = await import('../src/game/game.js');
+    expect(forgiveCommand('lok')).toBe('look');
+    expect(forgiveCommand('aks')).toBe('ask');
+    expect(forgiveCommand('nroth')).toBe('north');
+    expect(forgiveCommand('inventroy')).toBe('inventory');
+    for (const w of ['kil', 'atack', 'selll', 'giv', 'qit', 'byu', 'go', 'xyzzy']) expect(forgiveCommand(w)).toBeNull();
+  });
+});
+
 describe('no dashes in what townsfolk say', () => {
   it('turns dashes into commas and leaves hyphenated words alone', () => {
     expect(undash('Come in, come in\u2014mind the stoat.')).toBe('Come in, come in, mind the stoat.');

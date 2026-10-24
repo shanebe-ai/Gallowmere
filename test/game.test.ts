@@ -211,7 +211,7 @@ describe('Gallowmere end to end', () => {
       throw new Error('503');
     };
     const p = await login('Shane', 'drowned_rat');
-    await p.do('ask morda about the sewers', /You ask Morda about the sewers/);
+    await p.do('ask morda about the sewers', /You ask Morda the barkeep about the sewers/);
     // A question, so the fallback is one of Morda's answers to questions.
     await p.waitFor(/Ask me again when I'm less busy/);
     const { rows } = await query("SELECT provider, fallback_used FROM ai_usage ORDER BY id DESC LIMIT 1");
