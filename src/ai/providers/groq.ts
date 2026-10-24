@@ -11,6 +11,10 @@ export class GroqProvider implements ChatProvider {
     public timeoutMs: number,
   ) {}
 
+  private thinks(): boolean {
+    return this.model.includes('gpt-oss');
+  }
+
   isConfigured(): boolean {
     return this.apiKey.length > 0;
   }
@@ -30,7 +34,9 @@ export class GroqProvider implements ChatProvider {
           { role: 'user', content: req.user },
         ],
         temperature: 0.8,
-        max_tokens: req.maxTokens,
+        // gpt-oss models always think a little first: keep it light and leave room for it.
+        max_tokens: this.thinks() ? req.maxTokens * 4 : req.maxTokens,
+        ...(this.thinks() ? { reasoning_effort: 'low' } : {}),
         ...(req.json ? { response_format: { type: 'json_object' } } : {}),
       }),
     });

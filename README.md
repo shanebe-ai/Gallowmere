@@ -139,10 +139,10 @@ Set in `.env`. Only the database and AI keys need changing for most setups.
 | `PORT` | 3004 | Web port |
 | `TELNET_PORT` | 4004 | Telnet port |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | localhost, 5432, gallowmere, gallowmere | PostgreSQL connection |
-| `AIAND_API_KEY`, `AIAND_MODEL` | none, deepseek-ai/deepseek-v4-flash | Main AI provider when set ([ai&](https://aiand.com)) |
+| `AIAND_API_KEY`, `AIAND_MODEL` | none, google/gemma-4-31b-it | Main AI provider when set ([ai&](https://aiand.com)) |
 | `AIAND_REASONING_EFFORT`, `AIAND_RPM`, `AIAND_TIMEOUT_MS` | none, 300, 8000 | Thinking kept off for fast replies; rate guard; timeout |
-| `GROQ_API_KEY`, `GROQ_MODEL` | none, llama-3.1-8b-instant | Next AI provider in line |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | none, gemini-2.5-flash-lite | Last AI provider before scripted lines |
+| `GROQ_API_KEY`, `GROQ_MODEL` | none, openai/gpt-oss-20b | Next AI provider in line |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | none, gemini-3.5-flash-lite | Last AI provider before scripted lines |
 | `AI_DAILY_CAP_PER_PLAYER` | 200 | AI lines per player per day |
 | `AI_DAILY_CAP_GLOBAL` | 5000 | AI lines across all players per day |
 | `GROQ_RPM`, `GEMINI_RPM` | 25, 12 | Rate guards per minute |

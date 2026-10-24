@@ -29,7 +29,8 @@ export class GeminiProvider implements ChatProvider {
         contents: [{ role: 'user', parts: [{ text: req.user }] }],
         generationConfig: {
           temperature: 0.8,
-          maxOutputTokens: req.maxTokens,
+          // Newer Gemini models think first, and thinking counts against this cap; leave room.
+          maxOutputTokens: req.maxTokens * 4,
           ...(req.json ? { responseMimeType: 'application/json' } : {}),
         },
       }),
@@ -41,11 +42,12 @@ export class GeminiProvider implements ChatProvider {
     }
 
     const data = (await res.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }>;
       usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
     };
     return {
-      text: data.candidates?.[0]?.content?.parts?.[0]?.text ?? '',
+      // Skip any thought parts; the answer is the text that isn't one.
+      text: data.candidates?.[0]?.content?.parts?.find((p) => p.text && !p.thought)?.text ?? '',
       tokensIn: data.usageMetadata?.promptTokenCount ?? 0,
       tokensOut: data.usageMetadata?.candidatesTokenCount ?? 0,
     };
