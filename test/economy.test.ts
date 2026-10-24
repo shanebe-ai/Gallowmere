@@ -467,13 +467,49 @@ describe('Gallowmere economy end to end', () => {
     await p.close();
   });
   it('a mistyped name still reaches them', async () => {
+    npcFn = (req) => say(`You said: ${now(req).split('"')[1]}`);
     const p = await create('Vic', 'curio_shop');
     await p.do('say hi to old tillt', /You say, "hi to old tillt"/);
-    await p.waitFor(/Hello yourself|Mind the heron|gummy smile/);
+    await p.waitFor(/Tilly says to you, "You said: hi to old tillt"/);
     await p.close();
   });
 
-  it('alone with one person, plain speech goes to them and gets an answer in kind', async () => {
+  it('light characters talk through the AI but keep no notes and take no actions', async () => {
+    npcFn = (req) => {
+      if (req.user.includes('[Your notes')) return say('I should not see notes.');
+      if (/"remember"|"refuse"/.test(req.system)) return say('I should not be offered actions.');
+      if (!req.system.includes('Gerald')) return say('Where is my card?');
+      // A light character tries to slip in an action anyway: the engine ignores it.
+      return JSON.stringify({ say: 'Mind Gerald, dearie.', emote: 'pats the heron', action: { type: 'remember', note: 'touched Gerald' } });
+    };
+    const p = await create('Wyn', 'curio_shop');
+    await p.do('say hello', /You say, "hello"/);
+    await p.waitFor(/Tilly pats the heron\.[\s\S]*Tilly says to you, "Mind Gerald, dearie\."/);
+    await p.do('say what is that bird', /You say/);
+    await p.waitFor(/Mind Gerald/);
+    // The second turn carries the first in its recent exchange, so she can follow along.
+    expect(groq.calls.at(-1)!.user).toContain('Tilly: Mind Gerald, dearie.');
+    const { rows } = await query("SELECT count(*)::int AS n FROM npc_memory m JOIN players p ON p.id = m.player_id WHERE m.npc_id='tilly' AND p.name='Wyn'");
+    expect(rows[0].n).toBe(0);
+    await p.do('poke tilly', /You poke Old Tilly/);
+    await p.waitFor(/Mind Gerald/);
+    await p.close();
+  });
+
+  it('the rats answer with actions only, never words', async () => {
+    npcFn = () => JSON.stringify({ say: 'Hello, human.', emote: 'sniffs at your boot', action: { type: 'none' } });
+    const p = await create('Zed', 'sewer_grate');
+    await p.do('say hello rats', /You say/);
+    const seen = await p.waitFor(/The rats sniffs at your boot\.|The rats sniff at your boot\./);
+    await new Promise((r) => setTimeout(r, 300));
+    expect(seen + p.buf).not.toMatch(/Hello, human/);
+    await p.close();
+  });
+
+  it('when the AI is down, a light character still answers in kind', async () => {
+    npcFn = () => {
+      throw new Error('503');
+    };
     const tilly = app.game.world.npcs.get('tilly')!.card as any;
     const p = await create('Wen', 'curio_shop');
     const answered = (lines: string[]) => new RegExp(lines.map((l) => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'));

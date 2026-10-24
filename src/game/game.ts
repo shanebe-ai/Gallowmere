@@ -802,7 +802,7 @@ export class Game {
       this.toRoom(p.roomId, `${c.player(p.name)} ${seen}`, s);
       if (typeof a === 'object' && a.react) {
         const event = a.event ?? `${VERB_SEEN[action]} ${feature.name}`;
-        const witness = this.world.npcsIn(p.roomId).find((n) => n.kind === 'ai');
+        const witness = this.world.npcsIn(p.roomId).find((n) => n.kind === 'ai') ?? this.world.npcsIn(p.roomId).find((n) => n.kind === 'light');
         if (witness) void this.npcRespond(s, witness, event, 'event');
       }
       return;
@@ -814,7 +814,7 @@ export class Game {
       const name = npc.card.listName ?? npc.name;
       s.out(`You ${mine} ${name}.`);
       this.toRoom(p.roomId, `${c.player(p.name)} ${theirs} ${name}.`, s);
-      if (npc.kind === 'ai') void this.npcRespond(s, npc, `${theirs} you`, 'event');
+      if (npc.kind !== 'scripted') void this.npcRespond(s, npc, `${theirs} you`, 'event');
       else void this.npcRespond(s, npc, typed);
       return;
     }
@@ -911,7 +911,7 @@ export class Game {
     const hits = this.world
       .npcsIn(roomId)
       .filter((n) => n.card.keywords.some((k) => lower.includes(` ${k} `)));
-    return hits.find((n) => n.kind === 'ai') ?? hits[0];
+    return hits.find((n) => n.kind === 'ai') ?? hits.find((n) => n.kind === 'light') ?? hits[0];
   }
 
   private attack(s: Session, rest: string): void {
@@ -1019,13 +1019,15 @@ export class Game {
 
     s.aiPending = true;
     try {
-      const memory = await getMemory(npc.id, p.id);
+      // Light characters talk freely but keep nothing: no notes, no standing, no actions.
+      const light = npc.kind === 'light';
+      const memory = light ? { notes: [], summary: '' } : await getMemory(npc.id, p.id);
       const others = [
         ...this.playersIn(roomId, s).map((o) => o.player!.name),
         ...this.world.npcsIn(roomId).filter((n) => n.id !== npc.id).map((n) => n.name),
       ];
       const card = npc.card as any;
-      const allowed: ActionType[] = ['none', 'remember', 'refuse', ...(trade ? TRADE_ACTIONS : [])];
+      const allowed: ActionType[] = light ? ['none'] : ['none', 'remember', 'refuse', ...(trade ? TRADE_ACTIONS : [])];
       const out = await this.brain.turn({
         npcId: npc.id,
         npc: {
@@ -1036,9 +1038,12 @@ export class Game {
           wants: card.wants,
           secret: card.secret,
           knows: card.knows,
+          quirks: card.quirks,
           tradeStyle: card.tradeStyle,
           scripted: card.scripted,
           replies: card.replies,
+          light,
+          mute: !!card.mute,
         },
         player: { id: p.id, name: p.name },
         memory,
@@ -1059,15 +1064,19 @@ export class Game {
         return out;
       }
 
+      // "the butcher" opens a sentence as "The butcher".
+      const who = capitalize((card.speaker as string | undefined) ?? npc.name);
       if (out.emote) {
-        let emote = out.emote.replace(new RegExp(`^${npc.name}\\s+`, 'i'), '');
+        const names = [npc.name, card.speaker, card.listName].filter(Boolean).map((n: string) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        let emote = out.emote.replace(new RegExp(`^(${names.join('|')})\\s+`, 'i'), '');
         if (!/[.!?"]$/.test(emote)) emote += '.';
-        this.toRoom(roomId, c.npc(`${npc.name} ${emote}`));
+        this.toRoom(roomId, c.npc(`${who} ${emote}`));
+        if (!out.say) this.pushRecent(key, `(${npc.name} ${emote})`);
       }
       if (out.say) {
         for (const o of this.playersIn(roomId)) {
           const to = o === s ? 'you' : p.name;
-          o.out(`${c.npc(npc.name)} says to ${to}, ${c.speech(`"${out.say}"`)}`);
+          o.out(`${c.npc(who)} says to ${to}, ${c.speech(`"${out.say}"`)}`);
         }
         this.pushRecent(key, `${npc.name}: ${out.say}`);
       }

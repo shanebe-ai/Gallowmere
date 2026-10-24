@@ -328,8 +328,9 @@ export class Commerce {
     if (!ok) return s.out("You aren't carrying that anymore.");
     s.out(`You give ${item.template.name} to ${toName}.`);
     this.game.toRoom(p.roomId, `${c.player(p.name)} gives ${item.template.name} to ${toName}.`, s);
-    if (npc!.kind === 'ai') {
-      if (item.template.price >= 2) await nudgeStanding(npc!.id, p.id, 1, true);
+    if (npc!.kind !== 'scripted') {
+      // Only full characters keep standing; light ones just react.
+      if (npc!.kind === 'ai' && item.template.price >= 2) await nudgeStanding(npc!.id, p.id, 1, true);
       await this.game.npcRespond(s, npc!, `hands you ${item.template.name} as a gift`, 'event');
     } else {
       await this.game.npcRespond(s, npc!, 'thanks');

@@ -21,7 +21,7 @@ interface NpcSeed {
   id: string;
   room: string;
   name: string;
-  kind: 'ai' | 'scripted';
+  kind: 'ai' | 'light' | 'scripted';
   card: Record<string, unknown>;
 }
 

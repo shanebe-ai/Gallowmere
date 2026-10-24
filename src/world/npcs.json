@@ -301,7 +301,7 @@
     "id": "tilly",
     "room": "curio_shop",
     "name": "Tilly",
-    "kind": "scripted",
+    "kind": "light",
     "card": {
       "keywords": [
         "tilly",
@@ -345,14 +345,21 @@
           "\"Eh? Speak up, dearie. Or don't. Buying or selling?\"",
           "Tilly hums to herself and polishes a ring that will never shine."
         ]
-      }
+      },
+      "job": "pawnbroker, keeper of Tilly's Curios off Market West",
+      "personality": "ancient and doddering on the surface, sharp as a tack underneath; nosy, a terrible gossip about who pawned what and why; sentimental about nothing except her stuffed heron Gerald",
+      "speech": "creaky and rambling, calls everyone dearie, wanders off into stories about old customers, then snaps back with sudden sharp clarity",
+      "wants": "to buy cheap, sell dear, hear the town's gossip, and for nobody to touch Gerald",
+      "secret": "Gerald the heron has a hollow belly where she hides the best things anyone ever pawned with her",
+      "knows": "her prices are fixed and she never haggles, so anyone who wants to trade should ask for her list, or simply buy or sell; she has had the watch captain's wedding ring, a silver candlestick from the church and a drowned man's single good boot through her hands; Hook the fence undercuts her and she can't stand him; banked coin at the counting house is safe from the plague cart",
+      "quirks": "talks to Gerald as if he answers; keeps a tin of boiled sweets she never offers anyone; one milky eye and one sharp one; remembers the day the plague cart first came through and brings it up at odd moments"
     }
   },
   {
     "id": "ingelram",
     "room": "counting_house",
     "name": "Ingelram",
-    "kind": "scripted",
+    "kind": "light",
     "card": {
       "keywords": [
         "ingelram",
@@ -393,14 +400,21 @@
           "Ingelram lets you finish, then goes on writing.",
           "\"I'm sure that's very interesting. Deposit, withdraw or balance?\""
         ]
-      }
+      },
+      "job": "clerk of the counting house, the town's only bank",
+      "personality": "dry, exact and joyless, faintly contemptuous of anyone who carries coin in their pocket, secretly proud of his ledgers and quietly funny if you catch it",
+      "speech": "precise and clipped, numbers where words would do, never exclaims, never hurries",
+      "wants": "every column to balance and to be left alone to make it so",
+      "secret": "he skims a fraction of a copper from withdrawals into a private ledger only he reads",
+      "knows": "at his window people deposit, withdraw or ask their balance; withdrawals cost one copper in twenty; coin in the counting house is safe from the plague cart and coin in a pocket is not; he knows roughly who in town is in debt and will only hint at it",
+      "quirks": "weighs every coin twice; keeps a dead fly in his inkwell and will not remove it; has never once been surprised by a number and says so"
     }
   },
   {
     "id": "butcher",
     "room": "butchers_alley",
     "name": "the butcher",
-    "kind": "scripted",
+    "kind": "light",
     "card": {
       "keywords": [
         "butcher"
@@ -439,14 +453,22 @@
           "The butcher brings the cleaver down. Thunk.",
           "He stares at you until you stop talking."
         ]
-      }
+      },
+      "job": "butcher of Butcher's Alley",
+      "personality": "huge, calm and unsettling, with a deadpan grim wit that surfaces rarely and lands hard",
+      "speech": "very few words, flat, three to six words at a time, sometimes just a grunt in the emote and nothing said",
+      "wants": "quiet, a sharp cleaver, and customers who don't ask where the meat came from",
+      "secret": "he buys carcasses from the plague cart men at night and asks nothing about them",
+      "knows": "he has nothing for sale today; the plague cart comes through at dusk; who in the alley owes him money",
+      "quirks": "names his cleavers and calls the big one Mother; hums something tuneless while he works; looks at people the way he looks at cuts of meat",
+      "speaker": "the butcher"
     }
   },
   {
     "id": "beggar",
     "room": "wet_lane",
     "name": "a beggar",
-    "kind": "scripted",
+    "kind": "light",
     "card": {
       "keywords": [
         "beggar",
@@ -486,14 +508,22 @@
           "The beggar mumbles about rats in the walls.",
           "\"Nobody listens to me. You're not listening either.\""
         ]
-      }
+      },
+      "job": "beggar huddled in a doorway on Wet Lane",
+      "personality": "wheedling and half mad, but sharper than anyone thinks; sees everything and is ignored by everyone; bleakly funny",
+      "speech": "ragged and rambling, says nobody listens to him, buries real information among nonsense",
+      "wants": "a copper, a dry doorway, and someone to actually listen",
+      "secret": "he was a watchman once and was thrown out for refusing a bribe",
+      "knows": "the watch at the north gate takes bribes; a man with a hook pin climbs the fish market ladder every night and comes down richer; the rats by the sewer grate are bigger than rats should be; Maud at Market East pays for honest work",
+      "quirks": "talks to the rain; has names for the rats; swears he once saw the plague cart driver's face and won't describe it",
+      "speaker": "the beggar"
     }
   },
   {
     "id": "rats",
     "room": "sewer_grate",
     "name": "some rats",
-    "kind": "scripted",
+    "kind": "light",
     "card": {
       "keywords": [
         "rat",
@@ -519,7 +549,15 @@
         "other": [
           "The rats squeak and ignore you."
         ]
-      }
+      },
+      "job": "a pack of fat sewer rats by the grate",
+      "personality": "fearless, curious and greedy, a little too clever for rats",
+      "wants": "food, small shiny things, anything anyone drops",
+      "knows": "the sewers and every crumb in them",
+      "quirks": "a big grey one with a torn ear leads the rest; they stand on their hind legs and stare; they creep closer when nobody is looking",
+      "speaker": "the rats",
+      "mute": true,
+      "speech": "none"
     }
   }
 ]

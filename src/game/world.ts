@@ -122,7 +122,7 @@ export interface Npc {
   id: string;
   roomId: string;
   name: string;
-  kind: 'ai' | 'scripted';
+  kind: 'ai' | 'light' | 'scripted';
   card: {
     keywords: string[];
     short: string;

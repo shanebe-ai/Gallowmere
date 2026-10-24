@@ -38,9 +38,12 @@ CREATE TABLE IF NOT EXISTS npcs (
   id        TEXT PRIMARY KEY,
   room_id   TEXT NOT NULL REFERENCES rooms(id),
   name      TEXT NOT NULL,
-  kind      TEXT NOT NULL CHECK (kind IN ('ai', 'scripted')),
+  kind      TEXT NOT NULL CHECK (kind IN ('ai', 'light', 'scripted')),
   card_json JSONB NOT NULL
 );
+-- Light characters (they talk through the AI but keep no memory) arrived after the first release.
+ALTER TABLE npcs DROP CONSTRAINT IF EXISTS npcs_kind_check;
+ALTER TABLE npcs ADD CONSTRAINT npcs_kind_check CHECK (kind IN ('ai', 'light', 'scripted'));
 
 CREATE TABLE IF NOT EXISTS npc_memory (
   npc_id     TEXT NOT NULL REFERENCES npcs(id) ON DELETE CASCADE,
