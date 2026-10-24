@@ -31,6 +31,8 @@ export class Session {
   /** The last thing this player looked at or handled, so "take it" works. */
   lastTarget: string | null = null;
   quitting = false;
+  /** A walk in progress (travel): any other command stops it. */
+  travelling: NodeJS.Timeout | null = null;
 
   constructor(public conn: Connection) {}
 

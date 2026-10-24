@@ -8,7 +8,7 @@ import { Combat, maxHealthFor, xpForLevel } from './combat.js';
 import { PlagueCart, type CartOptions } from './cart.js';
 import type { AIService } from '../ai/service.js';
 import { avg, BENCH_DEFAULTS, BENCH_LINES, runBench, type LiveModel } from '../ai/bench.js';
-import { balances, Catalog, groupNames, restockShops, sweepRooms } from './economy.js';
+import { balances, Catalog, deleteItem, groupNames, restockShops, sweepRooms, tx } from './economy.js';
 import { addNote, getMemory } from '../npc/memory.js';
 import { isFlagged } from './filter.js';
 import { Session, type Connection } from './session.js';
@@ -63,7 +63,7 @@ const BANNER_NARROW = [
  * drop, fight or quit for you.
  */
 const FORGIVING = [
-  'health', 'look', 'examine', 'say', 'ask', 'talk', 'tell', 'list', 'wares', 'inventory', 'help', 'score', 'who', 'hint',
+  'health', 'travel', 'look', 'examine', 'say', 'ask', 'talk', 'tell', 'list', 'wares', 'inventory', 'help', 'score', 'who', 'hint',
   'appraise', 'balance', 'emote', 'north', 'south', 'east', 'west', 'down',
   'read', 'search', 'smell', 'listen', 'touch', 'knock', 'climb', 'hello', 'greetings',
 ];
@@ -147,6 +147,7 @@ const HELP: Record<string, string> = {
   bank: 'At the counting house: deposit <amount or all>, withdraw <amount or all> (one copper in twenty), balance.',
   work: 'work: ask Maud at Market East for an odd job.  bribe <someone> <amount>: some people can be bought.',
   hint: 'hint: a nudge toward what to try next.',
+  travel: "travel <place>: walk somewhere you've been before, one room at a time (travel nave, travel tavern, travel bank). travel on its own lists the places you know. Type anything to stop. A pilgrim's token from Father Osmund takes you straight to the nave: crush token.",
   fight: 'attack <someone> (kill, k): start a fight.  flee: run for it.  consider <someone>: size them up.  health (hp): your wounds, your weapon and your odds.  wield <weapon>, wear <armour>, remove.  bandage: bind your wounds out of a fight. No fighting in the temple or the counting house.',
   death: 'If you die you wake in the Temple of Ash with a grave chill. Your goods stay on your corpse for 30 minutes (only yours for the first 10): loot corpse to get them back, or pay Father Osmund to recover them. Banked coin is always safe.',
   corpses: 'loot corpse: take what a body carried.  take corpse: carry it (heavy).  give corpse to osmund in the nave (or drop it in the ossuary): a burial fee.  sell corpse to butcher: better paid, frowned upon.  bounty: collect cutpurse bounties at the watch house.',
@@ -193,6 +194,7 @@ export class Game {
       ai?: Pick<AIService, 'status' | 'ping'>;
       combat?: { tickMs?: number; lifeMs?: number; streetFolk?: number };
       cart?: CartOptions;
+      travelStepMs?: number;
     } = {},
   ) {
     this.catalog = new Catalog();
@@ -293,6 +295,7 @@ export class Game {
   }
 
   async disconnect(s: Session): Promise<void> {
+    this.stopTravel(s);
     this.sessions.delete(s);
     const lt = this.loginTimers.get(s);
     if (lt) clearTimeout(lt);
@@ -362,6 +365,7 @@ export class Game {
     this.commerce.closeHaggle(p.id);
     p.roomId = roomId;
     await query('UPDATE players SET room_id=$2 WHERE id=$1', [p.id, roomId]);
+    this.visit(p.id, roomId);
     this.toRoom(roomId, arrival, s);
     await this.showRoom(s);
     this.updateStatus(s);
@@ -548,6 +552,7 @@ export class Game {
     const { rows } = await query('SELECT alias, expansion FROM player_aliases WHERE player_id=$1', [player.id]);
     s.aliases = new Map(rows.map((r) => [r.alias, r.expansion]));
     await this.combat.load(player);
+    this.visit(player.id, player.roomId);
 
     const token = randomBytes(24).toString('hex');
     this.tokens.set(token, { playerId: player.id, expires: Date.now() + TOKEN_TTL_MS });
@@ -630,6 +635,7 @@ export class Game {
 
   async command(s: Session, line: string, retried = false): Promise<void> {
     if (!line) return;
+    if (s.travelling && !retried) this.stopTravel(s, 'You stop walking.');
     line = this.expandAlias(s, line);
 
     if (line.startsWith("'") || line.startsWith('"')) return this.say(s, line.slice(1).trim());
@@ -639,7 +645,7 @@ export class Game {
     const verb = verbRaw.toLowerCase();
     let rest = restParts.join(' ').trim();
 
-    if (DIR_SHORT[verb]) return this.move(s, DIR_SHORT[verb]);
+    if (DIR_SHORT[verb]) return void (await this.move(s, DIR_SHORT[verb]));
 
     switch (verb) {
       case 'l':
@@ -652,7 +658,7 @@ export class Game {
         return target === null ? undefined : this.look(s, target);
       }
       case 'go':
-        if (DIR_SHORT[rest.toLowerCase()]) return this.move(s, DIR_SHORT[rest.toLowerCase()]);
+        if (DIR_SHORT[rest.toLowerCase()]) return void (await this.move(s, DIR_SHORT[rest.toLowerCase()]));
         return s.out('Go where? Try north, south, east, west, up or down.');
       case 'say':
         // "say to guard hello" is the same as "talk guard hello".
@@ -697,6 +703,17 @@ export class Game {
         return this.combat.remove(s, rest);
       case 'bandage':
         return this.combat.bandage(s);
+      case 'travel':
+      case 'walk':
+      case 'goto':
+        if (verb === 'walk' && /^away/i.test(rest)) return this.commerce.walkAway(s);
+        return this.travel(s, rest.replace(/^to\s+/i, ''));
+      case 'stop':
+        return s.travelling ? undefined : s.out("You're standing still already.");
+      case 'crush':
+      case 'break':
+        if (/token/i.test(rest)) return this.useToken(s);
+        break;
       case 'health':
       case 'hp':
       case 'body':
@@ -743,9 +760,6 @@ export class Game {
       case 'accept':
       case 'deal':
         return this.commerce.accept(s);
-      case 'walk':
-        if (/^away/i.test(rest)) return this.commerce.walkAway(s);
-        break;
       case 'decline':
       case 'refuse':
         return this.commerce.walkAway(s);
@@ -817,6 +831,7 @@ export class Game {
         rest = target;
       }
       // Your own things first, then things on the floor, then the room.
+      if (action === 'use' && /token/i.test(rest)) return this.useToken(s);
       if (action === 'take' && rest && (await this.combat.takeCorpse(s, rest))) return;
       if (action === 'take' && rest && (await this.commerce.take(s, rest))) return;
       if (['eat', 'drink', 'light', 'read', 'use', 'open', 'smell'].includes(action) && (await this.commerce.itemAction(s, action, rest))) return;
@@ -842,22 +857,22 @@ export class Game {
     return sanitize(args ? `${exp} ${args}` : exp, MAX_INPUT);
   }
 
-  private async move(s: Session, dir: Direction): Promise<void> {
+  private async move(s: Session, dir: Direction, brief = false): Promise<boolean> {
     const p = s.player!;
     const room = this.world.room(p.roomId);
     const exit = room.exits.find((e) => e.direction === dir);
     if (!exit) {
-      if (dir === 'north' && room.id === 'moor_road') return s.out('The fog swallows the road. Not yet. Something is out there, and the town is not ready to meet it.');
-      return s.out("You can't go that way.");
+      if (dir === 'north' && room.id === 'moor_road') return (s.out('The fog swallows the road. Not yet. Something is out there, and the town is not ready to meet it.'), false);
+      return (s.out("You can't go that way."), false);
     }
     const st = this.combat.state(p.id);
-    if (st?.target) return s.out(c.error("You're in a fight! Flee if you want out."));
+    if (st?.target) return (s.out(c.error("You're in a fight! Flee if you want out.")), false);
     const lock = room.locks[dir];
     if (lock) {
       const mine = await this.commerce.myItems(s);
       if (mine.some((i) => i.template.id === lock.key)) s.out(c.system(lock.unlock));
       else if ((st?.level ?? 1) >= lock.force) s.out(c.system(lock.forced));
-      else return s.out(lock.locked);
+      else return (s.out(lock.locked), false);
     }
     this.commerce.closeHaggle(p.id);
     this.toRoom(room.id, `${c.player(p.name)} leaves ${dir}.`, s);
@@ -866,9 +881,103 @@ export class Game {
     const from = OPPOSITE[dir];
     const fromText = from === 'up' ? 'above' : from === 'down' ? 'below' : `the ${from}`;
     this.toRoom(p.roomId, `${c.player(p.name)} arrives from ${fromText}.`, s);
-    await this.showRoom(s);
+    this.visit(p.id, p.roomId);
+    if (brief) await this.showRoomBrief(s);
+    else await this.showRoom(s);
     this.updateStatus(s);
+    return true;
   }
+
+  /** Remembers that this character has been here, for travel. */
+  private visit(playerId: number, roomId: string): void {
+    void query('INSERT INTO visited_rooms (player_id, room_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [playerId, roomId]).catch(() => undefined);
+  }
+
+  /** On the way somewhere: the room's name and who's in it, nothing more. */
+  private async showRoomBrief(s: Session): Promise<void> {
+    const room = this.world.room(s.player!.roomId);
+    const npcs = this.world.npcsIn(room.id).map((n) => n.card.listName ?? n.name);
+    const players = this.playersIn(room.id, s).map((p) => p.player!.name);
+    s.out(c.title(room.title) + (npcs.length || players.length ? c.dim(`  (${[...npcs, ...players].join(', ')})`) : ''));
+  }
+
+  stopTravel(s: Session, why?: string): void {
+    if (!s.travelling) return;
+    clearTimeout(s.travelling);
+    s.travelling = null;
+    if (why) s.out(c.dim(why));
+  }
+
+  /**
+   * travel <place>: walks you to somewhere you've been before, one room at a time. The streets are
+   * still the streets: a fight, the cart or any command you type stops you.
+   */
+  private async travel(s: Session, rest: string): Promise<void> {
+    const p = s.player!;
+    const { rows } = await query('SELECT room_id FROM visited_rooms WHERE player_id=$1', [p.id]);
+    const known = rows.map((r) => r.room_id as string).filter((id) => this.world.rooms.has(id));
+    const t = cleanTarget(rest);
+    if (!t) {
+      const names = known.map((id) => this.world.room(id).title).sort();
+      s.out(c.title('Places you know the way to:'));
+      s.out(names.length ? names.join(', ') : 'Nowhere yet. Walk about first.');
+      return s.out(c.dim('travel <place>, for example: travel nave, travel tavern, travel bank.'));
+    }
+    const ALIAS: Record<string, string> = {
+      tavern: 'drowned_rat', rat: 'drowned_rat', inn: 'drowned_rat', pub: 'drowned_rat', bar: 'drowned_rat',
+      bank: 'counting_house', temple: 'nave', church: 'nave', osmund: 'nave', priest: 'nave', heal: 'nave',
+      gate: 'north_gate', smith: 'smithy_floor', hamo: 'smithy_floor', maud: 'maud_shop', grocer: 'maud_shop',
+      tilly: 'curio_shop', pawn: 'curio_shop', hook: 'hook_den', fence: 'hook_den', butcher: 'butchers_alley',
+      watch: 'watch_house', bounty: 'watch_house', market: 'market_square', docks: 'river_docks', sewer: 'sewer_grate',
+    };
+    let dest = ALIAS[t] && known.includes(ALIAS[t]) ? ALIAS[t] : undefined;
+    if (!dest) {
+      const hit = looseMatch(rest, known.map((id) => ({ name: this.world.room(id).title, keywords: id.split('_'), ref: id })));
+      if (hit && 'ambiguous' in hit) return s.out(`Which do you mean: ${orList(hit.ambiguous).replace(/ and (?!.* and )/, ' or ')}?`);
+      dest = hit && 'ref' in hit ? hit.ref : undefined;
+    }
+    if (!dest) {
+      // A real place you haven't found yet, or nowhere at all?
+      const all = [...this.world.rooms.values()].map((r) => ({ name: r.title, keywords: r.id.split('_'), ref: r.id }));
+      const real = ALIAS[t] || looseMatch(rest, all);
+      return s.out(real ? "You don't know the way there yet. Find it on foot once." : "You don't know anywhere by that name.");
+    }
+    if (dest === p.roomId) return s.out("You're already there.");
+    if (this.combat.state(p.id)?.target) return s.out(c.error("You're in a fight! Flee first."));
+    const route = this.world.path(p.roomId, dest);
+    if (!route) return s.out("You can't work out a way there from here.");
+    this.stopTravel(s);
+    s.out(c.system(`You set off for ${this.world.room(dest).title}, ${route.length} step${route.length > 1 ? 's' : ''} away. Type anything to stop.`));
+    const step = async (i: number) => {
+      s.travelling = null;
+      if (s.state !== 'playing' || s.player !== p) return;
+      const ok = await this.move(s, route[i] as Direction, i < route.length - 1);
+      if (!ok) return s.out(c.dim('You stop.'));
+      if (i === route.length - 1) return;
+      s.travelling = setTimeout(() => void step(i + 1).catch(() => undefined), this.opts.travelStepMs ?? 1200);
+      s.travelling.unref();
+    };
+    await step(0);
+  }
+
+  /** Crush a pilgrim's token: back to the nave at once, unless someone has you by the throat. */
+  private async useToken(s: Session): Promise<void> {
+    const p = s.player!;
+    const mine = await this.commerce.myItems(s);
+    const token = mine.find((i) => i.template.id === 'pilgrim_token');
+    if (!token) return s.out("You don't have a pilgrim's token. Father Osmund sells them in the nave.");
+    if (this.combat.inCombat(p.id)) return s.out(c.error("You can't, not with someone at your throat. Flee first."));
+    if (p.roomId === 'nave') return s.out("You're already in the nave. Save it.");
+    const ok = await tx((cl) => deleteItem(cl, token.id, { type: 'player', id: p.id }));
+    if (!ok) return;
+    this.stopTravel(s);
+    s.out(c.system('You crush the token in your fist and say the words. The street tilts, the light goes grey, and you are kneeling on the cold floor of the nave.'));
+    this.toRoom(p.roomId, `${c.player(p.name)} crushes something in one fist and is simply gone.`, s);
+    this.visit(p.id, 'nave');
+    await this.placePlayer(s, 'nave', `${c.player(p.name)} is suddenly kneeling on the floor of the nave, gasping.`);
+  }
+
+
 
   private async look(s: Session, target: string): Promise<void> {
     const t = cleanTarget(target);

@@ -669,5 +669,19 @@
     "weight": 0,
     "price": 1,
     "look": "Gnawed clean. You decide not to wonder what it came from."
+  },
+  {
+    "id": "pilgrim_token",
+    "name": "a pilgrim's token",
+    "keywords": [
+      "token",
+      "pilgrim",
+      "pilgrim's token"
+    ],
+    "kind": "tool",
+    "weight": 0,
+    "price": 4,
+    "look": "A thin disc of fired clay stamped with the temple's ash tree. Crush it and say the words, and you wake in the nave. Father Osmund swears it's faith. It isn't.",
+    "actions": {}
   }
 ]

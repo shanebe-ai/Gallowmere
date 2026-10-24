@@ -90,7 +90,8 @@
       "candle": 10,
       "bandage": 8,
       "holy_water": 6,
-      "prayer_beads": 4
+      "prayer_beads": 4,
+      "pilgrim_token": 6
     },
     "buys": [],
     "purse": 0,

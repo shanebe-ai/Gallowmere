@@ -199,6 +199,8 @@ You'll want to know about fighting. Everyone does.
 
 **Death.** It isn't the end, but it costs. You wake on the cold floor of the Temple of Ash with a grave chill: half your health and a shaky arm for ten minutes. Your coin and your pack stay on your corpse where you fell. For ten minutes only you can touch it. After that, anyone can. After half an hour it's gone. Or pay Father Osmund to send a boy for it. Banked coin never moves. The newly arrived keep their things.
 
+**Getting about.** Once you've found a place on foot, `travel` takes you back there, one room at a time: `travel nave`, `travel tavern`, `travel bank`. It's still the streets. A fight stops you, the cart can catch you, and typing anything stops you where you stand. When it's going badly, a pilgrim's token from Father Osmund will do better: `crush token` and you're kneeling in the nave. Not with someone's hands on you, though.
+
 **Healing.** Wounds close slowly on their own, faster by the fire in the Drowned Rat or on a bench in the nave. Bandages help (`bandage`). Morda's stew helps. Father Osmund will make you whole for a few coin (`heal`).
 
 **The plague cart.** At no fixed hour the temple bell tolls. A couple of minutes later the cart sets out from the temple steps and works its way through every street, down to the river. It takes every body it passes and everything on them, and it all ends up in Hook's back room, where you can buy it back if you can afford him. The cart men take a quarter of the coin in your purse, and anyone too badly hurt to stand goes on the cart with the dead. Get indoors when you hear the bell. Bank your coin before you do.
@@ -241,6 +243,8 @@ Gallowmere isn't a nice town, but it has rules.
 | What now? | `hint` |
 | Fight | `consider wat`, `attack wat`, `flee` |
 | Your body | `health` (or `hp`): wounds, weapon damage, armour, your odds |
+| Get somewhere | `travel nave`, `travel tavern`, `travel` on its own for the places you know |
+| Get out | `crush token` (a pilgrim's token from Father Osmund) |
 | Arm up | `wield cudgel`, `wear jerkin`, `remove` |
 | Heal | `bandage`, `heal` (in the nave) |
 | The dead | `loot corpse`, `take corpse`, `give corpse to osmund`, `sell corpse to butcher`, `recover` (in the nave) |

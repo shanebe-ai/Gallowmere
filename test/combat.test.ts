@@ -112,6 +112,7 @@ beforeAll(async () => {
       // Timers stay off: tests drive rounds, street life and the cart by hand.
       combat: { streetFolk: 0, tickMs: 1e9, lifeMs: 1e9 },
       cart: { warnMs: 1e9, stepMs: 1e9, minMs: 1e9, maxMs: 2e9 },
+      travelStepMs: 150,
     },
   });
   await new Promise<void>((r) => app.server.listen(0, r));
@@ -447,6 +448,48 @@ describe('Milestone 3 end to end', () => {
     app.game.combat.state(await idOf('Tam'))!.health = 5;
     await p.do('hp', /You are bleeding badly\. Health 5\/20[\s\S]*short sword: 3 to 6 damage[\s\S]*takes 2 off every hit[\s\S]*about 65%[\s\S]*cart men would take you for dead/);
     await p.do('look me', /Damp, mostly[\s\S]*Health 5\/20/);
+    await p.close();
+  });
+
+  it('travel walks you to places you know, and stops when you type or get into a fight', async () => {
+    const p = await create('Uri', 'north_gate', { old: true });
+    await p.do('travel nave', /You don't know the way there yet/);
+    for (const step of ['s', 'e', 'e', 'e']) await p.do(step, /Exits:/);
+    await p.do('travel', /Places you know the way to:[\s\S]*The Nave/);
+    await p.do('travel gate', /set off for The North Gate, 4 steps away/);
+    await p.waitFor(/Temple Steps[\s\S]*Gate Road[\s\S]*The North Gate[\s\S]*Exits:/, 5000);
+    expect((await query("SELECT room_id FROM players WHERE name='Uri'")).rows[0].room_id).toBe('north_gate');
+    // Any command stops you on the way.
+    await p.do('travel temple', /set off for The Nave/);
+    await p.do('look', /You stop walking/);
+    await new Promise((r) => setTimeout(r, 600));
+    expect((await query("SELECT room_id FROM players WHERE name='Uri'")).rows[0].room_id).not.toBe('nave');
+    // A fight stops you too.
+    await p.close();
+    const q = await login('Uri', 'gate_road');
+    const b = app.game.combat.spawn('bruiser', 'temple_steps', null);
+    b.target = `p:${await idOf('Uri')}`;
+    await q.do('travel nave', /set off for The Nave/);
+    // Arriving on the steps, the bruiser is waiting.
+    await app.game.combat.tick();
+    await q.waitFor(/You stop\.|You're in a fight/, 5000);
+    expect((await query("SELECT room_id FROM players WHERE name='Uri'")).rows[0].room_id).toBe('temple_steps');
+    await q.close();
+  });
+
+  it("a pilgrim's token takes you straight to the nave, but not out of a fight", async () => {
+    const p = await create('Vin', 'river_docks', { old: true });
+    await p.do('crush token', /don't have a pilgrim's token/);
+    await give('Vin', 'pilgrim_token');
+    await give('Vin', 'pilgrim_token');
+    const d = app.game.combat.spawn('drunk', 'river_docks', null);
+    d.target = `p:${await idOf('Vin')}`;
+    await p.do('crush token', /not with someone at your throat/);
+    clearMobs();
+    await p.do('use token', /kneeling on the cold floor of the nave[\s\S]*The Nave/);
+    expect(await carried('Vin')).toEqual(['pilgrim_token']);
+    await p.do('travel docks', /set off for River Docks/);
+    await p.do('stop', /You stop walking/);
     await p.close();
   });
 

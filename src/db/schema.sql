@@ -180,3 +180,10 @@ CREATE TABLE IF NOT EXISTS kills (
   at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS kills_killer ON kills (killer_id, victim_kind);
+
+-- Places each character has been, so travel only goes where you know the way.
+CREATE TABLE IF NOT EXISTS visited_rooms (
+  player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  room_id   TEXT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+  PRIMARY KEY (player_id, room_id)
+);

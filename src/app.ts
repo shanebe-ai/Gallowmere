@@ -37,7 +37,7 @@ export async function createApp(
     providers?: Array<{ provider: ChatProvider; rpm: number }>;
     telnetPort?: number | null;
     /** Fight timings, street folk numbers, the cart's clock and dice: for tests. */
-    game?: { random?: () => number; combat?: { tickMs?: number; lifeMs?: number; streetFolk?: number }; cart?: CartOptions };
+    game?: { random?: () => number; combat?: { tickMs?: number; lifeMs?: number; streetFolk?: number }; cart?: CartOptions; travelStepMs?: number };
   } = {},
 ) {
   const world = new World();
