@@ -212,7 +212,8 @@ describe('Gallowmere end to end', () => {
     };
     const p = await login('Shane', 'drowned_rat');
     await p.do('ask morda about the sewers', /You ask Morda about the sewers/);
-    await p.waitFor(/What'll it be|Not now, damp one|slides a mug|keep it off my floor|long look|Short of coin/);
+    // A question, so the fallback is one of Morda's answers to questions.
+    await p.waitFor(/Ask me again when I'm less busy/);
     const { rows } = await query("SELECT provider, fallback_used FROM ai_usage ORDER BY id DESC LIMIT 1");
     expect(rows[0]).toEqual({ provider: 'scripted', fallback_used: true });
     await p.close();
@@ -279,10 +280,16 @@ describe('Gallowmere end to end', () => {
     morda = () => reply('Evening, friend.');
     const guard = /Dace says to you, "Evening, friend\."/;
     const p = await login('Bob', 'north_gate');
-    // Before any conversation, a plain say with no name in it reaches nobody.
+    // Alone with Dace, a plain say with no name in it is said to him.
     await p.do('say lovely fog today', /You say, "lovely fog today"/);
+    await p.waitFor(guard);
+    // With another player about, an unnamed say is for them, not the guard.
+    const q = await login('Shane', 'north_gate');
+    await new Promise((r) => setTimeout(r, 300));
+    await q.do('say lovely fog today', /You say, "lovely fog today"/);
     await new Promise((r) => setTimeout(r, 700));
-    expect(p.buf).not.toMatch(guard);
+    expect(q.buf).not.toMatch(/Dace says/);
+    await q.close();
     await p.do('say hi guard', /You say, "hi guard"/);
     await p.waitFor(guard);
     await p.do('hello guard', /You say, "hello guard"/);

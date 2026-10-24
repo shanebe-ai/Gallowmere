@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { query } from '../db/pool.js';
 import { config } from '../config.js';
-import { NpcBrain, TRADE_ACTIONS, type ActionType, type NpcTurnOutput, type TradeContext } from '../npc/brain.js';
+import { NpcBrain, TRADE_ACTIONS, type ActionType, type NpcTurnOutput, type Replies, type TradeContext } from '../npc/brain.js';
 import { Commerce } from './commerce.js';
 import { balances, Catalog, groupNames, restockShops, sweepRooms } from './economy.js';
 import { addNote, getMemory } from '../npc/memory.js';
@@ -837,9 +837,21 @@ export class Game {
     this.toRoom(p.roomId, `${c.player(p.name)} says, ${c.speech(`"${text}"`)}`, s);
 
     // Naming someone in the room counts as talking to them. AI characters win a tie.
-    const npc = this.mentionedNpc(p.roomId, text) ?? this.looselyAddressed(p.roomId, text) ?? this.conversationPartner(s, text);
+    const npc =
+      this.mentionedNpc(p.roomId, text) ??
+      this.looselyAddressed(p.roomId, text) ??
+      this.conversationPartner(s, text) ??
+      this.onlyListener(s);
     if (npc) return void this.respondOrHaggle(s, npc, text);
     this.overheard(s);
+  }
+
+  /** Alone with one person, whatever you say is said to them. */
+  private onlyListener(s: Session): Npc | undefined {
+    const p = s.player!;
+    if (this.playersIn(p.roomId, s).length) return undefined;
+    const npcs = this.world.npcsIn(p.roomId);
+    return npcs.length === 1 ? npcs[0] : undefined;
   }
 
   /** "say hi to old tillt": a name close enough to someone here still reaches them. */
@@ -857,11 +869,11 @@ export class Game {
 
   private overheardAt = new Map<number, number>();
 
-  /** Nobody was addressed, but people are listening: someone reacts, now and then. */
+  /** Several people here and none of them named: one of them reacts, now and then. */
   private overheard(s: Session): void {
     const p = s.player!;
     const npcs = this.world.npcsIn(p.roomId).filter((n) => n.id !== 'rats');
-    if (!npcs.length || this.playersIn(p.roomId, s).length) return;
+    if (npcs.length < 2 || this.playersIn(p.roomId, s).length) return;
     const last = this.overheardAt.get(p.id) ?? 0;
     if (Date.now() - last < 45_000) return;
     this.overheardAt.set(p.id, Date.now());
@@ -879,7 +891,7 @@ export class Game {
   }
 
   /**
-   * Mid conversation, a plain say carries on talking to the same AI character,
+   * Mid conversation, a plain say carries on talking to the same character,
    * unless the player has named another player in the room.
    */
   conversationPartner(s: Session, text: string): Npc | undefined {
@@ -989,7 +1001,8 @@ export class Game {
     const roomId = npc.roomId;
 
     if (npc.kind === 'scripted') {
-      const line = this.brain.scripted(npc.id, npc.card);
+      const line = this.brain.scripted(npc.id, npc.card as { scripted: string[]; replies?: Replies }, kind === 'say' ? playerLine : undefined);
+      if (kind === 'say') this.chatting.set(p.id, { npcId: npc.id, at: Date.now() });
       setTimeout(() => this.toRoom(roomId, c.npc(line)), this.opts.scriptedDelayMs ?? 400).unref();
       return null;
     }
@@ -1025,6 +1038,7 @@ export class Game {
           knows: card.knows,
           tradeStyle: card.tradeStyle,
           scripted: card.scripted,
+          replies: card.replies,
         },
         player: { id: p.id, name: p.name },
         memory,
@@ -1069,7 +1083,7 @@ export class Game {
       return out;
     } catch (err) {
       console.error('npcRespond failed:', err);
-      this.toRoom(roomId, c.npc(this.brain.scripted(npc.id, npc.card)));
+      this.toRoom(roomId, c.npc(this.brain.scripted(npc.id, npc.card as { scripted: string[]; replies?: Replies }, kind === 'say' ? playerLine : undefined)));
       return null;
     } finally {
       s.aiPending = false;

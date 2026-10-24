@@ -33,7 +33,22 @@
         "Morda glances at the curtain on the west wall, then back at her rag."
       ],
       "listName": "Morda the barkeep",
-      "tradeStyle": "Prices are on the slate and she hates haggling, but will knock a copper off for regulars and add two for anyone who annoys her"
+      "tradeStyle": "Prices are on the slate and she hates haggling, but will knock a copper off for regulars and add two for anyone who annoys her",
+      "replies": {
+        "greet": [
+          "Morda nods without warmth. \"What'll it be?\"",
+          "\"Evening. Drink or don't, but don't stand there dripping.\""
+        ],
+        "ask": [
+          "Morda shrugs. \"Ask me again when I'm less busy. Say list if you want a drink.\""
+        ],
+        "thanks": [
+          "\"Aye.\""
+        ],
+        "bye": [
+          "\"Mind the step. And the rats.\""
+        ]
+      }
     }
   },
   {
@@ -75,7 +90,21 @@
         "Dace spits into the fog.",
         "The gibbet creaks overhead. Dace doesn't look up.",
         "Dace counts something in his palm and pockets it quickly."
-      ]
+      ],
+      "replies": {
+        "greet": [
+          "Dace straightens a little. \"Evening, friend. Market's south.\""
+        ],
+        "ask": [
+          "\"Information costs, friend. Everything costs.\""
+        ],
+        "thanks": [
+          "\"Don't thank me. Pay me.\""
+        ],
+        "bye": [
+          "\"Keep out of trouble. Or keep it quiet.\""
+        ]
+      }
     }
   },
   {
@@ -109,7 +138,21 @@
       "ambient": [
         "The hammer rings out: clang, clang, clang.",
         "Hamo plunges a blade into a barrel, and steam hisses up."
-      ]
+      ],
+      "replies": {
+        "greet": [
+          "Hamo grunts over the hammer. \"Shop floor's west.\""
+        ],
+        "ask": [
+          "\"Ask me when I'm not holding hot iron.\""
+        ],
+        "thanks": [
+          "Hamo nods once."
+        ],
+        "bye": [
+          "The hammer rings. That's goodbye."
+        ]
+      }
     }
   },
   {
@@ -143,7 +186,21 @@
       "ambient": [
         "Maud chalks a price higher on the board.",
         "Maud weighs out salt with a suspicious eye on the scales."
-      ]
+      ],
+      "replies": {
+        "greet": [
+          "Maud taps her board. \"Prices are there. Buy or step aside.\""
+        ],
+        "ask": [
+          "\"Say work if you want coin. Say list if you want food. Anything else, I'm busy.\""
+        ],
+        "thanks": [
+          "\"Hm.\""
+        ],
+        "bye": [
+          "\"Don't come back without coin.\""
+        ]
+      }
     }
   },
   {
@@ -176,7 +233,21 @@
       "ambient": [
         "A candle gutters out. Father Osmund lights another.",
         "Father Osmund mutters a prayer and doesn't finish it."
-      ]
+      ],
+      "replies": {
+        "greet": [
+          "\"Welcome, my child. Sit. The benches don't judge.\""
+        ],
+        "ask": [
+          "Father Osmund sighs. \"The Lord knows. I only suspect.\""
+        ],
+        "thanks": [
+          "\"Don't thank me. Light a candle.\""
+        ],
+        "bye": [
+          "\"Go carefully. The cart takes the careless first.\""
+        ]
+      }
     }
   },
   {
@@ -209,7 +280,21 @@
       "ambient": [
         "Hook writes a name in his ledger and blots it carefully.",
         "Hook weighs a ring on his scale and smiles at it."
-      ]
+      ],
+      "replies": {
+        "greet": [
+          "Hook smiles without warmth. \"Buying or selling?\""
+        ],
+        "ask": [
+          "\"Who sent you?\""
+        ],
+        "thanks": [
+          "\"Don't. It makes people nervous.\""
+        ],
+        "bye": [
+          "\"Mind the ladder.\""
+        ]
+      }
     }
   },
   {
@@ -235,7 +320,32 @@
       "ambient": [
         "Tilly dusts the heron and murmurs to it.",
         "Tilly polishes a ring and squints at the stone."
-      ]
+      ],
+      "replies": {
+        "greet": [
+          "Tilly peers at you over her spectacles. \"Hello yourself, dearie. Buying or selling?\"",
+          "\"Evening, evening. Mind the heron. Say list if you want to see what's for sale.\"",
+          "Tilly gives you a gummy smile. \"Another one come to look at my treasures. Go on then.\""
+        ],
+        "ask": [
+          "Tilly cups an ear. \"Eh? Say list and I'll show you what I've got. Prices are fixed, mind.\"",
+          "\"Questions cost nothing, answers cost more. Say list, dearie, or sell me something.\"",
+          "Tilly considers this a long time. \"Couldn't tell you. I could sell you a spoon, though.\""
+        ],
+        "thanks": [
+          "\"Mm. Manners. Don't see much of that in here.\"",
+          "Tilly waves a spotted hand. \"Yes, yes. Come back with coin.\""
+        ],
+        "bye": [
+          "\"Off you go then. Touch nothing on the way out.\"",
+          "Tilly is already counting something else. \"Mind the step, dearie.\""
+        ],
+        "other": [
+          "Tilly nods as if she heard every word. She did not.",
+          "\"Eh? Speak up, dearie. Or don't. Buying or selling?\"",
+          "Tilly hums to herself and polishes a ring that will never shine."
+        ]
+      }
     }
   },
   {
@@ -260,7 +370,30 @@
       "ambient": [
         "Ingelram turns a page and adds a column twice.",
         "The scales tick as Ingelram weighs another coin."
-      ]
+      ],
+      "replies": {
+        "greet": [
+          "Ingelram doesn't look up. \"Good day. Deposit, withdraw or balance?\"",
+          "\"Yes, hello. State your business with the counting house.\""
+        ],
+        "ask": [
+          "\"Deposit, withdraw or balance. Those are the questions I answer.\"",
+          "Ingelram dips his pen. \"One copper in twenty on withdrawals. Anything else is not my concern.\"",
+          "\"The counting house does not gossip. The counting house counts.\""
+        ],
+        "thanks": [
+          "\"Noted.\" He actually writes it down.",
+          "Ingelram inclines his head a fraction of an inch."
+        ],
+        "bye": [
+          "\"Good day.\" The pen never stops.",
+          "Ingelram has already forgotten you."
+        ],
+        "other": [
+          "Ingelram lets you finish, then goes on writing.",
+          "\"I'm sure that's very interesting. Deposit, withdraw or balance?\""
+        ]
+      }
     }
   },
   {
@@ -283,7 +416,30 @@
       "ambient": [
         "Thunk. Thunk. Thunk.",
         "The butcher hums something tuneless while he works."
-      ]
+      ],
+      "replies": {
+        "greet": [
+          "The butcher grunts. That is the whole greeting.",
+          "He looks up from the block. \"What.\""
+        ],
+        "ask": [
+          "\"Nothing for sale. Ask me again and you'll be for sale.\"",
+          "The butcher wipes the cleaver on his apron and does not answer.",
+          "\"Don't know. Don't care. Move along.\""
+        ],
+        "thanks": [
+          "\"For what.\"",
+          "The butcher snorts."
+        ],
+        "bye": [
+          "Thunk. You take that as goodbye.",
+          "\"Good.\""
+        ],
+        "other": [
+          "The butcher brings the cleaver down. Thunk.",
+          "He stares at you until you stop talking."
+        ]
+      }
     }
   },
   {
@@ -307,7 +463,30 @@
       "ambient": [
         "The beggar coughs wetly and pulls his rags tighter.",
         "The beggar watches the market road with one open eye."
-      ]
+      ],
+      "replies": {
+        "greet": [
+          "\"A friendly face! Spare a copper for a friendly face?\"",
+          "The beggar squints up at you. \"You're new. New ones still have coin.\""
+        ],
+        "ask": [
+          "\"Ask the watch. Ask Hook. Nobody asks me, and I see everything.\"",
+          "\"What do I know? I know the rats talk. Nobody listens to me.\"",
+          "\"Give us a copper and I'll tell you a thing. Or don't, and I'll tell you anyway, later.\""
+        ],
+        "thanks": [
+          "\"Thanks is free. Coppers are better.\"",
+          "The beggar blinks, unused to it."
+        ],
+        "bye": [
+          "\"Go on then. Everybody does.\"",
+          "The beggar is already asleep again, or pretending."
+        ],
+        "other": [
+          "The beggar mumbles about rats in the walls.",
+          "\"Nobody listens to me. You're not listening either.\""
+        ]
+      }
     }
   },
   {
@@ -329,7 +508,18 @@
       "ambient": [
         "Something scratches behind the grate.",
         "A rat drags a fish head into the dark."
-      ]
+      ],
+      "replies": {
+        "greet": [
+          "A rat looks at you as if you have said something stupid."
+        ],
+        "ask": [
+          "The rats have no answers. They have teeth."
+        ],
+        "other": [
+          "The rats squeak and ignore you."
+        ]
+      }
     }
   }
 ]

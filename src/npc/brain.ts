@@ -26,6 +26,20 @@ export interface NpcCard {
   knows?: string;
   tradeStyle?: string;
   scripted: string[];
+  replies?: Replies;
+}
+
+export type Intent = 'greet' | 'thanks' | 'bye' | 'ask' | 'other';
+export type Replies = Partial<Record<Intent, string[]>>;
+
+/** What kind of thing the player said, so a scripted character can answer in kind. */
+export function intentOf(line: string): Intent {
+  const t = ` ${line.toLowerCase().replace(/[^a-z' ?]+/g, ' ').replace(/\s+/g, ' ').trim()} `;
+  if (/ (thanks|thank you|thank ye|thankee|cheers|ta|much obliged|bless you) /.test(t)) return 'thanks';
+  if (/ (bye|goodbye|farewell|so long|later|good night|goodnight|be off|off now|see you|see ya) /.test(t)) return 'bye';
+  if (/\?/.test(t) || /^ (what|who|where|why|how|when|which|can|could|do|does|did|is|are|will|would|have|got|any|tell me) /.test(t)) return 'ask';
+  if (/ (hi|hello|hey|hail|greetings|evening|morning|afternoon|oi|ho|howdy|good day|well met|yo) /.test(t)) return 'greet';
+  return 'other';
 }
 
 export interface NpcTurnInput {
@@ -205,17 +219,25 @@ export class NpcBrain {
 
   constructor(private deps: BrainDeps) {}
 
-  scripted(npcId: string, card: { scripted: string[] }): string {
-    const lines = card.scripted.length ? card.scripted : ['...'];
+  /**
+   * A line from the card. Given what the player said, answers in kind when the card has replies
+   * for it (a greeting gets a greeting); otherwise one of the character's general lines.
+   */
+  scripted(npcId: string, card: { scripted: string[]; replies?: Replies }, playerLine?: string): string {
+    const intent = playerLine === undefined ? null : intentOf(playerLine);
+    const fitting = intent ? card.replies?.[intent] : undefined;
+    const lines = fitting?.length ? fitting : card.scripted.length ? card.scripted : ['...'];
+    const key = fitting?.length ? `${npcId}:${intent}` : npcId;
     const rand = this.deps.random ?? Math.random;
     let idx = Math.floor(rand() * lines.length);
-    if (lines.length > 1 && idx === this.lastScripted.get(npcId)) idx = (idx + 1) % lines.length;
-    this.lastScripted.set(npcId, idx);
+    if (lines.length > 1 && idx === this.lastScripted.get(key)) idx = (idx + 1) % lines.length;
+    this.lastScripted.set(key, idx);
     return lines[idx];
   }
 
   private scriptedOutput(input: NpcTurnInput): NpcTurnOutput {
-    return { say: '', action: { type: 'none' }, source: 'scripted', scriptedLine: this.scripted(input.npcId, input.npc) };
+    const line = input.kind === 'say' ? input.playerLine : undefined;
+    return { say: '', action: { type: 'none' }, source: 'scripted', scriptedLine: this.scripted(input.npcId, input.npc, line) };
   }
 
   async turn(input: NpcTurnInput): Promise<NpcTurnOutput> {

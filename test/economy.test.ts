@@ -466,12 +466,39 @@ describe('Gallowmere economy end to end', () => {
     await p.do('look moon', /don't see that here/);
     await p.close();
   });
-  it('a mistyped name still reaches them, and someone always reacts', async () => {
+  it('a mistyped name still reaches them', async () => {
     const p = await create('Vic', 'curio_shop');
     await p.do('say hi to old tillt', /You say, "hi to old tillt"/);
-    await p.waitFor(/Prices are fixed|Don't touch Gerald|Buying or selling|sharp eye follows/);
-    await p.do('say nice weather we are having', /You say/);
-    await p.waitFor(/glances up at you|Who are you talking to|pretends not to hear|mutters something|unsure if that was meant/);
+    await p.waitFor(/Hello yourself|Mind the heron|gummy smile/);
     await p.close();
+  });
+
+  it('alone with one person, plain speech goes to them and gets an answer in kind', async () => {
+    const tilly = app.game.world.npcs.get('tilly')!.card as any;
+    const p = await create('Wen', 'curio_shop');
+    const answered = (lines: string[]) => new RegExp(lines.map((l) => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'));
+    await p.do('say hi', /You say, "hi"/);
+    await p.waitFor(answered(tilly.replies.greet));
+    await p.do('say qhat can i do for you?', /You say/);
+    await p.waitFor(answered(tilly.replies.ask));
+    await p.do('say thanks', /You say/);
+    await p.waitFor(answered(tilly.replies.thanks));
+    await p.do('say bye', /You say/);
+    const last = await p.waitFor(answered(tilly.replies.bye));
+    expect(last).not.toMatch(/Who are you talking to/);
+    await p.close();
+  });
+
+  it('with two people about and nobody named, one of them reacts', async () => {
+    const butcher = app.game.world.npcs.get('butcher')!;
+    butcher.roomId = 'curio_shop';
+    try {
+      const p = await create('Xan', 'curio_shop');
+      await p.do('say nice weather we are having', /You say/);
+      await p.waitFor(/glances up at you|Who are you talking to|pretends not to hear|mutters something|unsure if that was meant/);
+      await p.close();
+    } finally {
+      butcher.roomId = 'butchers_alley';
+    }
   });
 });

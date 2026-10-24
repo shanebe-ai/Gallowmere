@@ -3,7 +3,32 @@ import { sanitize, stripAnsi, wrap, c } from '../src/game/text.js';
 import { isFlagged } from '../src/game/filter.js';
 import { RateBucket } from '../src/ai/service.js';
 import { foldNote, MAX_NOTES } from '../src/npc/memory.js';
-import { buildPrompt, parseReply } from '../src/npc/brain.js';
+import { buildPrompt, intentOf, NpcBrain, parseReply } from '../src/npc/brain.js';
+
+describe('what the player said', () => {
+  it('sorts lines into greetings, questions, thanks and goodbyes', () => {
+    expect(intentOf('hi')).toBe('greet');
+    expect(intentOf('hi old tilly')).toBe('greet');
+    expect(intentOf('Good evening!')).toBe('greet');
+    expect(intentOf('qhat can i do for you?')).toBe('ask');
+    expect(intentOf('where is the smith')).toBe('ask');
+    expect(intentOf('hi, got any rope?')).toBe('ask');
+    expect(intentOf('thanks')).toBe('thanks');
+    expect(intentOf('thank you kindly, bye')).toBe('thanks');
+    expect(intentOf('farewell')).toBe('bye');
+    expect(intentOf('nice heron')).toBe('other');
+    expect(intentOf('this is a hideous shop')).toBe('other');
+  });
+
+  it('scripted characters answer in kind, and fall back to their general lines', () => {
+    const brain = new NpcBrain({ random: () => 0 } as any);
+    const card = { scripted: ['General.'], replies: { greet: ['Hello.', 'Evening.'] } };
+    expect(brain.scripted('x', card, 'hello')).toBe('Hello.');
+    expect(brain.scripted('x', card, 'hello')).toBe('Evening.');
+    expect(brain.scripted('x', card, 'where am i?')).toBe('General.');
+    expect(brain.scripted('x', card)).toBe('General.');
+  });
+});
 
 describe('text', () => {
   it('wraps on word boundaries ignoring colour codes', () => {
