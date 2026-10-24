@@ -4,6 +4,7 @@ import { query } from '../db/pool.js';
 import { config } from '../config.js';
 import { NpcBrain, TRADE_ACTIONS, type ActionType, type NpcTurnOutput, type Replies, type TradeContext } from '../npc/brain.js';
 import { Commerce } from './commerce.js';
+import { avg, BENCH_DEFAULTS, BENCH_LINES, runBench, type LiveModel } from '../ai/bench.js';
 import { balances, Catalog, groupNames, restockShops, sweepRooms } from './economy.js';
 import { addNote, getMemory } from '../npc/memory.js';
 import { isFlagged } from './filter.js';
@@ -158,7 +159,7 @@ export class Game {
   constructor(
     public world: World,
     private brain: NpcBrain,
-    private opts: { random?: () => number; scriptedDelayMs?: number } = {},
+    private opts: { random?: () => number; scriptedDelayMs?: number; aiand?: LiveModel } = {},
   ) {
     this.catalog = new Catalog();
     this.catalog.load();
@@ -644,6 +645,12 @@ export class Game {
         return this.quit(s);
       case 'aistats':
         if (this.isAdmin(s)) return this.aiStats(s);
+        break;
+      case 'aibench':
+        if (this.isAdmin(s)) return this.aiBench(s, rest);
+        break;
+      case 'aimodel':
+        if (this.isAdmin(s)) return this.aiModel(s, rest);
         break;
     }
     if (VERBS[verb]) {
@@ -1146,7 +1153,11 @@ export class Game {
     if (key && HELP[key]) return s.out(HELP[key]);
     s.out(c.title('Commands'));
     for (const line of Object.values(HELP)) s.out(`  ${line}`);
-    if (this.isAdmin(s)) s.out('  aistats: AI calls, latency and fallbacks per player, last 24 hours.');
+    if (this.isAdmin(s)) {
+      s.out('  aistats: AI calls, latency and fallbacks per player, last 24 hours.');
+      s.out('  aibench [models | model ...]: time the same chat with Tilly on ai& models.');
+      s.out('  aimodel [model]: show or switch the ai& model until restart.');
+    }
   }
 
   private async score(s: Session): Promise<void> {
@@ -1166,6 +1177,61 @@ export class Game {
     s.out(c.dim('You pull your collar up and walk back into the fog. Saved.'));
     s.conn.setToken(null);
     s.conn.close();
+  }
+
+  /** Admin: times the same short chat with Tilly on several ai& models, to pick one by speed and voice. */
+  private async aiBench(s: Session, rest: string): Promise<void> {
+    const aiand = this.opts.aiand;
+    if (!aiand?.isConfigured()) return s.out('No ai& key is set. Add AIAND_API_KEY to the server .env and restart.');
+    if (this.benchRunning) return s.out('A bench is already running.');
+    this.benchRunning = true;
+    try {
+      const ctrl = new AbortController();
+      setTimeout(() => ctrl.abort(), 15_000).unref();
+      const available = await aiand.models(ctrl.signal).catch((err) => {
+        s.out(c.error(`Could not list models: ${err instanceof Error ? err.message : err}`));
+        return null;
+      });
+      if (!available) return;
+      if (rest.trim().toLowerCase() === 'models') {
+        s.out(c.title(`ai& models on this key (${available.length}):`));
+        for (const m of available) s.out(`  ${m}${m === aiand.model ? c.dim('  (in use)') : ''}`);
+        return;
+      }
+      const asked = rest.split(/[\s,]+/).filter(Boolean);
+      const models = asked.length ? asked : BENCH_DEFAULTS.filter((m) => available.includes(m));
+      if (!models.length) return s.out('None of the usual fast models are on this key. Try: aibench models');
+      const tilly = this.world.npcs.get('tilly');
+      if (!tilly) return s.out('Tilly is missing, so there is nobody to bench with.');
+      const card = tilly.card as any;
+      s.out(c.title(`Benching ${models.length} model(s) with Tilly, ${BENCH_LINES.length} lines each. Lines: ${BENCH_LINES.map((l) => `"${l}"`).join(', ')}`));
+      const rows = await runBench(
+        aiand,
+        models,
+        { ...card, name: tilly.name, light: true, mute: false },
+        (row) => {
+          const speed = row.times.length ? `avg ${avg(row.times)} ms, slowest ${Math.max(...row.times)} ms` : 'no replies';
+          s.out(`${c.title(row.model)}  ${speed}, ${row.valid}/${BENCH_LINES.length} usable`);
+          for (const e of row.errors) s.out(c.error(`  ${e}`));
+          for (const line of row.samples) s.out(c.dim(`  ${line}`));
+        },
+      );
+      const ranked = rows.filter((r) => r.valid === BENCH_LINES.length).sort((a, b) => avg(a.times) - avg(b.times));
+      if (ranked.length) s.out(c.system(`Fastest with every reply usable: ${ranked[0].model} (${avg(ranked[0].times)} ms). Switch with: aimodel ${ranked[0].model}`));
+    } finally {
+      this.benchRunning = false;
+    }
+  }
+  private benchRunning = false;
+
+  /** Admin: shows or switches the ai& model in use, until the next restart (AIAND_MODEL in .env makes it stick). */
+  private aiModel(s: Session, rest: string): void {
+    const aiand = this.opts.aiand;
+    if (!aiand?.isConfigured()) return s.out('No ai& key is set.');
+    const want = rest.trim();
+    if (!want) return s.out(`ai& model in use: ${aiand.model}`);
+    aiand.model = want;
+    s.out(`ai& model is now ${want} until the next restart. Set AIAND_MODEL=${want} in .env to keep it.`);
   }
 
   private async aiStats(s: Session): Promise<void> {

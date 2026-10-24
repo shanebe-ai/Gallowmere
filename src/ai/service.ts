@@ -46,7 +46,7 @@ interface Slot {
 }
 
 /**
- * Tries providers in order (Groq, then Gemini). Each has its own rate bucket and
+ * Tries providers in order (ai&, then Groq, then Gemini). Each has its own rate bucket and
  * timeout. Throws when every provider is unavailable, so the caller can fall
  * back to scripted lines.
  */

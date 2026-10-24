@@ -269,6 +269,41 @@ describe('Gallowmere end to end', () => {
     await shane.close();
   });
 
+  it('aibench and aimodel are admin only, time each ai& model and switch the live one', async () => {
+    const seen: string[] = [];
+    const fake = {
+      model: 'deepseek-ai/deepseek-v4-flash',
+      isConfigured: () => true,
+      models: async () => ['deepseek-ai/deepseek-v4-flash', 'openai/gpt-oss-120b', 'moonshotai/kimi-k3'],
+      chat: async (req: any, _signal: AbortSignal, model?: string) => {
+        seen.push(model!);
+        if (model === 'openai/gpt-oss-120b') return { text: 'not json at all', tokensIn: 1, tokensOut: 1 };
+        return { text: reply('Mind Gerald, dearie.', { type: 'none' }, 'pats the heron'), tokensIn: 1, tokensOut: 1 };
+      },
+    };
+    (app.game as any).opts.aiand = fake;
+    try {
+      const bob = await login('Bob');
+      await bob.do('aibench', /Huh\?|What\?|doesn't mean|fog swallows/);
+      await bob.do('aimodel x', /Huh\?|What\?|doesn't mean|fog swallows/);
+      await bob.close();
+      const shane = await login('Shane');
+      await shane.do('aibench models', /ai& models on this key \(3\)[\s\S]*deepseek-ai\/deepseek-v4-flash  \(in use\)[\s\S]*moonshotai\/kimi-k3/);
+      await shane.do('aibench', /Benching 2 model\(s\)/);
+      await shane.waitFor(/deepseek-ai\/deepseek-v4-flash  avg \d+ ms, slowest \d+ ms, 3\/3 usable[\s\S]*\(pats the heron\) "Mind Gerald, dearie\."/);
+      await shane.waitFor(/openai\/gpt-oss-120b  avg \d+ ms, slowest \d+ ms, 0\/3 usable[\s\S]*not usable: not json at all/);
+      await shane.waitFor(/Fastest with every reply usable: deepseek-ai\/deepseek-v4-flash/);
+      // The heavy model isn't benched unless named.
+      expect(seen).not.toContain('moonshotai/kimi-k3');
+      await shane.do('aimodel openai/gpt-oss-120b', /ai& model is now openai\/gpt-oss-120b/);
+      expect(fake.model).toBe('openai/gpt-oss-120b');
+      await shane.do('aimodel', /ai& model in use: openai\/gpt-oss-120b/);
+      await shane.close();
+    } finally {
+      (app.game as any).opts.aiand = undefined;
+    }
+  });
+
   it('caps player input at 300 characters and strips escape codes', async () => {
     const p = await login('Bob');
     await p.do(`say \x1b[31m${'a'.repeat(400)}`, /You say,\s+"a{290,300}"/);

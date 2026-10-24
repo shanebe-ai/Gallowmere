@@ -61,7 +61,7 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 6. Groq answers first. If it's slow, rate limited or down, Gemini Flash Lite takes over. If both are out, Morda falls back to scripted lines. The game never goes silent.
 7. The engine applies the action: a `remember` note is saved, a `refuse` makes them ignore that player for a minute. A price is clamped to the band the engine set for this haggle, and anything the model tried outside it is logged. Coin and items move only through code, in a transaction, after the player accepts.
 
-Every NPC line is logged to `ai_usage` with provider, tokens, latency and whether a fallback was used. The admin can type `aistats` in game to see lines per player per hour, fallback rate, latency and what it would cost on paid Groq.
+Every NPC line is logged to `ai_usage` with provider, tokens, latency and whether a fallback was used. The admin can type `aistats` in game to see lines per player per hour, fallback rate, latency and what it would cost on paid Groq. `aibench` runs the same short chat with Tilly on several ai& models and shows speed and what each said; `aimodel <model>` switches the live model until restart.
 
 ## Cost
 
@@ -139,8 +139,10 @@ Set in `.env`. Only the database and AI keys need changing for most setups.
 | `PORT` | 3004 | Web port |
 | `TELNET_PORT` | 4004 | Telnet port |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | localhost, 5432, gallowmere, gallowmere | PostgreSQL connection |
-| `GROQ_API_KEY`, `GROQ_MODEL` | none, llama-3.1-8b-instant | Main AI provider |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | none, gemini-2.5-flash-lite | Backup AI provider |
+| `AIAND_API_KEY`, `AIAND_MODEL` | none, deepseek-ai/deepseek-v4-flash | Main AI provider when set ([ai&](https://aiand.com)) |
+| `AIAND_REASONING_EFFORT`, `AIAND_RPM`, `AIAND_TIMEOUT_MS` | none, 300, 8000 | Thinking kept off for fast replies; rate guard; timeout |
+| `GROQ_API_KEY`, `GROQ_MODEL` | none, llama-3.1-8b-instant | Next AI provider in line |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | none, gemini-2.5-flash-lite | Last AI provider before scripted lines |
 | `AI_DAILY_CAP_PER_PLAYER` | 200 | AI lines per player per day |
 | `AI_DAILY_CAP_GLOBAL` | 5000 | AI lines across all players per day |
 | `GROQ_RPM`, `GEMINI_RPM` | 25, 12 | Rate guards per minute |

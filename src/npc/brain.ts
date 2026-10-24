@@ -66,7 +66,7 @@ export interface NpcTurnOutput {
   say: string;
   emote?: string;
   action: { type: ActionType; note?: string; price?: number };
-  source: 'groq' | 'gemini' | 'scripted';
+  source: 'aiand' | 'groq' | 'gemini' | 'scripted';
   scriptedLine?: string; // full scripted line, already in the NPC's voice
 }
 
@@ -316,6 +316,6 @@ export class NpcBrain {
       fallbackUsed: usedFallbackProvider,
     });
 
-    return { ...reply, source: result.provider as 'groq' | 'gemini' };
+    return { ...reply, source: result.provider as 'aiand' | 'groq' | 'gemini' };
   }
 }

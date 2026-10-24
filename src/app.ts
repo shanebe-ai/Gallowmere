@@ -6,6 +6,8 @@ import { Server } from 'socket.io';
 import { config } from './config.js';
 import { query } from './db/pool.js';
 import { AIService } from './ai/service.js';
+import { AiandProvider } from './ai/providers/aiand.js';
+import type { LiveModel } from './ai/bench.js';
 import { GroqProvider } from './ai/providers/groq.js';
 import { GeminiProvider } from './ai/providers/gemini.js';
 import type { ChatProvider } from './ai/types.js';
@@ -20,6 +22,10 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 export function defaultProviders(): Array<{ provider: ChatProvider; rpm: number }> {
   return [
+    {
+      provider: new AiandProvider(config.ai.aiandKey, config.ai.aiandModel, config.ai.aiandTimeoutMs, config.ai.aiandReasoning),
+      rpm: config.ai.aiandRpm,
+    },
     { provider: new GroqProvider(config.ai.groqKey, config.ai.groqModel, config.ai.groqTimeoutMs), rpm: config.ai.groqRpm },
     { provider: new GeminiProvider(config.ai.geminiKey, config.ai.geminiModel, config.ai.geminiTimeoutMs), rpm: config.ai.geminiRpm },
   ];
@@ -31,7 +37,10 @@ export async function createApp(
   const world = new World();
   await world.load();
 
-  const ai = new AIService(opts.providers ?? defaultProviders());
+  const providers = opts.providers ?? defaultProviders();
+  const ai = new AIService(providers);
+  // The ai& provider, for the admin bench and live model switching.
+  const aiand = providers.map((p) => p.provider).find((p) => p.name === 'aiand') as unknown as LiveModel | undefined;
   const brain = new NpcBrain({
     ai,
     dailyCap: config.ai.dailyCapPerPlayer,
@@ -63,7 +72,7 @@ export async function createApp(
     },
   });
 
-  const game = new Game(world, brain);
+  const game = new Game(world, brain, { aiand: aiand && 'models' in aiand ? aiand : undefined });
   await game.init();
 
   const app = express();

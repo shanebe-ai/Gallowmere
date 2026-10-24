@@ -20,6 +20,11 @@ export const config = {
     password: process.env.DB_PASSWORD || '',
   },
   ai: {
+    aiandKey: process.env.AIAND_API_KEY || '',
+    aiandModel: process.env.AIAND_MODEL || 'deepseek-ai/deepseek-v4-flash',
+    aiandReasoning: process.env.AIAND_REASONING_EFFORT ?? 'none',
+    aiandRpm: num('AIAND_RPM', 300),
+    aiandTimeoutMs: num('AIAND_TIMEOUT_MS', 8000),
     groqKey: process.env.GROQ_API_KEY || '',
     groqModel: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
     geminiKey: process.env.GEMINI_API_KEY || '',
