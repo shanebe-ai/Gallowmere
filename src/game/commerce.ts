@@ -26,7 +26,7 @@ import {
 } from './economy.js';
 import type { Session } from './session.js';
 import { c, capitalize } from './text.js';
-import { cleanTarget, type Npc } from './world.js';
+import { cleanTarget, looseMatch, type Npc } from './world.js';
 import type { ShopSeed } from '../db/migrate.js';
 
 /** What the commerce code needs from the game. */
@@ -89,7 +89,10 @@ export function findItem(items: Item[], typed: string): Item | undefined {
       i.template.keywords.some((k) => k === t || padded.includes(` ${k} `) || (t.length >= 3 && k.startsWith(t)))
     );
   });
-  return hits[nth - 1];
+  if (hits.length) return hits[nth - 1];
+  // Nothing exact: the closest single match among these items, forgiving partial words and typos.
+  const loose = looseMatch(m ? m[2] : typed, items.map((i) => ({ name: i.template.name, keywords: i.template.keywords, ref: i })));
+  return loose && 'ref' in loose ? loose.ref : undefined;
 }
 
 function parseAmount(text: string): number | null {

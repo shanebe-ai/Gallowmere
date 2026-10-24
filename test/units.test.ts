@@ -179,3 +179,34 @@ describe('telnet parser', () => {
     expect(run('x'.repeat(5000) + '\r\n').lines[0]).toHaveLength(1000);
   });
 });
+
+import { looseMatch } from '../src/game/world.js';
+
+describe('matching by context', () => {
+  const room = [
+    { name: 'the stalls', keywords: ['stalls', 'stall'], ref: 'stalls' },
+    { name: 'the painted rat sign', keywords: ['sign', 'rat sign'], ref: 'sign' },
+  ];
+  it('forgives typos and partial words', () => {
+    expect(looseMatch('sing', room)).toMatchObject({ ref: 'sign' });
+    expect(looseMatch('the painted thing', room)).toMatchObject({ ref: 'sign' });
+    expect(looseMatch('stalss', room)).toMatchObject({ ref: 'stalls' });
+  });
+  it('asks when two things fit equally', () => {
+    const two = [
+      { name: 'a brass locket', keywords: ['locket'], ref: 1 },
+      { name: 'a brass bell', keywords: ['bell'], ref: 2 },
+    ];
+    expect(looseMatch('brass', two)).toEqual({ ambiguous: ['a brass locket', 'a brass bell'] });
+  });
+  it('treats copies of the same thing as one', () => {
+    const ropes = [
+      { name: 'a coil of rope', keywords: ['rope'], ref: 1 },
+      { name: 'a coil of rope', keywords: ['rope'], ref: 2 },
+    ];
+    expect(looseMatch('ropes', ropes)).toMatchObject({ ref: 1 });
+  });
+  it('gives up on nonsense', () => {
+    expect(looseMatch('moon', room)).toBeNull();
+  });
+});

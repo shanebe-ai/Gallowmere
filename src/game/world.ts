@@ -48,6 +48,66 @@ function matches(phrase: string, name: string, keywords: string[]): boolean {
   );
 }
 
+const STOP = new Set(['of', 'and', 'with', 'on', 'in', 'the', 'a', 'an', 'at', 'to', 'some', 'that', 'this', 'it']);
+
+function words(text: string): string[] {
+  return cleanTarget(text)
+    .split(' ')
+    .map((w) => w.replace(/'s$/, ''))
+    .filter((w) => w && !STOP.has(w));
+}
+
+/** Edit distance counting a swapped pair of letters as one typo ("sing" for "sign"). */
+function distance(a: string, b: string): number {
+  if (Math.abs(a.length - b.length) > 2) return 3;
+  const d: number[][] = Array.from({ length: a.length + 1 }, (_, i) => Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)));
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+  }
+  return d[a.length][b.length];
+}
+
+export interface Candidate<T> {
+  name: string;
+  keywords: string[];
+  ref: T;
+}
+
+/**
+ * Second chance matching, by context: scores everything in the room against the words typed,
+ * forgiving partial words and small typos. Returns the single best match, or the names that tie.
+ */
+export function looseMatch<T>(phrase: string, cands: Candidate<T>[]): { ref: T; name: string } | { ambiguous: string[] } | null {
+  const typed = words(phrase);
+  if (!typed.length) return null;
+  const scored = cands.map((c) => {
+    const own = new Set([...words(c.name), ...c.keywords.flatMap((k) => words(k))]);
+    let score = 0;
+    for (const t of typed) {
+      let best = 0;
+      for (const o of own) {
+        if (o === t) best = Math.max(best, 3);
+        else if (t.length >= 3 && o.startsWith(t)) best = Math.max(best, 2);
+        else if (o.length >= 4 && t.startsWith(o)) best = Math.max(best, 2);
+        else if (t.length >= 4 && distance(t, o) <= 1) best = Math.max(best, 2);
+        else if (t.length >= 6 && distance(t, o) <= 2) best = Math.max(best, 1);
+      }
+      score += best;
+    }
+    return { c, score };
+  });
+  const top = Math.max(0, ...scored.map((x) => x.score));
+  if (!top) return null;
+  const winners = scored.filter((x) => x.score === top);
+  // One winner, or several copies of the same thing: either way it's obvious.
+  if (new Set(winners.map((x) => x.c.name)).size === 1) return { ref: winners[0].c.ref, name: winners[0].c.name };
+  return { ambiguous: [...new Set(winners.map((x) => x.c.name))] };
+}
+
 export interface Room {
   id: string;
   district: string;

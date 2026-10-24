@@ -9,7 +9,9 @@ import { addNote, getMemory } from '../npc/memory.js';
 import { isFlagged } from './filter.js';
 import { Session, type Connection } from './session.js';
 import { c, capitalize, listJoin, sanitize, stripAnsi } from './text.js';
-import { DIR_SHORT, OPPOSITE, World, cleanTarget, type Direction, type Feature, type Npc } from './world.js';
+import { DIR_SHORT, OPPOSITE, World, cleanTarget, looseMatch, type Candidate, type Direction, type Feature, type Npc } from './world.js';
+import { findItem } from './commerce.js';
+import { listJoin as orList } from './text.js';
 
 const MAX_INPUT = 300;
 const MAX_ALIASES = 30;
@@ -530,7 +532,7 @@ export class Game {
 
     const [verbRaw, ...restParts] = line.split(' ');
     const verb = verbRaw.toLowerCase();
-    const rest = restParts.join(' ').trim();
+    let rest = restParts.join(' ').trim();
 
     if (DIR_SHORT[verb]) return this.move(s, DIR_SHORT[verb]);
 
@@ -538,8 +540,11 @@ export class Game {
       case 'l':
       case 'look':
       case 'examine':
-      case 'x':
-        return this.look(s, rest);
+      case 'x': {
+        if (!rest) return this.look(s, rest);
+        const target = await this.resolveTarget(s, rest);
+        return target === null ? undefined : this.look(s, target);
+      }
       case 'go':
         if (DIR_SHORT[rest.toLowerCase()]) return this.move(s, DIR_SHORT[rest.toLowerCase()]);
         return s.out('Go where? Try north, south, east, west, up or down.');
@@ -643,6 +648,11 @@ export class Game {
     }
     if (VERBS[verb]) {
       const action = VERBS[verb];
+      if (rest && !/^all\b/i.test(rest)) {
+        const target = await this.resolveTarget(s, rest);
+        if (target === null) return;
+        rest = target;
+      }
       // Your own things first, then things on the floor, then the room.
       if (action === 'take' && rest && (await this.commerce.take(s, rest))) return;
       if (['eat', 'drink', 'light', 'read', 'use', 'open', 'smell'].includes(action) && (await this.commerce.itemAction(s, action, rest))) return;
@@ -711,6 +721,53 @@ export class Game {
     s.out("You don't see that here.");
   }
 
+  /**
+   * Works out what the player means by what they typed, in the context of the room:
+   * an exact name or keyword first, then the closest match among the people, things and
+   * items here. "it" means the last thing they looked at or handled. Returns the words to
+   * use, or null after telling the player the target is unclear.
+   */
+  async resolveTarget(s: Session, rest: string): Promise<string | null> {
+    const p = s.player!;
+    let t = cleanTarget(rest);
+    if (['it', 'him', 'her', 'them'].includes(t)) {
+      if (!s.lastTarget) {
+        s.out('What do you mean by that? Look at something first.');
+        return null;
+      }
+      return s.lastTarget;
+    }
+    t = t.replace(/^(up|down|out|over|around)\s+/, '');
+    const floor = await this.commerce.roomItems(p.roomId);
+    const mine = await this.commerce.myItems(s);
+    const exact =
+      this.world.findNpc(p.roomId, t)?.card.listName ??
+      this.world.findNpc(p.roomId, t)?.name ??
+      this.world.findFeature(p.roomId, t)?.name ??
+      findItem(mine, rest)?.template.name ??
+      findItem(floor, rest)?.template.name ??
+      this.findPlayerHere(s, t)?.player!.name;
+    if (exact) {
+      s.lastTarget = exact;
+      return rest;
+    }
+    if (['me', 'self', 'myself'].includes(t) || t === p.name.toLowerCase()) return rest;
+    const cands: Candidate<string>[] = [
+      ...this.world.npcsIn(p.roomId).map((n) => ({ name: n.card.listName ?? n.name, keywords: [n.name, ...n.card.keywords], ref: n.card.listName ?? n.name })),
+      ...this.world.room(p.roomId).features.map((f) => ({ name: f.name, keywords: f.keywords, ref: f.name })),
+      ...[...mine, ...floor].map((i) => ({ name: i.template.name, keywords: i.template.keywords, ref: i.template.name })),
+      ...this.playersIn(p.roomId, s).map((o) => ({ name: o.player!.name, keywords: [o.player!.name.toLowerCase()], ref: o.player!.name })),
+    ];
+    const hit = looseMatch(rest, cands);
+    if (!hit) return rest; // nothing close: let the command say so in its own words
+    if ('ambiguous' in hit) {
+      s.out(`Which do you mean: ${orList(hit.ambiguous).replace(/ and (?!.* and )/, ' or ')}?`);
+      return null;
+    }
+    s.lastTarget = hit.ref;
+    return hit.ref;
+  }
+
   private findPlayerHere(s: Session, cleaned: string): Session | undefined {
     if (!cleaned) return undefined;
     const first = cleaned.split(' ')[0];
@@ -736,7 +793,10 @@ export class Game {
         this.toRoom(p.roomId, `${c.player(p.name)} ${VERB_SEEN[action]} ${feature.name}.`, s);
         return void (await this.commerce.scavenge(s, spot, a.text, a.scavenge));
       }
-      const text = typeof a === 'string' ? a : a?.text ?? VERB_DEFAULT[action](feature.name);
+      const text =
+        typeof a === 'string'
+          ? a
+          : a?.text ?? (action === 'read' && /"|[A-Z]{3,}/.test(feature.look) ? feature.look : VERB_DEFAULT[action](feature.name));
       s.out(text);
       const seen = typeof a === 'object' && a.room ? a.room : `${VERB_SEEN[action]} ${feature.name}.`;
       this.toRoom(p.roomId, `${c.player(p.name)} ${seen}`, s);

@@ -451,4 +451,19 @@ describe('Gallowmere economy end to end', () => {
     await p.do('listen to the fog', /Nothing but the town|listen/);
     await p.close();
   });
+  it('works out what you mean from the room: the sign, typos, it, and asking when unclear', async () => {
+    const p = await create('Uma', 'market_west');
+    await p.do('look at the sign', /wooden sign of a rat/);
+    await p.do('examine sign', /wooden sign of a rat/);
+    await p.do('x the painted sign', /wooden sign of a rat/);
+    await p.do('look sing', /wooden sign of a rat/);
+    await p.do('read sign', /THE DROWNED RAT/);
+    await p.do('push it', /swat the sign/);
+    await p.do('look at the stalss', /Rope, lamp oil, bent nails/);
+    await p.do('search them', /poke through the stalls/);
+    await query(`INSERT INTO items (template_id, owner_type, owner_id) VALUES ('brass_locket','room','market_west'),('silver_spoon','room','market_west')`);
+    await p.do('take the lockt', /You take a brass locket/);
+    await p.do('look moon', /don't see that here/);
+    await p.close();
+  });
 });

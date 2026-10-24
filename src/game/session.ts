@@ -28,6 +28,8 @@ export class Session {
   firstPassword = '';
   wrongPasswords = 0;
   aiPending = false;
+  /** The last thing this player looked at or handled, so "take it" works. */
+  lastTarget: string | null = null;
   quitting = false;
 
   constructor(public conn: Connection) {}
