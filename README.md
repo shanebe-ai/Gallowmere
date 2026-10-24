@@ -53,7 +53,7 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 * Classic MUD combat in 3 second rounds: levels 1 to 10, experience, weapons and armour from Hamo, wounds in words, fleeing. Every roll is code; the AI only adds a taunt
 * No fighting in the temple or the counting house; Morda throws brawlers out of the Drowned Rat; players can fight players, never newcomers in their first two hours
 * Death and rebirth: wake in the Temple of Ash with a grave chill, your goods on your corpse (owner only for 10 minutes, gone after 30), banked coin always safe, newcomers keep everything
-* The plague cart: a random bell every one to two hours, a round through every street, the dead and the badly hurt collected, a toll of one coin in four, and everything it takes sold to Hook
+* The plague cart: a random bell from the temple tower every one to two hours (the admin can ring it early with `cart` from the bell tower), a round through every street, the dead and the badly hurt collected, a toll of one coin in four, and everything it takes sold to Hook
 * Ways to earn alone: looting, hauling corpses to Osmund or the butcher, carrying another player home, cutpurse bounties, rat tails for Maud, the rat king behind the iron door
 * Sewer beasts that come back, and a rat king that comes back once a day
 

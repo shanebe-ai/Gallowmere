@@ -514,6 +514,25 @@ describe('Milestone 3 end to end', () => {
     await q.close();
   });
 
+  it('the admin can only send the cart out from the bell tower', async () => {
+    const admin = await login('Boss', 'market_square');
+    await admin.do('cart', /The bell hangs in the bell tower, up the ladder from the nave/);
+    expect(app.game.cart.out).toBe(false);
+    await admin.close();
+    const a2 = await login('Boss', 'bell_tower');
+    await a2.do('ring bell', /haul on the rope[\s\S]*The temple bell tolls/);
+    expect(app.game.cart.out).toBe(true);
+    await a2.do('cart', /already out/);
+    await a2.close();
+    app.game.cart.out = false;
+    // Anyone else ringing it just wakes the dogs.
+    const p = await create('Xia', 'bell_tower', { old: true });
+    await p.do('ring bell', /Every dog in Gallowmere starts barking/);
+    expect(app.game.cart.out).toBe(false);
+    await p.do('cart', /Huh\?|What\?|doesn't mean|fog swallows/);
+    await p.close();
+  });
+
   it('dropping the connection mid fight keeps you in it', async () => {
     const p = await create('Sal', 'market_square', { old: true });
     const d = app.game.combat.spawn('drunk', 'market_square', null);

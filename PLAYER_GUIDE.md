@@ -203,7 +203,7 @@ You'll want to know about fighting. Everyone does.
 
 **Healing.** Wounds close slowly on their own, faster by the fire in the Drowned Rat or on a bench in the nave. Bandages help (`bandage`). Morda's stew helps. Father Osmund will make you whole for a few coin (`heal`).
 
-**The plague cart.** At no fixed hour the temple bell tolls. A couple of minutes later the cart sets out from the temple steps and works its way through every street, down to the river. It takes every body it passes and everything on them, and it all ends up in Hook's back room, where you can buy it back if you can afford him. The cart men take a quarter of the coin in your purse, and anyone too badly hurt to stand goes on the cart with the dead. Get indoors when you hear the bell. Bank your coin before you do.
+**The plague cart.** At no fixed hour, every hour or two, the cracked bell in the temple's bell tower tolls. A couple of minutes later the cart sets out from the temple steps and works its way through every street, down to the river. It takes every body it passes and everything on them, and it all ends up in Hook's back room, where you can buy it back if you can afford him. The cart men take a quarter of the coin in your purse, and anyone too badly hurt to stand goes on the cart with the dead. Get indoors when you hear the bell. Bank your coin before you do.
 
 **The dead pay, if you're not squeamish.** `loot corpse` takes what a body carried. `take corpse` puts it over your shoulder. Carry a body to Father Osmund in the nave and he'll pay for the burial. The butcher pays more, and doesn't ask, and word gets around. Carry another player's body to the temple and Osmund sends their things home to them, and pays you for the kindness.
 

@@ -177,7 +177,7 @@ const HELP: Record<string, string> = {
   fight: 'attack <someone> (kill, k): start a fight.  flee: run for it.  consider <someone>: size them up.  health (hp): your wounds, your weapon and your odds.  wield <weapon>, wear <armour>, remove.  bandage: bind your wounds out of a fight. No fighting in the temple or the counting house.',
   death: 'If you die you wake in the Temple of Ash with a grave chill. Your goods stay on your corpse for 30 minutes (only yours for the first 10): loot corpse to get them back, or pay Father Osmund to recover them. Banked coin is always safe.',
   corpses: 'loot corpse: take what a body carried.  take corpse: carry it (heavy).  give corpse to osmund in the nave (or drop it in the ossuary): a burial fee.  sell corpse to butcher: better paid, frowned upon.  bounty: collect cutpurse bounties at the watch house.',
-  cart: 'The plague cart: when the temple bell tolls, get indoors or bank your coin. The cart takes the dead, the badly hurt, and a quarter of what you carry.',
+  cart: 'The plague cart: when the bell in the temple tower tolls, get indoors or bank your coin. The cart takes the dead, the badly hurt, and a quarter of what you carry. It comes at no fixed hour, every hour or two.',
   who: 'who: everyone in Gallowmere right now.',
   alias: 'alias: list your aliases.  alias <name> <command>: create one.  unalias <name>: remove one.',
   score: 'score: who you are and where you stand.',
@@ -846,15 +846,15 @@ export class Game {
       case 'aimodel':
         if (this.isAdmin(s)) return this.aiModel(s, rest);
         break;
+      case 'ring':
+        // The admin ringing the bell in the tower sends the cart out; anyone else just makes noise.
+        if (this.isAdmin(s) && s.player!.roomId === 'bell_tower' && /bell/i.test(rest)) return this.ringForCart(s);
+        break;
       case 'aiping':
         if (this.isAdmin(s)) return this.aiPing(s);
         break;
       case 'cart':
-        if (this.isAdmin(s)) {
-          if (this.cart.out) return s.out('The cart is already out.');
-          s.out(c.dim('You ring the bell yourself.'));
-          return this.cart.bell();
-        }
+        if (this.isAdmin(s)) return this.ringForCart(s);
         break;
     }
     if (VERBS[verb]) {
@@ -993,6 +993,15 @@ export class Game {
       s.travelling.unref();
     };
     await step(0);
+  }
+
+  /** Admin: ring the temple bell and send the plague cart out now. Only from the bell tower. */
+  private ringForCart(s: Session): void {
+    if (s.player!.roomId !== 'bell_tower') return s.out('The bell hangs in the bell tower, up the ladder from the nave. Ring it from there.');
+    if (this.cart.out) return s.out('The cart is already out.');
+    s.out(c.dim('You haul on the rope with both hands.'));
+    this.toRoom(s.player!.roomId, `${c.player(s.player!.name)} hauls on the bell rope.`, s);
+    this.cart.bell();
   }
 
   /** journal: the places you've found that are worth going back to. */
@@ -1518,7 +1527,7 @@ export class Game {
       s.out('  aibench [models | model ...]: time the same chat with Tilly on ai& models.');
       s.out('  aimodel [model]: show or switch the ai& model until restart.');
       s.out('  aiping: one tiny request to each AI provider, to see which work.');
-      s.out('  cart: ring the temple bell and send the plague cart out now.');
+      s.out('  cart (or ring bell): in the bell tower, up the ladder from the nave, ring the bell and send the plague cart out now.');
     }
   }
 
