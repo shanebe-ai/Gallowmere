@@ -64,6 +64,9 @@ html, body {
 }
 
 #status-info b { color: var(--green); font-weight: normal; }
+#status-info .hp { color: var(--green); }
+#status-info .hp-mid { color: var(--amber); }
+#status-info .hp-low { color: var(--red); }
 
 .conn { font-size: 16px; padding: 0 6px; border: 1px solid currentColor; }
 .conn-ok { color: var(--green-dim); }

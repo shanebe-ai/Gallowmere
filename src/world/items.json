@@ -105,7 +105,8 @@
         "text": "You spoon down the stew. Warmth spreads from your belly out. You stop wondering what the lumps were.",
         "consume": true
       }
-    }
+    },
+    "heals": 4
   },
   {
     "id": "ale",
@@ -228,10 +229,11 @@
     "look": "Clean linen boiled in vinegar. The temple's best seller.",
     "actions": {
       "use": {
-        "text": "You bind a scrape you didn't know you had. It stings, then it's better.",
+        "text": "You bind your wounds tight. It stings, then it's better.",
         "consume": true
       }
-    }
+    },
+    "heals": 5
   },
   {
     "id": "knife",
@@ -242,11 +244,15 @@
     ],
     "kind": "tool",
     "weight": 1,
-    "price": 5,
-    "look": "A plain knife with a wooden handle. For bread, rope and the odd argument.",
+    "price": 6,
+    "look": "A plain knife with a wooden handle. For bread, rope and the odd argument. Wield it and it's a weapon.",
     "actions": {
       "use": "You cut a thread off your sleeve. Sharp enough."
-    }
+    },
+    "damage": [
+      1,
+      4
+    ]
   },
   {
     "id": "hammer",
@@ -299,35 +305,47 @@
     ],
     "kind": "weapon",
     "weight": 3,
-    "price": 6,
-    "look": "Knotted oak, heavier at one end. Steel and blood come to Gallowmere soon. For now it's a heavy stick.",
-    "actions": {}
+    "price": 5,
+    "look": "Knotted oak, heavier at one end. The dock bruisers swear by them.",
+    "actions": {},
+    "damage": [
+      2,
+      4
+    ]
   },
   {
     "id": "hand_axe",
-    "name": "a hand axe",
+    "name": "a hatchet",
     "keywords": [
       "axe",
       "hatchet"
     ],
     "kind": "weapon",
     "weight": 3,
-    "price": 15,
-    "look": "A short axe with a bearded head. Steel and blood come to Gallowmere soon. For now it splits kindling.",
-    "actions": {}
+    "price": 9,
+    "look": "A short axe with a bearded head. Splits kindling, and worse.",
+    "actions": {},
+    "damage": [
+      2,
+      5
+    ]
   },
   {
     "id": "shortsword",
-    "name": "a shortsword",
+    "name": "a short sword",
     "keywords": [
       "shortsword",
       "sword"
     ],
     "kind": "weapon",
     "weight": 4,
-    "price": 25,
-    "look": "A plain, honest blade. Hamo's best. Steel and blood come to Gallowmere soon. For now it's just a promise.",
-    "actions": {}
+    "price": 18,
+    "look": "A plain, honest blade, the best in town. Hamo won't say who else he's made them for.",
+    "actions": {},
+    "damage": [
+      3,
+      6
+    ]
   },
   {
     "id": "holy_water",
@@ -532,5 +550,124 @@
     "price": 0,
     "look": "A heavy sack of turnips with MAUD chalked on it. Give it to Maud for your pay.",
     "actions": {}
+  },
+  {
+    "id": "padded_jerkin",
+    "name": "a padded jerkin",
+    "keywords": [
+      "jerkin",
+      "padded",
+      "armour",
+      "armor"
+    ],
+    "kind": "armour",
+    "weight": 3,
+    "price": 10,
+    "armour": 1,
+    "look": "Quilted wool stuffed with rags. It turns a glancing blow and smells of the last owner."
+  },
+  {
+    "id": "leather_coat",
+    "name": "a leather coat",
+    "keywords": [
+      "coat",
+      "leather",
+      "armour",
+      "armor"
+    ],
+    "kind": "armour",
+    "weight": 4,
+    "price": 22,
+    "armour": 2,
+    "look": "Boiled leather, stiff as a board, scarred where a blade found it once already."
+  },
+  {
+    "id": "rat_tail",
+    "name": "a rat tail",
+    "keywords": [
+      "tail",
+      "rat tail",
+      "tails"
+    ],
+    "kind": "tail",
+    "weight": 0,
+    "price": 2,
+    "look": "Long, naked and pink. Maud pays for these; the rats eat her grain."
+  },
+  {
+    "id": "rat_king_knot",
+    "name": "the rat king's knot",
+    "keywords": [
+      "knot",
+      "king",
+      "trophy"
+    ],
+    "kind": "valuable",
+    "weight": 1,
+    "price": 30,
+    "look": "A knot of tails grown together, dried hard. Proof you killed the thing in the Nest. Hook will want it."
+  },
+  {
+    "id": "iron_key",
+    "name": "an iron key",
+    "keywords": [
+      "key",
+      "iron key"
+    ],
+    "kind": "tool",
+    "weight": 0,
+    "price": 25,
+    "look": "Heavy, black and old, with a bit like a broken tooth. It smells of the sewers."
+  },
+  {
+    "id": "rags",
+    "name": "a bundle of rags",
+    "keywords": [
+      "rags",
+      "bundle",
+      "rag"
+    ],
+    "kind": "junk",
+    "weight": 1,
+    "price": 1,
+    "look": "Grey, damp and best not examined closely."
+  },
+  {
+    "id": "empty_bottle",
+    "name": "an empty bottle",
+    "keywords": [
+      "bottle"
+    ],
+    "kind": "junk",
+    "weight": 1,
+    "price": 1,
+    "look": "Green glass, a crack near the neck, a smell of cheap gin."
+  },
+  {
+    "id": "tract",
+    "name": "a soggy tract",
+    "keywords": [
+      "tract",
+      "pamphlet",
+      "paper"
+    ],
+    "kind": "junk",
+    "weight": 0,
+    "price": 1,
+    "look": "A cheap printed sheet: THE CART COMES FOR THE WICKED. Someone has added: AND EVERYONE ELSE.",
+    "actions": {
+      "read": "THE CART COMES FOR THE WICKED. Below, in pencil: AND EVERYONE ELSE."
+    }
+  },
+  {
+    "id": "bone",
+    "name": "a gnawed bone",
+    "keywords": [
+      "bone"
+    ],
+    "kind": "junk",
+    "weight": 0,
+    "price": 1,
+    "look": "Gnawed clean. You decide not to wonder what it came from."
   }
 ]

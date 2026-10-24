@@ -47,6 +47,10 @@ export interface GameHooks {
     trade?: TradeContext,
   ): Promise<NpcTurnOutput | null>;
   updateStatus(s: Session): void;
+  /** Weight carried outside the pack, like a corpse over the shoulder. */
+  extraLoad?(playerId: number): number;
+  onConsume?(s: Session, template: Item['template']): void;
+  gearLines?(s: Session): Promise<string[]>;
 }
 
 export interface Haggle {
@@ -170,11 +174,12 @@ export class Commerce {
     s.out(c.title('You are carrying:'));
     if (!items.length) s.out('  Nothing but lint and regret.');
     for (const n of groupNames(items)) s.out(`  ${c.thing(n)}`);
-    s.out(`Coin: ${c.player(String(coin))}${bank ? c.dim(`  (banked: ${bank})`) : ''}   Load: ${this.weightOf(items)}/${PACK_LIMIT}`);
+    for (const line of (await this.game.gearLines?.(s)) ?? []) s.out(line);
+    s.out(`Coin: ${c.player(String(coin))}${bank ? c.dim(`  (banked: ${bank})`) : ''}   Load: ${this.weightOf(items, s.player!.id)}/${PACK_LIMIT}`);
   }
 
-  private weightOf(items: Item[]): number {
-    return items.reduce((w, i) => w + i.template.weight, 0);
+  private weightOf(items: Item[], playerId?: number): number {
+    return items.reduce((w, i) => w + i.template.weight, 0) + (playerId ? (this.game.extraLoad?.(playerId) ?? 0) : 0);
   }
 
   async roomItems(roomId: string): Promise<Item[]> {
@@ -193,7 +198,7 @@ export class Commerce {
     const all = /^all\b/i.test(cleanTarget(target));
     const picks = all ? floor : [findItem(floor, target)].filter((i): i is Item => !!i);
     if (!picks.length) return false;
-    let load = this.weightOf(await this.myItems(s));
+    let load = this.weightOf(await this.myItems(s), s.player!.id);
     let took = 0;
     for (const item of picks) {
       if (load + item.template.weight > PACK_LIMIT) {
@@ -250,6 +255,7 @@ export class Commerce {
       if (!ok) return true;
     }
     s.out(a.text);
+    if (a.consume) this.game.onConsume?.(s, item.template);
     const seen = { eat: 'eats', drink: 'drinks', light: 'lights', read: 'reads', use: 'uses', open: 'opens', smell: 'sniffs' }[verb] ?? 'fiddles with';
     this.game.toRoom(p.roomId, `${c.player(p.name)} ${seen} ${item.template.name}.`, s);
     return true;
@@ -312,7 +318,7 @@ export class Commerce {
 
     if (other) {
       const theirs = await itemsOf(this.catalog, { type: 'player', id: other.player!.id });
-      if (this.weightOf(theirs) + item.template.weight > PACK_LIMIT) return s.out(`${other.player!.name} can't carry any more.`);
+      if (this.weightOf(theirs, other.player!.id) + item.template.weight > PACK_LIMIT) return s.out(`${other.player!.name} can't carry any more.`);
       const ok = await tx((cl) => moveItem(cl, item.id, { type: 'player', id: p.id }, { type: 'player', id: other.player!.id }));
       if (!ok) return s.out("You aren't carrying that anymore.");
       s.out(`You give ${item.template.name} to ${toName}.`);
@@ -397,7 +403,7 @@ export class Commerce {
       return;
     }
     const t = this.catalog.template(pick);
-    const load = this.weightOf(await this.myItems(s));
+    const load = this.weightOf(await this.myItems(s), s.player!.id);
     if (load + t.weight > PACK_LIMIT) {
       await createItem(null, pick, { type: 'room', id: p.roomId });
       return s.out(`You find ${t.name}, but your pack is full. You leave it at your feet.`);
@@ -596,7 +602,7 @@ export class Commerce {
     const p = s.player!;
     this.haggles.delete(p.id);
     const t = this.catalog.template(h.templateId);
-    const load = this.weightOf(await this.myItems(s));
+    const load = this.weightOf(await this.myItems(s), s.player!.id);
     if (load + t.weight > PACK_LIMIT) return s.out(`${capitalize(t.name)} won't fit in your pack.`);
     try {
       await tx(async (cl) => {

@@ -4,6 +4,8 @@ import { query } from '../db/pool.js';
 import { config } from '../config.js';
 import { NpcBrain, TRADE_ACTIONS, type ActionType, type NpcTurnOutput, type Replies, type TradeContext } from '../npc/brain.js';
 import { Commerce } from './commerce.js';
+import { Combat, maxHealthFor, xpForLevel } from './combat.js';
+import { PlagueCart, type CartOptions } from './cart.js';
 import type { AIService } from '../ai/service.js';
 import { avg, BENCH_DEFAULTS, BENCH_LINES, runBench, type LiveModel } from '../ai/bench.js';
 import { balances, Catalog, groupNames, restockShops, sweepRooms } from './economy.js';
@@ -145,6 +147,10 @@ const HELP: Record<string, string> = {
   bank: 'At the counting house: deposit <amount or all>, withdraw <amount or all> (one copper in twenty), balance.',
   work: 'work: ask Maud at Market East for an odd job.  bribe <someone> <amount>: some people can be bought.',
   hint: 'hint: a nudge toward what to try next.',
+  fight: 'attack <someone> (kill, k): start a fight.  flee: run for it.  consider <someone>: size them up.  wield <weapon>, wear <armour>, remove.  bandage: bind your wounds out of a fight. No fighting in the temple or the counting house.',
+  death: 'If you die you wake in the Temple of Ash with a grave chill. Your goods stay on your corpse for 30 minutes (only yours for the first 10): loot corpse to get them back, or pay Father Osmund to recover them. Banked coin is always safe.',
+  corpses: 'loot corpse: take what a body carried.  take corpse: carry it (heavy).  give corpse to osmund in the nave (or drop it in the ossuary): a burial fee.  sell corpse to butcher: better paid, frowned upon.  bounty: collect cutpurse bounties at the watch house.',
+  cart: 'The plague cart: when the temple bell tolls, get indoors or bank your coin. The cart takes the dead, the badly hurt, and a quarter of what you carry.',
   who: 'who: everyone in Gallowmere right now.',
   alias: 'alias: list your aliases.  alias <name> <command>: create one.  unalias <name>: remove one.',
   score: 'score: who you are and where you stand.',
@@ -173,16 +179,27 @@ export class Game {
   private ambientTimer: NodeJS.Timeout | null = null;
   catalog: Catalog;
   commerce: Commerce;
+  combat: Combat;
+  cart: PlagueCart;
   private stockDay = '';
 
   constructor(
     public world: World,
     private brain: NpcBrain,
-    private opts: { random?: () => number; scriptedDelayMs?: number; aiand?: LiveModel; ai?: Pick<AIService, 'status' | 'ping'> } = {},
+    private opts: {
+      random?: () => number;
+      scriptedDelayMs?: number;
+      aiand?: LiveModel;
+      ai?: Pick<AIService, 'status' | 'ping'>;
+      combat?: { tickMs?: number; lifeMs?: number; streetFolk?: number };
+      cart?: CartOptions;
+    } = {},
   ) {
     this.catalog = new Catalog();
     this.catalog.load();
     this.commerce = new Commerce(this, this.catalog);
+    this.combat = new Combat(this, opts.combat ?? {});
+    this.cart = new PlagueCart(this, this.combat, opts.cart ?? {});
   }
 
   /** Stocks the shops and fills their purses. Runs at start and again each new day. */
@@ -195,11 +212,24 @@ export class Game {
     return (this.opts.random ?? Math.random)();
   }
 
+  /** The game's dice, so tests can load them. */
+  random(): number {
+    return this.rand();
+  }
+
   startAmbient(): void {
     this.ambientTimer = setInterval(() => this.ambientTick(), AMBIENT_EVERY_MS);
     this.ambientTimer.unref();
     this.cleanupTimer = setInterval(() => this.cleanup(), CLEANUP_EVERY_MS);
     this.cleanupTimer.unref();
+    this.startLife();
+  }
+
+  /** Fights, street folk and the plague cart. Separate so tests can run them without ambient chatter. */
+  startLife(): void {
+    this.combat.populate();
+    this.combat.start();
+    this.cart.start();
   }
 
   /** Drops expired tokens and stale rate limit entries so memory stays flat. */
@@ -228,6 +258,8 @@ export class Game {
     if (this.cleanupTimer) clearInterval(this.cleanupTimer);
     for (const t of this.loginTimers.values()) clearTimeout(t);
     for (const l of this.linkdead.values()) clearTimeout(l.timer);
+    this.combat.stop();
+    this.cart.stop();
   }
 
   // ---------------------------------------------------------------- connections
@@ -270,20 +302,69 @@ export class Game {
     if (!p || this.byPlayer.get(p.id) !== s) return;
     this.byPlayer.delete(p.id);
     await query('UPDATE players SET last_seen=now(), room_id=$2 WHERE id=$1', [p.id, p.roomId]);
+    await this.combat.save(p.id);
 
-    if (s.quitting) {
+    // Dropping the connection mid fight doesn't save you: the body stays in the fight a while.
+    const fighting = this.combat.inCombat(p.id);
+    if (s.quitting && !fighting) {
+      await this.combat.forget(p.id);
       this.toRoom(p.roomId, `${c.player(p.name)} fades into the fog.`);
       this.updateStatusAll();
       return;
     }
     // A dropped connection gets a short grace period before the room hears about it.
     const timer = setTimeout(() => {
+      const ld = this.linkdead.get(p.id);
       this.linkdead.delete(p.id);
-      this.toRoom(p.roomId, `${c.player(p.name)} fades into the fog.`);
+      void this.combat.forget(p.id).catch(() => undefined);
+      this.toRoom(ld?.roomId ?? p.roomId, `${c.player(p.name)} fades into the fog.`);
       this.updateStatusAll();
-    }, LINKDEAD_GRACE_MS);
+    }, fighting ? 30_000 : LINKDEAD_GRACE_MS);
     timer.unref();
     this.linkdead.set(p.id, { timer, roomId: p.roomId, name: p.name });
+  }
+
+  /** The session playing this character right now, if any. */
+  sessionOf(id: number): Session | undefined {
+    return this.byPlayer.get(id);
+  }
+
+  /** Where a character is: online, or still standing there after dropping the connection. */
+  playerRoom(id: number): string | null {
+    return this.byPlayer.get(id)?.player?.roomId ?? this.linkdead.get(id)?.roomId ?? null;
+  }
+
+  setLinkdeadRoom(id: number, roomId: string): void {
+    const ld = this.linkdead.get(id);
+    if (ld) ld.roomId = roomId;
+  }
+
+  extraLoad(playerId: number): number {
+    return this.combat.extraLoad(playerId);
+  }
+
+  onConsume(s: Session, t: Parameters<Combat['onConsume']>[1]): void {
+    this.combat.onConsume(s, t);
+  }
+
+  gearLines(s: Session): Promise<string[]> {
+    return this.combat.gearLines(s);
+  }
+
+  /** Every player in town hears it. */
+  broadcast(text: string): void {
+    for (const s of this.byPlayer.values()) s.out(text);
+  }
+
+  /** Puts a player somewhere without walking: thrown out, fled, or waking in the temple. */
+  async placePlayer(s: Session, roomId: string, arrival: string): Promise<void> {
+    const p = s.player!;
+    this.commerce.closeHaggle(p.id);
+    p.roomId = roomId;
+    await query('UPDATE players SET room_id=$2 WHERE id=$1', [p.id, roomId]);
+    this.toRoom(roomId, arrival, s);
+    await this.showRoom(s);
+    this.updateStatus(s);
   }
 
   async input(s: Session, raw: string): Promise<void> {
@@ -466,6 +547,7 @@ export class Game {
 
     const { rows } = await query('SELECT alias, expansion FROM player_aliases WHERE player_id=$1', [player.id]);
     s.aliases = new Map(rows.map((r) => [r.alias, r.expansion]));
+    await this.combat.load(player);
 
     const token = randomBytes(24).toString('hex');
     this.tokens.set(token, { playerId: player.id, expires: Date.now() + TOKEN_TTL_MS });
@@ -497,12 +579,15 @@ export class Game {
       .then(({ coin }) => {
         if (s.player !== p || s.state === 'closed') return;
         const room = this.world.room(p.roomId);
+        const st = this.combat.state(p.id);
         s.conn.setStatus({
           name: p.name,
           room: room.title,
           online: this.byPlayer.size,
           exits: room.exits.filter((e) => !e.hidden).map((e) => e.direction),
           coin,
+          health: st?.health,
+          maxHealth: st ? maxHealthFor(st.level) : undefined,
         });
       })
       .catch(() => undefined);
@@ -512,7 +597,7 @@ export class Game {
     for (const s of this.byPlayer.values()) this.updateStatus(s);
   }
 
-  private async showRoom(s: Session): Promise<void> {
+  async showRoom(s: Session): Promise<void> {
     const room = this.world.room(s.player!.roomId);
     const floor = await this.commerce.roomItems(room.id);
     s.out(c.title(room.title));
@@ -520,7 +605,7 @@ export class Game {
     // Who and what is here, one scannable line each. Every name can be clicked to look at it.
     const npcs = this.world.npcsIn(room.id).map((n) => n.card.listName ?? n.name);
     const players = this.playersIn(room.id, s).map((p) => p.player!.name);
-    const things = [...room.features.map((f) => f.name), ...groupNames(floor)];
+    const things = [...room.features.map((f) => f.name), ...groupNames(floor), ...(await this.combat.corpseNames(room.id))];
     this.listLine(s, 'People:', npcs, c.npc);
     this.listLine(s, 'Players:', players, c.player);
     this.listLine(s, 'You see:', things, c.thing);
@@ -562,6 +647,7 @@ export class Game {
       case 'examine':
       case 'x': {
         if (!rest) return this.look(s, rest);
+        if (await this.combat.lookCorpse(s, rest)) return;
         const target = await this.resolveTarget(s, rest);
         return target === null ? undefined : this.look(s, target);
       }
@@ -595,7 +681,33 @@ export class Game {
       case 'punch':
       case 'stab':
       case 'k':
-        return this.attack(s, rest);
+        return this.combat.attack(s, rest);
+      case 'flee':
+      case 'run':
+        return this.combat.flee(s);
+      case 'consider':
+      case 'con':
+        return this.combat.consider(s, rest);
+      case 'wield':
+        return this.combat.wield(s, rest);
+      case 'wear':
+        return this.combat.wear(s, rest);
+      case 'remove':
+      case 'unwield':
+        return this.combat.remove(s, rest);
+      case 'bandage':
+        return this.combat.bandage(s);
+      case 'loot':
+        return this.combat.loot(s, rest);
+      case 'bounty':
+      case 'bounties':
+        return this.combat.bounty(s);
+      case 'heal':
+        return this.combat.heal(s);
+      case 'recover':
+        return this.combat.recover(s);
+      case 'bury':
+        return this.combat.bury(s);
       case 'emote':
       case 'me':
         return this.emote(s, rest);
@@ -604,9 +716,11 @@ export class Game {
       case 'inventory':
         return this.commerce.inventory(s);
       case 'drop':
+        if (await this.combat.dropCorpse(s, rest)) return;
         return this.commerce.drop(s, rest);
       case 'give':
       case 'hand':
+        if (this.combat.mentionsCorpse(rest)) return /\bosmund|priest|father\b/i.test(rest) ? this.combat.bury(s) : s.out('Only Father Osmund takes the dead. And the butcher, if you sell.');
         return this.commerce.give(s, rest);
       case 'list':
       case 'wares':
@@ -615,6 +729,7 @@ export class Game {
       case 'purchase':
         return this.commerce.buy(s, rest);
       case 'sell':
+        if (this.combat.mentionsCorpse(rest)) return this.combat.sellToButcher(s);
         return this.commerce.sell(s, rest);
       case 'offer':
       case 'counter':
@@ -680,6 +795,13 @@ export class Game {
       case 'aiping':
         if (this.isAdmin(s)) return this.aiPing(s);
         break;
+      case 'cart':
+        if (this.isAdmin(s)) {
+          if (this.cart.out) return s.out('The cart is already out.');
+          s.out(c.dim('You ring the bell yourself.'));
+          return this.cart.bell();
+        }
+        break;
     }
     if (VERBS[verb]) {
       const action = VERBS[verb];
@@ -689,6 +811,7 @@ export class Game {
         rest = target;
       }
       // Your own things first, then things on the floor, then the room.
+      if (action === 'take' && rest && (await this.combat.takeCorpse(s, rest))) return;
       if (action === 'take' && rest && (await this.commerce.take(s, rest))) return;
       if (['eat', 'drink', 'light', 'read', 'use', 'open', 'smell'].includes(action) && (await this.commerce.itemAction(s, action, rest))) return;
       return this.interact(s, action, verb, rest);
@@ -720,6 +843,15 @@ export class Game {
     if (!exit) {
       if (dir === 'north' && room.id === 'moor_road') return s.out('The fog swallows the road. Not yet. Something is out there, and the town is not ready to meet it.');
       return s.out("You can't go that way.");
+    }
+    const st = this.combat.state(p.id);
+    if (st?.target) return s.out(c.error("You're in a fight! Flee if you want out."));
+    const lock = room.locks[dir];
+    if (lock) {
+      const mine = await this.commerce.myItems(s);
+      if (mine.some((i) => i.template.id === lock.key)) s.out(c.system(lock.unlock));
+      else if ((st?.level ?? 1) >= lock.force) s.out(c.system(lock.forced));
+      else return s.out(lock.locked);
     }
     this.commerce.closeHaggle(p.id);
     this.toRoom(room.id, `${c.player(p.name)} leaves ${dir}.`, s);
@@ -910,7 +1042,7 @@ export class Game {
   /** Several people here and none of them named: one of them reacts, now and then. */
   private overheard(s: Session): void {
     const p = s.player!;
-    const npcs = this.world.npcsIn(p.roomId).filter((n) => n.id !== 'rats');
+    const npcs = this.world.npcsIn(p.roomId).filter((n) => !n.card.mute);
     if (npcs.length < 2 || this.playersIn(p.roomId, s).length) return;
     const last = this.overheardAt.get(p.id) ?? 0;
     if (Date.now() - last < 45_000) return;
@@ -950,24 +1082,6 @@ export class Game {
       .npcsIn(roomId)
       .filter((n) => n.card.keywords.some((k) => lower.includes(` ${k} `)));
     return hits.find((n) => n.kind === 'ai') ?? hits.find((n) => n.kind === 'light') ?? hits[0];
-  }
-
-  private attack(s: Session, rest: string): void {
-    const target = rest.replace(/^(the|at)\s+/i, '').trim();
-    const roomId = s.player!.roomId;
-    const npc = target ? this.world.findNpc(roomId, target.split(' ')[0]) : undefined;
-    const other = target
-      ? this.playersIn(roomId, s).find((o) => o.player!.name.toLowerCase().startsWith(target.toLowerCase()))
-      : undefined;
-    const who = npc ? npc.name : other ? other.player!.name : '';
-    if (target && !who) return s.out("There's nobody like that here.");
-    s.out(
-      who
-        ? `You size up ${who} and think better of it. Steel and blood come to Gallowmere soon, but not today.`
-        : 'Attack what? Not that it matters yet: steel and blood come to Gallowmere soon, but not today.',
-    );
-    if (npc) this.toRoom(roomId, c.dim(`${s.player!.name} eyes ${npc.name} with murder in mind, then thinks better of it.`), s);
-    if (other) other.out(c.dim(`${s.player!.name} eyes you with murder in mind, then thinks better of it.`));
   }
 
   private emote(s: Session, text: string): void {
@@ -1121,7 +1235,7 @@ export class Game {
         },
         player: { id: p.id, name: p.name },
         memory,
-        room: { title: this.world.room(roomId).title, others },
+        room: { title: this.world.room(roomId).title, others, note: this.cart.note() },
         recent: this.recent.get(key) ?? [],
         playerLine,
         kind,
@@ -1216,7 +1330,8 @@ export class Game {
 
   private help(s: Session, topic: string): void {
     const t = topic.toLowerCase();
-    const key = DIR_SHORT[t] ? 'move' : t === 'l' ? 'look' : t;
+    const alias: Record<string, string> = { attack: 'fight', kill: 'fight', flee: 'fight', combat: 'fight', die: 'death', dead: 'death', corpse: 'corpses', loot: 'corpses', bounty: 'corpses', plague: 'cart', bell: 'cart' };
+    const key = DIR_SHORT[t] ? 'move' : t === 'l' ? 'look' : alias[t] ?? t;
     if (key && HELP[key]) return s.out(HELP[key]);
     s.out(c.title('Commands'));
     for (const line of Object.values(HELP)) s.out(`  ${line}`);
@@ -1225,6 +1340,7 @@ export class Game {
       s.out('  aibench [models | model ...]: time the same chat with Tilly on ai& models.');
       s.out('  aimodel [model]: show or switch the ai& model until restart.');
       s.out('  aiping: one tiny request to each AI provider, to see which work.');
+      s.out('  cart: ring the temple bell and send the plague cart out now.');
     }
   }
 
@@ -1236,6 +1352,13 @@ export class Game {
     s.out(`You stand in ${this.world.room(p.roomId).title}.`);
     const { coin, bank } = await balances(p.id);
     s.out(`Coin: ${coin} in your purse, ${bank} in the counting house.`);
+    const st = await this.combat.load(p);
+    const max = maxHealthFor(st.level);
+    const next = st.level < 10 ? `, ${xpForLevel(st.level + 1) - st.xp} more to level ${st.level + 1}` : '';
+    s.out(`Level ${st.level}. Health ${st.health}/${max}. Experience ${st.xp}${next}.`);
+    const chill = st.chillUntil - Date.now();
+    if (chill > 0) s.out(c.dim(`A grave chill is on you: weaker aim for ${Math.ceil(chill / 60_000)} more minute(s).`));
+    if (this.combat.isNew(st)) s.out(c.dim('You are new to these streets: other players can\'t fight you, and death costs you nothing but a chill.'));
   }
 
   private quit(s: Session): void {
@@ -1355,8 +1478,9 @@ export class Game {
     }
     s.out(c.dim('  ai& and free tiers cost $0; the last column is what it would cost at paid Groq rates, for reference.'));
     const byNpc = await query(
-      `SELECT npc_id, count(*)::int AS calls, count(*) FILTER (WHERE provider <> 'scripted')::int AS ai_calls
-         FROM ai_usage WHERE created_at > now() - interval '24 hours' GROUP BY npc_id ORDER BY calls DESC`,
+      `SELECT CASE WHEN npc_id ~ '^m[0-9]+$' THEN 'street folk' ELSE npc_id END AS npc_id,
+              count(*)::int AS calls, count(*) FILTER (WHERE provider <> 'scripted')::int AS ai_calls
+         FROM ai_usage WHERE created_at > now() - interval '24 hours' GROUP BY 1 ORDER BY calls DESC`,
     );
     s.out(c.title('By character'));
     for (const r of byNpc.rows) s.out(`  ${String(r.npc_id).padEnd(16)} ${String(r.calls).padStart(5)} lines, ${r.ai_calls} from the AI`);
@@ -1365,10 +1489,15 @@ export class Game {
   // ---------------------------------------------------------------- ambience
 
   ambientTick(): void {
+    // At most one idle line per room each beat, so three rats don't all squabble at once.
+    const spoke = new Set<string>();
     for (const npc of this.world.npcs.values()) {
       const lines = npc.card.ambient ?? [];
-      if (!lines.length || !this.playersIn(npc.roomId).length) continue;
-      if (this.rand() < 0.15) this.toRoom(npc.roomId, c.dim(lines[Math.floor(this.rand() * lines.length)]));
+      if (!lines.length || spoke.has(npc.roomId) || !this.playersIn(npc.roomId).length) continue;
+      if (this.rand() < 0.15) {
+        spoke.add(npc.roomId);
+        this.toRoom(npc.roomId, c.dim(lines[Math.floor(this.rand() * lines.length)]));
+      }
     }
   }
 

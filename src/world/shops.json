@@ -39,7 +39,8 @@
     "buys": [
       "food",
       "tool",
-      "junk"
+      "junk",
+      "tail"
     ],
     "purse": 30,
     "sellBand": [
@@ -61,12 +62,15 @@
       "crowbar": 2,
       "cudgel": 3,
       "hand_axe": 2,
-      "shortsword": 1
+      "shortsword": 1,
+      "padded_jerkin": 2,
+      "leather_coat": 1
     },
     "buys": [
       "tool",
       "weapon",
-      "junk"
+      "junk",
+      "armour"
     ],
     "purse": 40,
     "sellBand": [
@@ -130,14 +134,16 @@
     "sells": {
       "lockpicks": 2,
       "silver_spoon": 1,
-      "brass_locket": 1
+      "brass_locket": 1,
+      "iron_key": 2
     },
     "buys": [
       "food",
       "tool",
       "weapon",
       "junk",
-      "valuable"
+      "valuable",
+      "armour"
     ],
     "purse": 80,
     "sellBand": [

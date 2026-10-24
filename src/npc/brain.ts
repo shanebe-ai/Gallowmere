@@ -53,7 +53,7 @@ export interface NpcTurnInput {
   npc: NpcCard;
   player: { id: number; name: string };
   memory: { notes: string[]; summary: string };
-  room: { title: string; others: string[] };
+  room: { title: string; others: string[]; note?: string };
   recent: string[];
   playerLine: string;
   /** 'event' means playerLine describes something the player did, written by the engine. */
@@ -149,7 +149,7 @@ export function buildPrompt(input: NpcTurnInput): { system: string; user: string
       : `${player.name} says to you: "${input.playerLine}"`;
   const user = [
     ...(light ? [] : [`[Your notes on ${player.name}]`, memory.summary ? `Summary: ${memory.summary}` : 'Summary: none', notes, '']),
-    `[Where] ${room.title}. Also here: ${others}.`,
+    `[Where] ${room.title}. Also here: ${others}.${room.note ? ` ${room.note}` : ''}`,
     '',
     '[Recent exchange]',
     recent,

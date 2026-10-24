@@ -170,11 +170,21 @@ socket.on('session', (token: string | null) => {
   }
 });
 
-socket.on('status', (s: { name: string; room: string; online: number; exits: string[]; coin?: number }) => {
+socket.on('status', (s: { name: string; room: string; online: number; exits: string[]; coin?: number; health?: number; maxHealth?: number }) => {
   const name = document.createElement('b');
   name.textContent = s.name;
+  const parts: Node[] = [name];
+  if (typeof s.health === 'number' && typeof s.maxHealth === 'number') {
+    // Health turns amber when hurt and red when the cart would take you.
+    const hp = document.createElement('span');
+    const f = s.health / s.maxHealth;
+    hp.className = f < 1 / 3 ? 'hp hp-low' : f < 0.75 ? 'hp hp-mid' : 'hp';
+    hp.textContent = `${s.health}/${s.maxHealth}`;
+    parts.push(document.createTextNode(' · '), hp);
+  }
   const coin = typeof s.coin === 'number' ? ` · ${s.coin} coin` : '';
-  statusInfo.replaceChildren(name, document.createTextNode(`${coin} · ${s.room} · ${s.online} online`));
+  parts.push(document.createTextNode(`${coin} · ${s.room} · ${s.online} online`));
+  statusInfo.replaceChildren(...parts);
   renderExits(s.exits);
 });
 

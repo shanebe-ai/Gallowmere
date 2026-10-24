@@ -20,22 +20,22 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 ## What's in it now
 
 **The world**
-* 41 rooms across the gate, market, temple, tavern, docks and sewers, plus the road north, closed for now
+* 45 rooms across the gate, market, temple, tavern, docks and sewers, plus the road north, closed for now
 * Every room lists its People, Players and the things You see, and everything listed can be used
 * Plain word verbs on things and people: look, take, touch, open, pull, push, knock, read, search, smell, listen, sit, climb, play, drink, kick, and more
-* A hidden fence behind a door the locals hint at, a sealed iron door under the sewers, and a few secrets for players who talk to people
+* A hidden fence behind a door the locals hint at, an iron door under the sewers that finally opens, and a few secrets for players who talk to people
 
 **Six AI townsfolk**
 * Morda the barkeep, Dace the gate guard, Hamo the blacksmith, Maud the grocer, Father Osmund and Hook the fence, played by Llama 3.1 8B on Groq
 * Per player memory in PostgreSQL: short notes, folded into a summary as they pile up, plus a standing score from minus 5 to plus 5 that only code moves
 * They remember you across logins, carry a conversation without being named every line, react in character when you mess with their things, and can turn you away
-* Scripted extras for flavour: Tilly the pawnbroker, Ingelram the bank clerk, a butcher, a beggar, the rats
+* Light AI characters who talk freely but keep no memory: Tilly the pawnbroker, Ingelram the bank clerk, the butcher, the beggar, and every street person and beast
 
 **The economy**
 * Coin, items and a 20 weight pack. Every character starts with 10 coin
 * Six shops with daily restocking and a daily buying purse, so prices can't be farmed
 * Haggling: the AI argues in character, the engine holds the price band and moves the coin
-* A bank with a withdrawal fee, ready for the plague cart in milestone 3
+* A bank with a withdrawal fee: the only coin the plague cart can't touch
 * Honest ways to earn: Maud's odd job, scavenging spots with hourly cooldowns, selling junk
 * Bribes that buy real information
 * Every coin movement written to a ledger, every trade in one database transaction
@@ -46,10 +46,17 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 * Real telnet door for Mudlet and other MUD clients, with window size negotiation and hidden password entry
 * Accounts, aliases, `who`, `score`, `help`
 
+**Fighting, dying and the plague cart**
+* About ten generated street folk always about (drunks, rag pickers, a preacher, cutpurses, rat catchers, bruisers, stray dogs), each with a rolled name, quirk and stats, talking on the light AI tier. They wander, brawl with each other and can be fought
+* Classic MUD combat in 3 second rounds: levels 1 to 10, experience, weapons and armour from Hamo, wounds in words, fleeing. Every roll is code; the AI only adds a taunt
+* No fighting in the temple or the counting house; Morda throws brawlers out of the Drowned Rat; players can fight players, never newcomers in their first two hours
+* Death and rebirth: wake in the Temple of Ash with a grave chill, your goods on your corpse (owner only for 10 minutes, gone after 30), banked coin always safe, newcomers keep everything
+* The plague cart: a random bell every one to two hours, a round through every street, the dead and the badly hurt collected, a toll of one coin in four, and everything it takes sold to Hook
+* Ways to earn alone: looting, hauling corpses to Osmund or the butcher, carrying another player home, cutpurse bounties, rat tails for Maud, the rat king behind the iron door
+* Sewer beasts that come back, and a rat king that comes back once a day
+
 **Playing**
 * A `hint` command with directions to wherever you need to go next
-
-**Not yet:** combat and death. See [Roadmap](#roadmap).
 
 ## How an NPC line happens
 
@@ -169,7 +176,7 @@ First time setup on a new server:
 
 1. **Walk the town.** 15 rooms, one AI barkeep with memory, browser and telnet. *Done.*
 2. **A living market.** 41 rooms, six AI townsfolk, items and inventory, haggling inside code set price ranges, a bank, odd jobs, scavenging, bribes. *Done.*
-3. **Fight and bleed.** Sewer monsters, limb based combat, and a nightly plague cart that takes whatever you haven't banked. Death means waking at the temple with a grave chill, and a corpse run for what you carried. New players keep their things.
+3. **Blood and the cart.** Street folk, sewer beasts, combat, death and rebirth, the plague cart, and ways to earn by the sword and the shovel. *Done.*
 4. **Gossip and law.** A rumour board the townsfolk read and spread, guards who remember crimes, bounties. Then an admin only MCP server, so the world can be run from Claude.
 5. **See where it goes.** Guilds, more NPCs, a second area, real players.
 

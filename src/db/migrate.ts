@@ -15,6 +15,7 @@ interface RoomSeed {
   features?: Array<{ name: string; keywords: string[]; look: string }>;
   exits: Record<string, string>;
   hiddenExits?: string[];
+  locks?: Record<string, unknown>;
 }
 
 interface NpcSeed {
@@ -34,6 +35,12 @@ export interface ItemSeed {
   price: number;
   look: string;
   actions?: Record<string, unknown>;
+  /** Weapons: damage range per hit. */
+  damage?: [number, number];
+  /** Armour: points taken off each hit. */
+  armour?: number;
+  /** Bandages and the like: health restored out of combat. */
+  heals?: number;
 }
 
 export interface ShopSeed {
@@ -65,9 +72,9 @@ export async function migrate(client: pg.Pool | pg.PoolClient = pool): Promise<v
   try {
     for (const r of rooms) {
       await client.query(
-        `INSERT INTO rooms (id, district, title, description, flags, features) VALUES ($1,$2,$3,$4,$5,$6)
-         ON CONFLICT (id) DO UPDATE SET district=$2, title=$3, description=$4, flags=$5, features=$6`,
-        [r.id, r.district, r.title, r.description, r.flags ?? [], JSON.stringify(r.features ?? [])],
+        `INSERT INTO rooms (id, district, title, description, flags, features, locks) VALUES ($1,$2,$3,$4,$5,$6,$7)
+         ON CONFLICT (id) DO UPDATE SET district=$2, title=$3, description=$4, flags=$5, features=$6, locks=$7`,
+        [r.id, r.district, r.title, r.description, r.flags ?? [], JSON.stringify(r.features ?? []), JSON.stringify(r.locks ?? {})],
       );
     }
     await client.query('DELETE FROM exits');

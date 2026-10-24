@@ -151,13 +151,13 @@ Selling works the same way: `sell lamp` takes their offer, `sell lamp for 5` sta
 
 **The Market.** Rope, oil, eels that haven't finished dying, and a founder's statue with no nose. Pickpockets work the crowd. Keep a hand on your purse. Maud's Provisions, the counting house and Butcher's Alley sit off Market East. Old Tilly's curios are north of Market West. The market cellars are under the square, and things get lost down there.
 
-**Smithy Row.** The hammer never stops. Hamo sells knives and tools, and keeps the real blades under a tarp. Ask him about them. He'll tell you not yet.
+**Smithy Row.** The hammer never stops. Hamo sells knives, tools and, at last, the real blades from under the tarp. Coats and jerkins too, for those who'd rather not bleed.
 
 **The Drowned Rat.** The only warm room in town. Rooms upstairs, a dice cellar below for the serious games, a yard out back. Mind the curtain on the west wall. Nobody looks at it for long.
 
 **Wet Lane and the Docks.** Never dry, never honest. The fish market, the harbourmaster's office, the net loft and a beached wreck called The Patience. The harbourmaster takes bribes on Tuesdays. Today is not Tuesday.
 
-**The Sewers.** Iron bars bent wide enough for someone thin. Down through them, a tunnel, an overflow, and at the end an iron door, chained and painted red: DO NOT. Something on the other side knocks. Don't knock back.
+**The Sewers.** Iron bars bent wide enough for someone thin. Down through them, a tunnel, an overflow, and at the end an iron door, chained and painted red: DO NOT. Something on the other side knocks. If you get through, there's a cistern of black water, a shelf of bones the cart men tip there, a passage up to the old wreck, and a nest. Don't go in the nest.
 
 ## The people
 
@@ -179,26 +179,35 @@ Selling works the same way: `sell lamp` takes their offer, `sell lamp for 5` sta
 
 **The beggar in Wet Lane.** One eye open, always watching the market road. He saw the watch take a bribe this morning. Nobody listens to him.
 
-**The rats.** Big ones. Bigger than rats should be. They don't run from you. Think about that.
+**The rats.** Big ones. Bigger than rats should be. They don't run from you. They fight back. Think about that.
+
+**The street folk.** Different faces every day. Drunks, rag pickers, a preacher, cutpurses, rat catchers, bruisers. They'll talk if you talk to them, and every one of them has something on their mind.
 
 ## Steel and blood
 
 You'll want to know about fighting. Everyone does.
 
-Not yet.
+**The streets are full of people you can hurt.** Drunks, rag pickers, a mad preacher, cutpurses, rat catchers, dock bruisers, stray dogs. They wander, they mutter, and now and then they fall out with each other and you can watch, or join in. `consider wat` tells you how a fight would likely go. `attack wat` starts one. The townsfolk with names you know, Morda and the rest, are not for fighting. The whole town would hang you.
 
-Try `attack` and you'll size them up and think better of it. Gallowmere isn't ready to bleed for you. Soon, though. The blacksmith is putting edges on those blades for a reason, and the scratching under the grate is getting louder.
+**A fight runs on its own.** Blows land every few seconds until someone drops, runs or is dragged off. Your health is in the status bar and goes amber, then red. `flee` takes you out through a random door, if you're lucky. You can't just walk away mid fight.
 
-When steel comes to Gallowmere, this is what the old hands say it'll be like:
+**Arm yourself.** Hamo has finally put edges on the blades: a knife, a cudgel, a hatchet, a short sword, and a padded jerkin or a leather coat if you'd rather not bleed. `wield cudgel`, `wear jerkin`. Fists work, barely.
 
-* **It's about the body, not a number.** Blows land on a head, a chest, an arm, a leg. Lose your sword arm and your sword hits the cobbles. Only a ruined head or body puts you down for good.
-* **Death isn't the end, but it costs.** You wake on the floor of the Temple of Ash with a grave chill in your bones, weaker for a while. What you carried stays on your corpse where you fell. For a little while it's yours alone to recover. After that, anyone can help themselves. Father Osmund will fetch it back for you, for a fee.
-* **The newly arrived get a little mercy.** In your first hours in town, death won't take your things.
-* **The plague cart comes every night.** Whatever you haven't banked by the time it rolls through is gone. You'll get a warning an hour before. Listen to it.
-* **The watch remembers.** Rob the grocer and the captain hears about it. The barkeep mentions it the next night. The grocer charges you double for the rest of your life.
-* **The sewers come first.** Rats, then whatever the rats are afraid of.
+**Where you can't fight.** The temple and everything under its roof, and the counting house. Father Osmund's glare is worth a dozen guards. The Drowned Rat isn't holy, but start a fight there and Morda throws you into the mud. Both of you.
 
-Until then, keep your knuckles to yourself and your ears open.
+**Other players.** Fair game, outside the temple and the bank. Except the newly arrived: for their first two hours nobody can lay a hand on them, and they can't lay one on anybody.
+
+**Death.** It isn't the end, but it costs. You wake on the cold floor of the Temple of Ash with a grave chill: half your health and a shaky arm for ten minutes. Your coin and your pack stay on your corpse where you fell. For ten minutes only you can touch it. After that, anyone can. After half an hour it's gone. Or pay Father Osmund to send a boy for it. Banked coin never moves. The newly arrived keep their things.
+
+**Healing.** Wounds close slowly on their own, faster by the fire in the Drowned Rat or on a bench in the nave. Bandages help (`bandage`). Morda's stew helps. Father Osmund will make you whole for a few coin (`heal`).
+
+**The plague cart.** At no fixed hour the temple bell tolls. A couple of minutes later the cart sets out from the temple steps and works its way through every street, down to the river. It takes every body it passes and everything on them, and it all ends up in Hook's back room, where you can buy it back if you can afford him. The cart men take a quarter of the coin in your purse, and anyone too badly hurt to stand goes on the cart with the dead. Get indoors when you hear the bell. Bank your coin before you do.
+
+**The dead pay, if you're not squeamish.** `loot corpse` takes what a body carried. `take corpse` puts it over your shoulder. Carry a body to Father Osmund in the nave and he'll pay for the burial. The butcher pays more, and doesn't ask, and word gets around. Carry another player's body to the temple and Osmund sends their things home to them, and pays you for the kindness.
+
+**Bounties and tails.** The watch house pays for every cutpurse you put down (`bounty`). Maud pays a copper for every rat tail. The rats are under the grate.
+
+**The sewers.** Rats by the grate, bigger ones in the tunnels. The iron door at the end opens for a key, or for someone strong enough to force it. Hook sells keys. Rat catchers sometimes carry one. What's behind it is the worst fight in Gallowmere, and it comes back every day.
 
 ## Manners
 
@@ -230,6 +239,11 @@ Gallowmere isn't a nice town, but it has rules.
 | Work | `work` in Maud's shop |
 | Bribes | `bribe dace 3` |
 | What now? | `hint` |
+| Fight | `consider wat`, `attack wat`, `flee` |
+| Arm up | `wield cudgel`, `wear jerkin`, `remove` |
+| Heal | `bandage`, `heal` (in the nave) |
+| The dead | `loot corpse`, `take corpse`, `give corpse to osmund`, `sell corpse to butcher`, `recover` (in the nave) |
+| Bounties | `bounty` at the watch house |
 | Who's in town | `who` |
 | Your details | `score` |
 | Shortcuts | `alias tm talk morda`, then `tm hello` |

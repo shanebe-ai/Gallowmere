@@ -108,6 +108,15 @@ export function looseMatch<T>(phrase: string, cands: Candidate<T>[]): { ref: T; 
   return { ambiguous: [...new Set(winners.map((x) => x.c.name))] };
 }
 
+/** A locked exit: a key opens it, or a character of the given level can force it. */
+export interface Lock {
+  key: string;
+  force: number;
+  locked: string;
+  unlock: string;
+  forced: string;
+}
+
 export interface Room {
   id: string;
   district: string;
@@ -116,6 +125,7 @@ export interface Room {
   flags: string[];
   features: Feature[];
   exits: Exit[];
+  locks: Record<string, Lock>;
 }
 
 export interface Npc {
@@ -123,6 +133,8 @@ export interface Npc {
   roomId: string;
   name: string;
   kind: 'ai' | 'light' | 'scripted';
+  /** Generated street folk and beasts: they can be fought, and they come and go. */
+  mob?: boolean;
   card: {
     keywords: string[];
     short: string;
@@ -140,13 +152,13 @@ export class World {
   startRoom = 'north_gate';
 
   async load(): Promise<void> {
-    const rooms = await query('SELECT id, district, title, description, flags, features FROM rooms');
+    const rooms = await query('SELECT id, district, title, description, flags, features, locks FROM rooms');
     const exits = await query('SELECT room_id, direction, to_room_id, hidden FROM exits');
     const npcs = await query('SELECT id, room_id, name, kind, card_json FROM npcs');
 
     this.rooms.clear();
     for (const r of rooms.rows) {
-      this.rooms.set(r.id, { id: r.id, district: r.district, title: r.title, description: r.description, flags: r.flags, features: r.features ?? [], exits: [] });
+      this.rooms.set(r.id, { id: r.id, district: r.district, title: r.title, description: r.description, flags: r.flags, features: r.features ?? [], exits: [], locks: r.locks ?? {} });
       if (r.flags.includes('start')) this.startRoom = r.id;
     }
     for (const e of exits.rows) {

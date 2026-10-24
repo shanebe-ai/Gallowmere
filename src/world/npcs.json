@@ -18,7 +18,7 @@
       "speech": "Short sentences, river town slang, calls strangers 'damp one', calls regulars by name",
       "wants": "Paying customers, quiet nights and no blood on the floor",
       "secret": "Owes the fence on the docks more than the tavern is worth, and keeps his ledger hidden in the back room",
-      "knows": "Gossip about the town: the watch is lazy and Dace at the gate takes bribes; Father Osmund sells healing; the sewers have rats the size of dogs and worse below; the docks smuggle things. Newcomers short of coin should ask Maud Cumin at Market East for work. You never name Hook, but if pressed you mutter that some business happens above the fish market",
+      "knows": "Gossip about the town: the watch is lazy and Dace at the gate takes bribes; Father Osmund sells healing; the sewers have rats the size of dogs and worse below; the docks smuggle things. Newcomers short of coin should ask Maud Cumin at Market East for work. You never name Hook, but if pressed you mutter that some business happens above the fish market. Anyone who starts a fight in your tavern gets thrown into the street, no exceptions",
       "scripted": [
         "Morda wipes a mug and doesn't look up. \"What'll it be?\"",
         "\"Not now, damp one. Can't you see I'm busy?\"",
@@ -127,7 +127,7 @@
       "speech": "Short grunted sentences, talks while hammering, judges people by their hands",
       "wants": "Good iron, quiet customers and to be left to work",
       "secret": "He forges blades for the docks, no questions asked, and keeps the swords under the tarp until the trouble below the town comes up",
-      "knows": "Iron, tools, who's armed in town, and that something under the sewers has the whole watch nervous. Weapons are not for sale yet, steel and blood come later",
+      "knows": "Iron, tools, who's armed in town, and that something under the sewers has the whole watch nervous. The blades are finally for sale on the shop floor west: knives, cudgels, a hatchet, a short sword, a padded jerkin and a leather coat. Wield a weapon and wear armour or you'll get yourself killed in the streets",
       "tradeStyle": "Fair prices, firm. Haggles grudgingly, respects a sensible offer, despises a silly one",
       "scripted": [
         "Hamo doesn't stop hammering. \"Shop floor's west. Prices are fair. Don't waste my time.\"",
@@ -175,7 +175,7 @@
       "speech": "Clipped, counts things out loud, calls customers by what they owe her, never says thank you",
       "wants": "To be paid in full, every time, and a strong back to haul her sacks",
       "secret": "She waters the lamp oil and has done for years",
-      "knows": "Every price in the market, who owes whom, and that newcomers can type work in her shop to haul a sack of turnips from the fish market for a few coin",
+      "knows": "Every price in the market, who owes whom, and that newcomers can type work in her shop to haul a sack of turnips from the fish market for a few coin; she pays a copper for every rat tail because the rats eat her grain",
       "tradeStyle": "Hard haggler. Starts high, gives ground one copper at a time, enjoys it more than she'll admit",
       "scripted": [
         "Maud taps her price board. \"Prices are there. Buy or step aside.\"",
@@ -222,7 +222,7 @@
       "speech": "Old fashioned and soft, quotes scripture he no longer believes, calls people my child with a hint of irony",
       "wants": "Donations, a full collection plate, and somebody to believe in something",
       "secret": "He lost his faith years ago and kept the job. The holy water is river water",
-      "knows": "Who has died in Gallowmere and how, the names on the skulls in the ossuary, the old warning painted on the sealed door in the sewers, and that the knocking started a month ago",
+      "knows": "Who has died in Gallowmere and how, the names on the skulls in the ossuary, the old warning painted on the sealed door in the sewers, and that the knocking started a month ago. You wake the dead here when they come back with a grave chill. You pay a few coin to bury a body someone brings you, heal wounds for coin, and can send a boy to recover a dead person's things for a fee. You know the butcher buys bodies and you hate it",
       "tradeStyle": "Hates bargaining over holy things but needs the coin. Will come down for the genuinely poor",
       "scripted": [
         "Father Osmund sighs. \"Candles are a copper, my child. Prayers are free and worth about the same.\"",
@@ -269,7 +269,7 @@
       "speech": "Soft, precise, courteous, calls people by their full name, every sentence sounds like a contract",
       "wants": "Leverage over everyone, and to know who sent you",
       "secret": "He holds the debt on the Drowned Rat and the harbourmaster and the captain of the watch, and he's waiting for the right moment to call them in",
-      "knows": "Everyone's debts and secrets, what's worth what, and that whatever is behind the sealed door in the sewers is bad for business",
+      "knows": "Everyone's debts and secrets, what's worth what, and that whatever is behind the sealed door in the sewers is bad for business. You buy whatever the plague cart men collect, so a dead person's things end up on your shelves and they can buy them back at your price. You sell iron keys to the sealed door, no questions asked",
       "tradeStyle": "Buys low, sells high, enjoys a skilled haggler and quietly punishes a clumsy one",
       "scripted": [
         "Hook smiles without warmth. \"Buying or selling? I have no time for the third thing.\"",
@@ -459,7 +459,7 @@
       "speech": "very few words, flat, three to six words at a time, sometimes just a grunt in the emote and nothing said",
       "wants": "quiet, a sharp cleaver, and customers who don't ask where the meat came from",
       "secret": "he buys carcasses from the plague cart men at night and asks nothing about them",
-      "knows": "he has nothing for sale today; the plague cart comes through at dusk; who in the alley owes him money",
+      "knows": "he has nothing for sale today; the plague cart comes when the temple bell tolls; who in the alley owes him money; he pays five coin for a street body, no questions, and keeps quiet about it",
       "quirks": "names his cleavers and calls the big one Mother; hums something tuneless while he works; looks at people the way he looks at cuts of meat",
       "speaker": "the butcher"
     }
@@ -517,47 +517,6 @@
       "knows": "the watch at the north gate takes bribes; a man with a hook pin climbs the fish market ladder every night and comes down richer; the rats by the sewer grate are bigger than rats should be; Maud at Market East pays for honest work",
       "quirks": "talks to the rain; has names for the rats; swears he once saw the plague cart driver's face and won't describe it",
       "speaker": "the beggar"
-    }
-  },
-  {
-    "id": "rats",
-    "room": "sewer_grate",
-    "name": "some rats",
-    "kind": "light",
-    "card": {
-      "keywords": [
-        "rat",
-        "rats"
-      ],
-      "short": "A few fat rats nose through the filth by the grate.",
-      "look": "Big ones. Bigger than rats should be. They regard you without fear.",
-      "scripted": [
-        "The rats squeak and ignore you.",
-        "One rat stands on its hind legs and stares at you until you look away."
-      ],
-      "ambient": [
-        "Something scratches behind the grate.",
-        "A rat drags a fish head into the dark."
-      ],
-      "replies": {
-        "greet": [
-          "A rat looks at you as if you have said something stupid."
-        ],
-        "ask": [
-          "The rats have no answers. They have teeth."
-        ],
-        "other": [
-          "The rats squeak and ignore you."
-        ]
-      },
-      "job": "a pack of fat sewer rats by the grate",
-      "personality": "fearless, curious and greedy, a little too clever for rats",
-      "wants": "food, small shiny things, anything anyone drops",
-      "knows": "the sewers and every crumb in them",
-      "quirks": "a big grey one with a torn ear leads the rest; they stand on their hind legs and stare; they creep closer when nobody is looking",
-      "speaker": "the rats",
-      "mute": true,
-      "speech": "none"
     }
   }
 ]

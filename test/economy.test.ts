@@ -141,8 +141,8 @@ describe('world data for milestone 2', () => {
   const npcs = JSON.parse(readFileSync(new URL('../src/world/npcs.json', import.meta.url), 'utf8'));
   const itemIds = new Set(items.map((i: any) => i.id));
 
-  it('has 41 rooms, all connected both ways', () => {
-    expect(rooms).toHaveLength(41);
+  it('has 45 rooms, all connected both ways', () => {
+    expect(rooms).toHaveLength(45);
     const by = Object.fromEntries(rooms.map((r: any) => [r.id, r]));
     const opp: Record<string, string> = { north: 'south', south: 'north', east: 'west', west: 'east', up: 'down', down: 'up' };
     for (const r of rooms) for (const [d, t] of Object.entries<string>(r.exits)) expect(by[t].exits[opp[d]], `${r.id} ${d}`).toBe(r.id);
@@ -365,7 +365,7 @@ describe('Gallowmere economy end to end', () => {
     const { rows } = await query("SELECT count(*)::int AS n FROM items WHERE template_id='shortsword' AND owner_type='player'");
     expect(rows[0].n).toBe(1);
     const spent = (100 - (await coinOf('Jon')).coin) + (100 - (await coinOf('Kit')).coin);
-    expect(spent).toBe(38); // base 25 at up to 1.5x, charged exactly once
+    expect(spent).toBe(27); // base 18 at up to 1.5x, charged exactly once
     await a.close();
     await b.close();
   });
@@ -526,12 +526,18 @@ describe('Gallowmere economy end to end', () => {
 
   it('the rats answer with actions only, never words', async () => {
     npcFn = () => JSON.stringify({ say: 'Hello, human.', emote: 'sniffs at your boot', action: { type: 'none' } });
-    const p = await create('Zed', 'sewer_grate');
-    await p.do('say hello rats', /You say/);
-    const seen = await p.waitFor(/The rats sniffs at your boot\.|The rats sniff at your boot\./);
-    await new Promise((r) => setTimeout(r, 300));
-    expect(seen + p.buf).not.toMatch(/Hello, human/);
-    await p.close();
+    const rat = app.game.combat.spawn('rat', 'sewer_grate', null);
+    try {
+      const p = await create('Zed', 'sewer_grate');
+      await p.do('say hello rat', /You say/);
+      const seen = await p.waitFor(/The rat sniffs at your boot\./);
+      await new Promise((r) => setTimeout(r, 300));
+      expect(seen + p.buf).not.toMatch(/Hello, human/);
+      await p.close();
+    } finally {
+      app.game.combat.mobs.delete(rat.id);
+      app.game.world.npcs.delete(rat.id);
+    }
   });
 
   it('when the AI is down, a light character still answers in kind', async () => {

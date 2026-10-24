@@ -18,6 +18,9 @@ export interface ItemTemplate {
   price: number;
   look: string;
   actions: Record<string, string | ItemAction>;
+  damage?: [number, number];
+  armour?: number;
+  heals?: number;
 }
 
 export interface Item {
@@ -25,7 +28,7 @@ export interface Item {
   template: ItemTemplate;
 }
 
-export type Owner = { type: 'player' | 'room' | 'shop'; id: string | number };
+export type Owner = { type: 'player' | 'room' | 'shop' | 'corpse'; id: string | number };
 
 /** Static world economy: item templates and shop settings, loaded once. */
 export class Catalog {
@@ -44,6 +47,9 @@ export class Catalog {
         price: t.price,
         look: t.look,
         actions: (t.actions ?? {}) as Record<string, string | ItemAction>,
+        damage: t.damage,
+        armour: t.armour,
+        heals: t.heals,
       });
     }
     this.shops.clear();

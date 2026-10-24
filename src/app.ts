@@ -8,6 +8,7 @@ import { query } from './db/pool.js';
 import { AIService } from './ai/service.js';
 import { AiandProvider } from './ai/providers/aiand.js';
 import type { LiveModel } from './ai/bench.js';
+import type { CartOptions } from './game/cart.js';
 import { GroqProvider } from './ai/providers/groq.js';
 import { GeminiProvider } from './ai/providers/gemini.js';
 import type { ChatProvider } from './ai/types.js';
@@ -32,7 +33,12 @@ export function defaultProviders(): Array<{ provider: ChatProvider; rpm: number 
 }
 
 export async function createApp(
-  opts: { providers?: Array<{ provider: ChatProvider; rpm: number }>; telnetPort?: number | null } = {},
+  opts: {
+    providers?: Array<{ provider: ChatProvider; rpm: number }>;
+    telnetPort?: number | null;
+    /** Fight timings, street folk numbers, the cart's clock and dice: for tests. */
+    game?: { random?: () => number; combat?: { tickMs?: number; lifeMs?: number; streetFolk?: number }; cart?: CartOptions };
+  } = {},
 ) {
   const world = new World();
   await world.load();
@@ -72,7 +78,7 @@ export async function createApp(
     },
   });
 
-  const game = new Game(world, brain, { aiand: aiand && 'models' in aiand ? aiand : undefined, ai });
+  const game = new Game(world, brain, { aiand: aiand && 'models' in aiand ? aiand : undefined, ai, ...(opts.game ?? {}) });
   await game.init();
 
   const app = express();

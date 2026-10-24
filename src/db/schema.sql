@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS rooms (
   flags       TEXT[] NOT NULL DEFAULT '{}'
 );
 ALTER TABLE rooms ADD COLUMN IF NOT EXISTS features JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE rooms ADD COLUMN IF NOT EXISTS locks JSONB NOT NULL DEFAULT '{}';
 
 CREATE TABLE IF NOT EXISTS exits (
   room_id    TEXT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
@@ -97,7 +98,7 @@ CREATE TABLE IF NOT EXISTS item_templates (
 CREATE TABLE IF NOT EXISTS items (
   id          BIGSERIAL PRIMARY KEY,
   template_id TEXT NOT NULL REFERENCES item_templates(id),
-  owner_type  TEXT NOT NULL CHECK (owner_type IN ('player', 'room', 'shop')),
+  owner_type  TEXT NOT NULL CHECK (owner_type IN ('player', 'room', 'shop', 'corpse')),
   owner_id    TEXT NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -138,3 +139,44 @@ CREATE TABLE IF NOT EXISTS player_flags (
   at        TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (player_id, flag)
 );
+
+-- Milestone 3: fighting, death and the plague cart.
+
+ALTER TABLE players ADD COLUMN IF NOT EXISTS health INTEGER NOT NULL DEFAULT 20;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS level INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS xp INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS wielded_item BIGINT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS worn_item BIGINT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS chill_until TIMESTAMPTZ;
+
+-- A body and what it carried. Player corpses wait for their owner first; anyone's after open_at.
+CREATE TABLE IF NOT EXISTS corpses (
+  id          BIGSERIAL PRIMARY KEY,
+  kind        TEXT NOT NULL CHECK (kind IN ('player', 'street', 'rat')),
+  player_id   INTEGER REFERENCES players(id) ON DELETE SET NULL,
+  name        TEXT NOT NULL,
+  room_id     TEXT REFERENCES rooms(id),
+  carried_by  INTEGER REFERENCES players(id) ON DELETE SET NULL,
+  coin        INTEGER NOT NULL DEFAULT 0 CHECK (coin >= 0),
+  died_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  open_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at  TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS corpses_room ON corpses (room_id);
+
+-- Items can lie on a corpse too.
+ALTER TABLE items DROP CONSTRAINT IF EXISTS items_owner_type_check;
+ALTER TABLE items ADD CONSTRAINT items_owner_type_check CHECK (owner_type IN ('player', 'room', 'shop', 'corpse'));
+
+-- Every kill, for experience, bounties and an audit trail.
+CREATE TABLE IF NOT EXISTS kills (
+  id          BIGSERIAL PRIMARY KEY,
+  killer_id   INTEGER REFERENCES players(id) ON DELETE SET NULL,
+  victim_kind TEXT NOT NULL,
+  victim_name TEXT NOT NULL,
+  victim_id   INTEGER REFERENCES players(id) ON DELETE SET NULL,
+  room_id     TEXT,
+  bounty_paid BOOLEAN NOT NULL DEFAULT FALSE,
+  at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS kills_killer ON kills (killer_id, victim_kind);

@@ -66,6 +66,9 @@
           "open": "The shutters are barred from the inside. Of course they are."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -128,6 +131,9 @@
           "take": "Take a beggar? Nobody in this town comes that cheap."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -165,6 +171,9 @@
           "take": "She's painted on the wall. She isn't going anywhere, and neither are her eyes."
         }
       }
+    ],
+    "flags": [
+      "sanctuary"
     ]
   },
   {
@@ -202,6 +211,9 @@
           "touch": "No edge on them yet. Give it a week."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -240,6 +252,9 @@
           "take": "You'd need a ladder, and a much better reason."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -281,6 +296,9 @@
           "read": "BACK SOON, says the note. Someone has scratched a date under it. Three years ago."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -309,6 +327,9 @@
           "smell": "Fresh, the fishmonger says. Your nose says otherwise."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -435,6 +456,9 @@
           "touch": "Colder than it should be."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -460,6 +484,9 @@
           "use": "You cup your hands, look at the water, and think better of drinking it. Wise."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -498,6 +525,9 @@
           "push": "You knock. Something heavy shifts inside, then goes very quiet."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -523,6 +553,9 @@
           "climb": "You get a shoulder between the bars. It's a squeeze, but you'd fit. Go down if you've the stomach for it."
         }
       }
+    ],
+    "flags": [
+      "sewer"
     ]
   },
   {
@@ -749,6 +782,9 @@
           "use": "You light a candle from another. For a moment the nave is a little warmer. Then a draught takes it."
         }
       }
+    ],
+    "flags": [
+      "sanctuary"
     ]
   },
   {
@@ -786,6 +822,9 @@
           "read": "The labels say: Poppy. Willow. Vinegar. Mercy, 20 coin."
         }
       }
+    ],
+    "flags": [
+      "sanctuary"
     ]
   },
   {
@@ -823,6 +862,9 @@
           "touch": "Dry and light. You wipe your hand on your coat and keep wiping it for a while."
         }
       }
+    ],
+    "flags": [
+      "sanctuary"
     ]
   },
   {
@@ -939,6 +981,9 @@
           "take": "You reach for a joint. A dog under the awning growls in a voice much too deep for its size."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -947,7 +992,8 @@
     "title": "The Counting House",
     "description": "A cold stone room with one window, barred, and one counter, also barred. Behind the bars Ingelram the clerk sits among ledgers and scales, weighing coin with the care other men give their children. Coin deposited here is safe from the plague cart, they say. Market East is north.",
     "flags": [
-      "bank"
+      "bank",
+      "sanctuary"
     ],
     "exits": {
       "north": "market_east"
@@ -1038,9 +1084,9 @@
           "rack",
           "weapons"
         ],
-        "look": "Under the tarp: swords, cudgels and axe heads, sharp and unbloodied. A tag on the rack says NOT YET.",
+        "look": "Under the tarp: swords, cudgels and axe heads, sharp and unbloodied. The tag that said NOT YET has been torn off.",
         "actions": {
-          "open": "You lift the tarp. Steel glints. A heavy hand drops it back down. \"Not yet,\" says Hamo, from the forge.",
+          "open": "You lift the tarp. Steel glints. \"Shop floor's west,\" says Hamo, without looking up. \"Pay first.\"",
           "take": "Your hand barely touches the tarp before the hammer next door goes quiet. You step back. It starts again."
         }
       },
@@ -1274,6 +1320,9 @@
           "touch": "A gull lets you get close, then takes a piece of your sleeve."
         }
       }
+    ],
+    "flags": [
+      "street"
     ]
   },
   {
@@ -1409,7 +1458,8 @@
     "title": "The Hulk",
     "description": "An old ship beached on the mud south of the docks, her back broken and her ribs open to the sky. Children dare each other to go in. Scavengers don't need daring. The tide comes up to her keel twice a day. The docks are north.",
     "exits": {
-      "north": "river_docks"
+      "north": "river_docks",
+      "down": "smugglers_cut"
     },
     "features": [
       {
@@ -1449,6 +1499,9 @@
           "read": "Faded paint on her chest: the ship's name. THE PATIENCE."
         }
       }
+    ],
+    "hiddenExits": [
+      "down"
     ]
   },
   {
@@ -1487,6 +1540,9 @@
           "read": "Not words. Not quite. But they go somewhere, and they all point west."
         }
       }
+    ],
+    "flags": [
+      "sewer"
     ]
   },
   {
@@ -1525,15 +1581,19 @@
           "push": "You lean on the drain grating. It doesn't move. Something on the other side does."
         }
       }
+    ],
+    "flags": [
+      "sewer"
     ]
   },
   {
     "id": "sealed_door",
     "district": "sewers",
     "title": "Before the Iron Door",
-    "description": "The tunnel ends at an iron door set deep in old stone, older than the sewers around it. It is chained, padlocked and painted with a warning in red: DO NOT. From the other side comes a slow knocking that stops when you get close. The overflow is south.",
+    "description": "The tunnel ends at an iron door set deep in old stone, older than the sewers around it. It is chained, padlocked and painted with a warning in red: DO NOT. From the other side comes a slow knocking that stops when you get close. The door is north, if you can get through it. The overflow is south.",
     "exits": {
-      "south": "overflow"
+      "south": "overflow",
+      "north": "old_cistern"
     },
     "features": [
       {
@@ -1544,7 +1604,7 @@
         ],
         "look": "Riveted iron, black with age, held shut with a chain as thick as your wrist and a padlock the size of your fist.",
         "actions": {
-          "open": "Chained and padlocked. Whoever sealed this meant it. Not yet.",
+          "open": "Chained and padlocked. An iron key would open it, or a shoulder strong enough to force it. Go north to try.",
           "push": "You push. The door doesn't move. On the other side, something pushes back.",
           "knock": {
             "text": "You knock twice. The knocking on the other side stops. Then, slowly, it knocks twice back."
@@ -1565,6 +1625,184 @@
           "touch": "The paint is old and flaking. It comes away red on your fingers like it was never quite dry."
         }
       }
+    ],
+    "locks": {
+      "north": {
+        "key": "iron_key",
+        "force": 5,
+        "locked": "The iron door is chained and padlocked. A key would open it. So might someone strong enough to force it (level 5).",
+        "unlock": "You fit the iron key to the padlock. It turns with a scream of rust, the chain drops, and the door swings in on the dark.",
+        "forced": "You set your shoulder to the door and heave. The rotten chain gives with a crack, and the door grinds open on the dark."
+      }
+    },
+    "flags": [
+      "sewer"
+    ]
+  },
+  {
+    "id": "old_cistern",
+    "district": "sewers",
+    "title": "The Old Cistern",
+    "description": "Past the iron door the stone changes: older, cut finer, wet with a black water that fills a great round cistern to within a hand of its rim. A narrow walk runs around the edge. Things swim in it, and some of them are rats the size of dogs. Passages lead east and west. The iron door is south.",
+    "exits": {
+      "south": "sealed_door",
+      "east": "bone_shelf",
+      "west": "smugglers_cut"
+    },
+    "features": [
+      {
+        "name": "the black water",
+        "keywords": [
+          "water",
+          "cistern",
+          "pool"
+        ],
+        "look": "Still and black and deep. Every so often the surface bulges, as if something underneath rolled over.",
+        "actions": {
+          "touch": "Cold enough to ache. Something brushes your fingers and is gone.",
+          "search": "You feel along the rim and come up with nothing but slime and a long, pale hair.",
+          "drink": "You'd sooner drink from the river. The river is better than this.",
+          "listen": "Water dripping. Claws on stone. And, far off east, a sound like many small voices at once."
+        }
+      },
+      {
+        "name": "the old carvings",
+        "keywords": [
+          "carvings",
+          "carving",
+          "stone",
+          "faces"
+        ],
+        "look": "Faces cut into the stone above the waterline, worn almost smooth. They are all looking down into the water.",
+        "actions": {
+          "touch": "The faces are cold and slick. One of them has had its eyes chiselled out, recently.",
+          "read": "Not letters. A tally: hundreds of short cuts in groups of five, running round the whole chamber."
+        }
+      }
+    ],
+    "flags": [
+      "sewer"
+    ]
+  },
+  {
+    "id": "bone_shelf",
+    "district": "sewers",
+    "title": "The Bone Shelf",
+    "description": "A long dry shelf above the waterline where the cart men tip whatever Hook won't buy. Bones, boots, broken things, and things nobody wanted to look at twice, heaped higher than your head. Something in the heap moves when you don't. A low opening leads north. The cistern is west.",
+    "exits": {
+      "west": "old_cistern",
+      "north": "the_nest"
+    },
+    "features": [
+      {
+        "name": "the heap",
+        "keywords": [
+          "heap",
+          "bones",
+          "pile",
+          "boots"
+        ],
+        "look": "The town's leftovers. Mostly bones. Some of them still have boots on.",
+        "actions": {
+          "search": {
+            "text": "You pick through the heap, trying not to think about it.",
+            "scavenge": [
+              "bone",
+              "rusty_buckle",
+              "tin_ring",
+              "old_coin",
+              "rags",
+              "lost_copper"
+            ]
+          },
+          "smell": "You were wrong about the cistern. This is the worst smell in Gallowmere.",
+          "listen": "Shifting. Settling. Then a squeak, and the whole heap goes still."
+        }
+      }
+    ],
+    "flags": [
+      "sewer"
+    ]
+  },
+  {
+    "id": "smugglers_cut",
+    "district": "sewers",
+    "title": "The Smugglers' Cut",
+    "description": "A dry passage cut through the rock at a slant, with iron rings in the wall for lanterns that are long gone. Someone used this once to move things the harbourmaster never saw. Wooden steps climb up into darkness that smells of tar and the river: the hulk. The cistern is east.",
+    "exits": {
+      "east": "old_cistern",
+      "up": "hulk"
+    },
+    "features": [
+      {
+        "name": "the iron rings",
+        "keywords": [
+          "rings",
+          "ring",
+          "lantern"
+        ],
+        "look": "Rusted lantern rings, every ten paces. One still holds the stub of a candle.",
+        "actions": {
+          "take": "Rusted solid into the rock.",
+          "touch": "Rust comes off on your fingers like dried blood."
+        }
+      },
+      {
+        "name": "the wooden steps",
+        "keywords": [
+          "steps",
+          "stairs",
+          "ladder"
+        ],
+        "look": "Tarred planks nailed into the rock, climbing to a square of grey light: the belly of the hulk.",
+        "actions": {
+          "climb": "The steps creak but hold. Go up to reach the hulk.",
+          "touch": "Sticky with old tar. Somebody kept these in good repair, once."
+        }
+      }
+    ],
+    "flags": [
+      "sewer"
+    ]
+  },
+  {
+    "id": "the_nest",
+    "district": "sewers",
+    "title": "The Nest",
+    "description": "A low round chamber packed with straw, cloth and gnawed bone, warm as a stable and loud with squeaking. The walls are scratched floor to ceiling. Whatever lives here has lived here a long time, and it does not like visitors. The only way out is south.",
+    "exits": {
+      "south": "bone_shelf"
+    },
+    "features": [
+      {
+        "name": "the straw",
+        "keywords": [
+          "straw",
+          "bedding",
+          "cloth"
+        ],
+        "look": "Stolen bedding, sacks and shirts, packed down hard and stinking.",
+        "actions": {
+          "search": "You dig into the bedding and find a nest of pink blind young. You put the straw back.",
+          "smell": "Ammonia, rot and something sweet underneath. Your eyes stream."
+        }
+      },
+      {
+        "name": "the scratched walls",
+        "keywords": [
+          "walls",
+          "scratches",
+          "marks"
+        ],
+        "look": "Every inch of the wall is scored with claw marks, layer over layer, years deep.",
+        "actions": {
+          "read": "In among the scratches, cut by a human hand: DO NOT. we tried. it remembers.",
+          "touch": "The grooves are warm."
+        }
+      }
+    ],
+    "flags": [
+      "sewer"
     ]
   }
 ]
