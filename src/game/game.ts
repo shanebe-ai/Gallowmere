@@ -837,8 +837,45 @@ export class Game {
     this.toRoom(p.roomId, `${c.player(p.name)} says, ${c.speech(`"${text}"`)}`, s);
 
     // Naming someone in the room counts as talking to them. AI characters win a tie.
-    const npc = this.mentionedNpc(p.roomId, text) ?? this.conversationPartner(s, text);
-    if (npc) void this.respondOrHaggle(s, npc, text);
+    const npc = this.mentionedNpc(p.roomId, text) ?? this.looselyAddressed(p.roomId, text) ?? this.conversationPartner(s, text);
+    if (npc) return void this.respondOrHaggle(s, npc, text);
+    this.overheard(s);
+  }
+
+  /** "say hi to old tillt": a name close enough to someone here still reaches them. */
+  looselyAddressed(roomId: string, text: string): Npc | undefined {
+    const npcs = this.world.npcsIn(roomId);
+    if (!npcs.length) return undefined;
+    const cands = npcs.map((n) => ({
+      name: n.name,
+      keywords: [n.name, ...n.card.keywords].filter((k) => !k.includes(' ')),
+      ref: n,
+    }));
+    const hit = looseMatch(text, cands);
+    return hit && 'ref' in hit ? hit.ref : undefined;
+  }
+
+  private overheardAt = new Map<number, number>();
+
+  /** Nobody was addressed, but people are listening: someone reacts, now and then. */
+  private overheard(s: Session): void {
+    const p = s.player!;
+    const npcs = this.world.npcsIn(p.roomId).filter((n) => n.id !== 'rats');
+    if (!npcs.length || this.playersIn(p.roomId, s).length) return;
+    const last = this.overheardAt.get(p.id) ?? 0;
+    if (Date.now() - last < 45_000) return;
+    this.overheardAt.set(p.id, Date.now());
+    const n = npcs[Math.floor(this.rand() * npcs.length)];
+    const who = n.card.listName ?? n.name;
+    const lines = [
+      `${capitalize(who)} glances up at you, then away.`,
+      `${capitalize(who)} squints at you. "Eh? Who are you talking to?"`,
+      `${capitalize(who)} pretends not to hear.`,
+      `${capitalize(who)} mutters something you don't catch.`,
+      `${capitalize(who)} looks around, unsure if that was meant for them.`,
+    ];
+    const line = lines[Math.floor(this.rand() * lines.length)];
+    setTimeout(() => this.toRoom(p.roomId, c.npc(line)), this.opts.scriptedDelayMs ?? 400).unref();
   }
 
   /**

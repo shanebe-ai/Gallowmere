@@ -1,4 +1,13 @@
 /* Gallowmere terminal. Phosphor palette borrowed from the Sector Wars BBS theme. */
+
+/* VT323 by Peter Hull, SIL Open Font License. Served from here so it loads before the terminal measures it. */
+@font-face {
+  font-family: 'VT323';
+  src: url('fonts/vt323.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
 :root {
   --green: #33ff33;
   --green-dim: #1a9933;
@@ -67,7 +76,13 @@ html, body {
   padding: 6px 4px 0 10px;
 }
 
-#term .xterm { height: 100%; }
+#term .xterm {
+  height: 100%;
+  /* Terminal cells are fixed width: no kerning or ligatures nudging letters out of their cells. */
+  font-kerning: none;
+  font-feature-settings: 'kern' 0, 'liga' 0, 'calt' 0;
+  font-variant-ligatures: none;
+}
 #term .xterm-viewport { background: transparent !important; }
 #term .xterm-viewport::-webkit-scrollbar { width: 8px; }
 #term .xterm-viewport::-webkit-scrollbar-thumb { background: rgba(51, 255, 51, 0.25); }
