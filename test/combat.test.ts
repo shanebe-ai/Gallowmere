@@ -412,6 +412,44 @@ describe('Milestone 3 end to end', () => {
     }
   });
 
+  it('no one kind takes over the streets, however many die', async () => {
+    const combat = app.game.combat as any;
+    const before = combat.opts.streetFolk;
+    combat.opts.streetFolk = 10;
+    try {
+      // Kill off everyone who brawls, again and again, and let the streets refill.
+      for (let round = 0; round < 15; round++) {
+        combat.populate();
+        while ([...app.game.combat.mobs.values()].filter((m) => MOBS[m.kind].street).length < 10) combat.populate();
+        for (const m of [...app.game.combat.mobs.values()]) if (!['preacher', 'ragpicker'].includes(m.kind) && MOBS[m.kind].street) await app.game.combat.killMob(m, null);
+      }
+      combat.populate();
+      while ([...app.game.combat.mobs.values()].filter((m) => MOBS[m.kind].street).length < 10) combat.populate();
+      const count = (k: string) => [...app.game.combat.mobs.values()].filter((m) => m.kind === k).length;
+      expect(count('preacher')).toBeLessThanOrEqual(1);
+      expect(count('ragpicker')).toBeLessThanOrEqual(1);
+      expect(count('drunk') + count('cutpurse') + count('bruiser') + count('dog')).toBeGreaterThanOrEqual(6);
+    } finally {
+      combat.opts.streetFolk = before;
+      clearMobs();
+      await query('DELETE FROM corpses');
+    }
+  });
+
+  it('health shows your wounds, weapon damage, armour and odds', async () => {
+    const p = await create('Tam', 'market_square', { old: true });
+    await give('Tam', 'shortsword');
+    await give('Tam', 'leather_coat');
+    await p.do('health', /You are unhurt\. Health 20\/20[\s\S]*Bare fists: 1 to 2 damage[\s\S]*No armour/);
+    await p.do('wield sword', /You wield a short sword/);
+    await p.do('wear coat', /You put on a leather coat/);
+    await query("UPDATE players SET health=5 WHERE name='Tam'");
+    app.game.combat.state(await idOf('Tam'))!.health = 5;
+    await p.do('hp', /You are bleeding badly\. Health 5\/20[\s\S]*short sword: 3 to 6 damage[\s\S]*takes 2 off every hit[\s\S]*about 65%[\s\S]*cart men would take you for dead/);
+    await p.do('look me', /Damp, mostly[\s\S]*Health 5\/20/);
+    await p.close();
+  });
+
   it('dropping the connection mid fight keeps you in it', async () => {
     const p = await create('Sal', 'market_square', { old: true });
     const d = app.game.combat.spawn('drunk', 'market_square', null);

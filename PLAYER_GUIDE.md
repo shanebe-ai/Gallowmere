@@ -189,7 +189,7 @@ You'll want to know about fighting. Everyone does.
 
 **The streets are full of people you can hurt.** Drunks, rag pickers, a mad preacher, cutpurses, rat catchers, dock bruisers, stray dogs. They wander, they mutter, and now and then they fall out with each other and you can watch, or join in. `consider wat` tells you how a fight would likely go. `attack wat` starts one. The townsfolk with names you know, Morda and the rest, are not for fighting. The whole town would hang you.
 
-**A fight runs on its own.** Blows land every few seconds until someone drops, runs or is dragged off. Your health is in the status bar and goes amber, then red. `flee` takes you out through a random door, if you're lucky. You can't just walk away mid fight.
+**A fight runs on its own.** Blows land every few seconds until someone drops, runs or is dragged off. Your health is in the status bar and goes amber, then red. `flee` takes you out through a random door, if you're lucky. You can't just walk away mid fight. Type `health` any time to see how badly you're hurt, what your weapon does and how your odds look.
 
 **Arm yourself.** Hamo has finally put edges on the blades: a knife, a cudgel, a hatchet, a short sword, and a padded jerkin or a leather coat if you'd rather not bleed. `wield cudgel`, `wear jerkin`. Fists work, barely.
 
@@ -240,6 +240,7 @@ Gallowmere isn't a nice town, but it has rules.
 | Bribes | `bribe dace 3` |
 | What now? | `hint` |
 | Fight | `consider wat`, `attack wat`, `flee` |
+| Your body | `health` (or `hp`): wounds, weapon damage, armour, your odds |
 | Arm up | `wield cudgel`, `wear jerkin`, `remove` |
 | Heal | `bandage`, `heal` (in the nave) |
 | The dead | `loot corpse`, `take corpse`, `give corpse to osmund`, `sell corpse to butcher`, `recover` (in the nave) |

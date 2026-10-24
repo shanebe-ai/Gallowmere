@@ -273,6 +273,25 @@ export class Combat {
     return lines;
   }
 
+  /** health: your body, your weapon and what a fight with you looks like. */
+  async diagnose(s: Session): Promise<void> {
+    const st = await this.load(s.player!);
+    const { weapon, armour } = await this.gear(st);
+    const max = maxHealthFor(st.level);
+    const now = Date.now();
+    const how = woundWords(st.health, max);
+    s.out(c.title(`You are ${how}. Health ${st.health}/${max}.`));
+    const dmg = weapon?.damage ?? [1, 2];
+    s.out(weapon ? `Wielding ${weapon.name}: ${dmg[0]} to ${dmg[1]} damage a hit.` : `Bare fists: ${dmg[0]} to ${dmg[1]} damage a hit. Hamo sells better.`);
+    s.out(armour ? `Wearing ${armour.name}: takes ${armour.armour} off every hit you take.` : 'No armour: you take every hit in full.');
+    const aim = 65 + (st.chillUntil > now ? -15 : 0) + (st.aleUntil > now ? -5 : 0);
+    s.out(`Level ${st.level}: you land about ${aim}% of your blows on someone your own level, more on weaker, fewer on stronger.`);
+    if (st.chillUntil > now) s.out(c.dim(`A grave chill is on you for ${Math.ceil((st.chillUntil - now) / 60_000)} more minute(s): your aim is worse.`));
+    if (st.aleUntil > now) s.out(c.dim('Ale in your blood: a point more damage a hit, a little less aim.'));
+    if (st.health < max / 3) s.out(c.error('The cart men would take you for dead like this. Get indoors and get healed.'));
+    else if (st.health < max) s.out(c.dim('Rest by the fire in the Drowned Rat or in the nave to heal faster, or use a bandage.'));
+  }
+
   /** Food and drink with an effect: stew heals, ale emboldens. */
   onConsume(s: Session, t: ItemTemplate): void {
     const st = this.players.get(s.player!.id);
@@ -1061,10 +1080,14 @@ export class Combat {
   }
 
   private spawnStreet(announce: boolean): Mob {
-    const total = STREET_MIX.reduce((n, [, w]) => n + w, 0);
+    // Only kinds below their cap can arrive, so the mix stays a mix.
+    const have = (k: MobKind) => [...this.mobs.values()].filter((m) => m.kind === k).length;
+    const open = STREET_MIX.filter(([k, , cap]) => have(k) < cap);
+    const pool = open.length ? open : STREET_MIX;
+    const total = pool.reduce((n, [, w]) => n + w, 0);
     let roll = this.r() * total;
-    let kind: MobKind = 'drunk';
-    for (const [k, w] of STREET_MIX) {
+    let kind: MobKind = pool[0][0];
+    for (const [k, w] of pool) {
       if ((roll -= w) < 0) {
         kind = k;
         break;

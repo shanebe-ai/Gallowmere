@@ -63,7 +63,7 @@ const BANNER_NARROW = [
  * drop, fight or quit for you.
  */
 const FORGIVING = [
-  'look', 'examine', 'say', 'ask', 'talk', 'tell', 'list', 'wares', 'inventory', 'help', 'score', 'who', 'hint',
+  'health', 'look', 'examine', 'say', 'ask', 'talk', 'tell', 'list', 'wares', 'inventory', 'help', 'score', 'who', 'hint',
   'appraise', 'balance', 'emote', 'north', 'south', 'east', 'west', 'down',
   'read', 'search', 'smell', 'listen', 'touch', 'knock', 'climb', 'hello', 'greetings',
 ];
@@ -147,7 +147,7 @@ const HELP: Record<string, string> = {
   bank: 'At the counting house: deposit <amount or all>, withdraw <amount or all> (one copper in twenty), balance.',
   work: 'work: ask Maud at Market East for an odd job.  bribe <someone> <amount>: some people can be bought.',
   hint: 'hint: a nudge toward what to try next.',
-  fight: 'attack <someone> (kill, k): start a fight.  flee: run for it.  consider <someone>: size them up.  wield <weapon>, wear <armour>, remove.  bandage: bind your wounds out of a fight. No fighting in the temple or the counting house.',
+  fight: 'attack <someone> (kill, k): start a fight.  flee: run for it.  consider <someone>: size them up.  health (hp): your wounds, your weapon and your odds.  wield <weapon>, wear <armour>, remove.  bandage: bind your wounds out of a fight. No fighting in the temple or the counting house.',
   death: 'If you die you wake in the Temple of Ash with a grave chill. Your goods stay on your corpse for 30 minutes (only yours for the first 10): loot corpse to get them back, or pay Father Osmund to recover them. Banked coin is always safe.',
   corpses: 'loot corpse: take what a body carried.  take corpse: carry it (heavy).  give corpse to osmund in the nave (or drop it in the ossuary): a burial fee.  sell corpse to butcher: better paid, frowned upon.  bounty: collect cutpurse bounties at the watch house.',
   cart: 'The plague cart: when the temple bell tolls, get indoors or bank your coin. The cart takes the dead, the badly hurt, and a quarter of what you carry.',
@@ -697,6 +697,12 @@ export class Game {
         return this.combat.remove(s, rest);
       case 'bandage':
         return this.combat.bandage(s);
+      case 'health':
+      case 'hp':
+      case 'body':
+      case 'diagnose':
+      case 'condition':
+        return this.combat.diagnose(s);
       case 'loot':
         return this.combat.loot(s, rest);
       case 'bounty':
@@ -869,7 +875,8 @@ export class Game {
     if (!t) return await this.showRoom(s);
     const roomId = s.player!.roomId;
     if (t === 'me' || t === 'self' || t === 'myself' || t === s.player!.name.toLowerCase()) {
-      return s.out('You look like someone who just walked out of the fog. Damp, mostly.');
+      s.out('You look like someone who just walked out of the fog. Damp, mostly.');
+      return this.combat.diagnose(s);
     }
     const npc = this.world.findNpc(roomId, t);
     if (npc) {

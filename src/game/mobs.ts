@@ -205,15 +205,18 @@ export const MOBS: Record<MobKind, MobSpec> = {
   },
 };
 
-/** Street folk the streets are filled from, weighted. */
-export const STREET_MIX: Array<[MobKind, number]> = [
-  ['drunk', 3],
-  ['dog', 2],
-  ['ragpicker', 2],
-  ['preacher', 1],
-  ['cutpurse', 2],
-  ['ratcatcher', 1],
-  ['bruiser', 1],
+/**
+ * Street folk the streets are filled from: [kind, weight, most at once]. The cap matters: kinds that
+ * never brawl (preachers, rag pickers) would otherwise outlive everyone and take over the streets.
+ */
+export const STREET_MIX: Array<[MobKind, number, number]> = [
+  ['drunk', 3, 3],
+  ['dog', 2, 2],
+  ['ragpicker', 2, 1],
+  ['preacher', 1, 1],
+  ['cutpurse', 2, 2],
+  ['ratcatcher', 1, 1],
+  ['bruiser', 2, 2],
 ];
 
 /** Beasts kept in the sewers: how many of each, and where. */
