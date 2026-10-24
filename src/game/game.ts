@@ -57,13 +57,38 @@ const BANNER_NARROW = [
   '',
 ];
 
+/**
+ * The notebook: places worth remembering, grouped, with a note and the word to travel there.
+ * Only places the player has found show up.
+ */
+export const JOURNAL: Array<{ group: string; room: string; note: string; travel: string }> = [
+  { group: 'Sanctuaries (no fighting)', room: 'nave', note: 'Father Osmund: heal, bandages, pilgrim\'s tokens, burials, recover your corpse', travel: 'nave' },
+  { group: 'Sanctuaries (no fighting)', room: 'temple_of_ash', note: 'where you wake when you die', travel: 'temple of ash' },
+  { group: 'Sanctuaries (no fighting)', room: 'healers_ward', note: 'quiet beds, you heal faster', travel: 'healers ward' },
+  { group: 'Sanctuaries (no fighting)', room: 'ossuary', note: 'lay a body down here for the burial fee', travel: 'ossuary' },
+  { group: 'Sanctuaries (no fighting)', room: 'counting_house', note: 'Ingelram: deposit, withdraw, balance. Banked coin is safe from the cart', travel: 'bank' },
+  { group: 'Shops', room: 'maud_shop', note: 'Maud: food, rope, lamps, odd jobs. Buys junk, tools and rat tails', travel: 'maud' },
+  { group: 'Shops', room: 'smithy_row', note: 'Hamo: weapons and armour. Buys tools and weapons', travel: 'smith' },
+  { group: 'Shops', room: 'curio_shop', note: 'Tilly: trinkets. Buys junk and valuables, never haggles', travel: 'tilly' },
+  { group: 'Shops', room: 'hook_den', note: 'Hook: buys anything, sells keys, has whatever the cart took', travel: 'hook' },
+  { group: 'Shops', room: 'drowned_rat', note: 'Morda: ale, stew, bread. Rest by the fire to heal. No fighting', travel: 'tavern' },
+  { group: 'Work and bounties', room: 'watch_house', note: 'the duty sergeant pays bounties on cutpurses', travel: 'watch' },
+  { group: 'Work and bounties', room: 'butchers_alley', note: 'the butcher buys bodies, no questions asked', travel: 'butcher' },
+  { group: 'Work and bounties', room: 'fish_market', note: "Maud's sack waits here when you've taken her odd job", travel: 'fish market' },
+  { group: 'Danger', room: 'sewer_grate', note: 'rats to fight, tails to sell', travel: 'sewer' },
+  { group: 'Danger', room: 'sealed_door', note: 'the iron door: a key, or level 5 to force it', travel: 'iron door' },
+  { group: 'Danger', room: 'the_nest', note: 'the rat king, back once a day', travel: 'nest' },
+  { group: 'Ways in and out', room: 'north_gate', note: 'Dace: news and bribes. The moor road north is closed', travel: 'gate' },
+  { group: 'Ways in and out', room: 'smugglers_cut', note: 'a dry way between the cistern and the hulk', travel: 'smugglers cut' },
+];
+
 /** Verbs for doing things to people and things, mapped to the action names rooms.json uses. */
 /**
  * Commands a typo may be read as. Only harmless ones: a slip should never buy, sell, give,
  * drop, fight or quit for you.
  */
 const FORGIVING = [
-  'health', 'travel', 'look', 'examine', 'say', 'ask', 'talk', 'tell', 'list', 'wares', 'inventory', 'help', 'score', 'who', 'hint',
+  'health', 'travel', 'journal', 'look', 'examine', 'say', 'ask', 'talk', 'tell', 'list', 'wares', 'inventory', 'help', 'score', 'who', 'hint',
   'appraise', 'balance', 'emote', 'north', 'south', 'east', 'west', 'down',
   'read', 'search', 'smell', 'listen', 'touch', 'knock', 'climb', 'hello', 'greetings',
 ];
@@ -147,6 +172,7 @@ const HELP: Record<string, string> = {
   bank: 'At the counting house: deposit <amount or all>, withdraw <amount or all> (one copper in twenty), balance.',
   work: 'work: ask Maud at Market East for an odd job.  bribe <someone> <amount>: some people can be bought.',
   hint: 'hint: a nudge toward what to try next.',
+  journal: "journal (j): your notebook of useful places you've found: sanctuaries, shops, the bank, bounties, danger. Each with the word to travel there.",
   travel: "travel <place>: walk somewhere you've been before, one room at a time (travel nave, travel tavern, travel bank). travel on its own lists the places you know. Type anything to stop. A pilgrim's token from Father Osmund takes you straight to the nave: crush token.",
   fight: 'attack <someone> (kill, k): start a fight.  flee: run for it.  consider <someone>: size them up.  health (hp): your wounds, your weapon and your odds.  wield <weapon>, wear <armour>, remove.  bandage: bind your wounds out of a fight. No fighting in the temple or the counting house.',
   death: 'If you die you wake in the Temple of Ash with a grave chill. Your goods stay on your corpse for 30 minutes (only yours for the first 10): loot corpse to get them back, or pay Father Osmund to recover them. Banked coin is always safe.',
@@ -266,7 +292,7 @@ export class Game {
 
   // ---------------------------------------------------------------- connections
 
-  async connect(conn: Connection, token?: string | null, cols?: number): Promise<Session> {
+  async connect(conn: Connection, token?: string | null, cols?: number, keepScreen = false): Promise<Session> {
     const s = new Session(conn);
     if (cols) s.setCols(cols);
     this.sessions.add(s);
@@ -275,7 +301,7 @@ export class Game {
     if (tok && tok.expires > Date.now()) {
       const player = await this.loadPlayer(tok.playerId);
       if (player) {
-        await this.enterWorld(s, player, true);
+        await this.enterWorld(s, player, true, false, keepScreen);
         return s;
       }
     }
@@ -524,6 +550,7 @@ export class Game {
     player: { id: number; name: string; roomId: string; createdAt: Date },
     resumed: boolean,
     isNew = false,
+    keepScreen = false,
   ): Promise<void> {
     // One body per character: an older connection is pushed out.
     const old = this.byPlayer.get(player.id);
@@ -562,7 +589,8 @@ export class Game {
     const quietly = resumed && (ld !== undefined || old !== undefined);
     if (resumed) s.out(c.dim('[Reconnected]'));
     if (!quietly && !old) this.toRoom(player.roomId, `${c.player(player.name)} steps out of the fog.`, s);
-    await this.showRoom(s);
+    // Coming back to a screen that still shows the game: no need to repeat the room.
+    if (!(resumed && keepScreen)) await this.showRoom(s);
     if (isNew) s.out(c.dim("Type help for commands. The Drowned Rat is south and west of the market, if you're thirsty."));
     this.updateStatusAll();
   }
@@ -708,6 +736,12 @@ export class Game {
       case 'goto':
         if (verb === 'walk' && /^away/i.test(rest)) return this.commerce.walkAway(s);
         return this.travel(s, rest.replace(/^to\s+/i, ''));
+      case 'journal':
+      case 'j':
+      case 'notes':
+      case 'notebook':
+      case 'places':
+        return this.journal(s);
       case 'stop':
         return s.travelling ? undefined : s.out("You're standing still already.");
       case 'crush':
@@ -926,7 +960,7 @@ export class Game {
     const ALIAS: Record<string, string> = {
       tavern: 'drowned_rat', rat: 'drowned_rat', inn: 'drowned_rat', pub: 'drowned_rat', bar: 'drowned_rat',
       bank: 'counting_house', temple: 'nave', church: 'nave', osmund: 'nave', priest: 'nave', heal: 'nave',
-      gate: 'north_gate', smith: 'smithy_floor', hamo: 'smithy_floor', maud: 'maud_shop', grocer: 'maud_shop',
+      gate: 'north_gate', smith: 'smithy_row', smithy: 'smithy_row', hamo: 'smithy_row', blacksmith: 'smithy_row', maud: 'maud_shop', grocer: 'maud_shop',
       tilly: 'curio_shop', pawn: 'curio_shop', hook: 'hook_den', fence: 'hook_den', butcher: 'butchers_alley',
       watch: 'watch_house', bounty: 'watch_house', market: 'market_square', docks: 'river_docks', sewer: 'sewer_grate',
     };
@@ -944,7 +978,8 @@ export class Game {
     }
     if (dest === p.roomId) return s.out("You're already there.");
     if (this.combat.state(p.id)?.target) return s.out(c.error("You're in a fight! Flee first."));
-    const route = this.world.path(p.roomId, dest);
+    // A hidden way counts once you've been through to the other side.
+    const route = this.world.path(p.roomId, dest, (e) => known.includes(e.to));
     if (!route) return s.out("You can't work out a way there from here.");
     this.stopTravel(s);
     s.out(c.system(`You set off for ${this.world.room(dest).title}, ${route.length} step${route.length > 1 ? 's' : ''} away. Type anything to stop.`));
@@ -958,6 +993,33 @@ export class Game {
       s.travelling.unref();
     };
     await step(0);
+  }
+
+  /** journal: the places you've found that are worth going back to. */
+  private async journal(s: Session): Promise<void> {
+    const p = s.player!;
+    const { rows } = await query('SELECT room_id FROM visited_rooms WHERE player_id=$1', [p.id]);
+    const been = new Set(rows.map((r) => r.room_id as string));
+    const found = JOURNAL.filter((e) => been.has(e.room) && this.world.rooms.has(e.room));
+    s.out(c.title('Your notebook'));
+    if (!found.length) {
+      s.out("A few blank pages. Walk about and you'll fill them.");
+      return;
+    }
+    let group = '';
+    for (const e of found.sort((a, b) => JOURNAL.findIndex((x) => x.group === a.group) - JOURNAL.findIndex((x) => x.group === b.group))) {
+      if (e.group !== group) {
+        group = e.group;
+        s.out(c.label(group));
+      }
+      // "Father Osmund: heal..." reads as "The Nave (Father Osmund): heal...".
+      const m = e.note.match(/^([A-Z][^:]{0,24}): (.*)$/);
+      const who = m ? ` (${m[1]})` : '';
+      s.out(`  ${c.thing(this.world.room(e.room).title)}${who}: ${m ? m[2] : e.note}. ${c.dim(`travel ${e.travel}`)}`);
+    }
+    const others = [...been].filter((id) => this.world.rooms.has(id) && !JOURNAL.some((e) => e.room === id)).length;
+    const missing = JOURNAL.filter((e) => !been.has(e.room)).length;
+    s.out(c.dim(`And ${others} other place${others === 1 ? '' : 's'} you know the way to (travel on its own lists them all).${missing ? ' Some pages are still blank.' : ''}`));
   }
 
   /** Crush a pilgrim's token: back to the nave at once, unless someone has you by the throat. */

@@ -45,7 +45,8 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 * Browser terminal on xterm.js with ANSI colour, scrollback, command history, clickable exits and names, exit buttons for phones, and reconnect after a dropped connection
 * Real telnet door for Mudlet and other MUD clients, with window size negotiation and hidden password entry
 * Accounts, aliases, `who`, `score`, `help`
-* `travel` to any place you've walked to before, `health` for your wounds and odds, and a pilgrim's token for a quick way back to the temple
+* `travel` to any place you've walked to before, a `journal` of the useful places you've found, `health` for your wounds and odds, and a pilgrim's token for a quick way back to the temple
+* Phones: touch scrolling through the history, and the screen survives the browser reloading the page
 
 **Fighting, dying and the plague cart**
 * About ten generated street folk always about (drunks, rag pickers, a preacher, cutpurses, rat catchers, bruisers, stray dogs), each with a rolled name, quirk and stats, talking on the light AI tier. They wander, brawl with each other and can be fought

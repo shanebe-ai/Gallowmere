@@ -186,8 +186,11 @@ export class World {
     return this.room(roomId).features.find((f) => matches(w, f.name, f.keywords));
   }
 
-  /** Shortest walk between two rooms, as directions, using only exits players can see. */
-  path(from: string, to: string): string[] | null {
+  /**
+   * Shortest walk between two rooms, as directions, using only exits players can see,
+   * plus any hidden exit the caller allows (one the player has found).
+   */
+  path(from: string, to: string, allowHidden?: (e: Exit) => boolean): string[] | null {
     if (from === to) return [];
     const prev = new Map<string, { room: string; dir: string }>();
     const queue = [from];
@@ -195,7 +198,7 @@ export class World {
     while (queue.length) {
       const cur = queue.shift()!;
       for (const e of this.room(cur).exits) {
-        if (e.hidden || seen.has(e.to)) continue;
+        if ((e.hidden && !allowHidden?.(e)) || seen.has(e.to)) continue;
         seen.add(e.to);
         prev.set(e.to, { room: cur, dir: e.direction });
         if (e.to === to) {

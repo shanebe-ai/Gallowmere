@@ -8,6 +8,7 @@ import { stripAnsi } from '../src/game/text.js';
 import { ROUTE } from '../src/game/cart.js';
 import { MOBS } from '../src/game/mobs.js';
 import { maxHealthFor, woundWords, xpForLevel } from '../src/game/combat.js';
+import { JOURNAL } from '../src/game/game.js';
 import { FakeProvider, reply } from './fakes.js';
 
 let url = '';
@@ -491,6 +492,26 @@ describe('Milestone 3 end to end', () => {
     await p.do('travel docks', /set off for River Docks/);
     await p.do('stop', /You stop walking/);
     await p.close();
+  });
+
+  it('the journal lists only places you have found, and every travel word in it leads there', async () => {
+    const p = await create('Wyn', 'north_gate', { old: true });
+    await p.do('j', /Your notebook[\s\S]*Ways in and out[\s\S]*The North Gate \(Dace\): news and bribes[\s\S]*travel gate/);
+    expect(p.buf).not.toMatch(/Hook/);
+    await p.close();
+    // Pretend Wyn has been everywhere, then follow every travel word in the notebook.
+    const id = await idOf('Wyn');
+    await query('INSERT INTO visited_rooms (player_id, room_id) SELECT $1, id FROM rooms ON CONFLICT DO NOTHING', [id]);
+    const q = await login('Wyn', 'gate_road');
+    const seen = await q.do('journal', /other place/);
+    for (const e of JOURNAL) expect(seen).toContain(app.game.world.room(e.room).title);
+    for (const e of JOURNAL) {
+      await query("UPDATE players SET room_id='gate_road' WHERE name='Wyn'");
+      const title = app.game.world.room(e.room).title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      await q.do(`travel ${e.travel}`, new RegExp(`set off for ${title}|already there|${title}`));
+      await q.do('stop', /You stop walking|standing still/);
+    }
+    await q.close();
   });
 
   it('dropping the connection mid fight keeps you in it', async () => {

@@ -134,12 +134,13 @@ export async function createApp(
     let session: Awaited<ReturnType<Game['connect']>> | null = null;
     let started = false;
 
-    socket.on('hello', (payload: { token?: string; cols?: number } = {}) => {
+    socket.on('hello', (payload: { token?: string; cols?: number; keepScreen?: boolean } = {}) => {
       if (started) return;
       started = true;
       const token = typeof payload?.token === 'string' ? payload.token.slice(0, 100) : null;
       gate.run(async () => {
-        session = await game.connect(conn, token, Number(payload?.cols));
+        // A client that still shows the game (it kept its history) needn't be shown the room again.
+        session = await game.connect(conn, token, Number(payload?.cols), payload?.keepScreen === true);
       });
     });
 

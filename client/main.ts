@@ -4,6 +4,8 @@ import { io } from 'socket.io-client';
 import '@xterm/xterm/css/xterm.css';
 
 const TOKEN_KEY = 'gm_token';
+const SCREEN_KEY = 'gm_screen';
+const SCREEN_MAX = 200_000; // characters of recent output kept across a reload
 const HISTORY_KEY = 'gm_history';
 const HISTORY_MAX = 100;
 
@@ -32,6 +34,43 @@ function load(key: string): string | null {
     return localStorage.getItem(key);
   } catch {
     return null;
+  }
+}
+
+// Some phones throw the page away while you're in another app and reload it when you come
+// back. The recent screen is kept in this tab's session storage so it can be put back.
+let screen = '';
+let screenTimer: number | null = null;
+let shown = false; // the terminal shows the game, so a reconnect needn't repeat the room
+
+function keepScreen(text: string) {
+  screen += text;
+  if (screen.length > SCREEN_MAX * 1.25) screen = screen.slice(-SCREEN_MAX);
+  if (screenTimer !== null) return;
+  screenTimer = window.setTimeout(() => {
+    screenTimer = null;
+    try {
+      sessionStorage.setItem(SCREEN_KEY, screen.slice(-SCREEN_MAX));
+    } catch {
+      /* storage full or blocked: the screen just won't survive a reload */
+    }
+  }, 1000);
+}
+
+function savedScreen(): string {
+  try {
+    return sessionStorage.getItem(SCREEN_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function forgetScreen() {
+  screen = '';
+  try {
+    sessionStorage.removeItem(SCREEN_KEY);
+  } catch {
+    /* nothing to forget */
   }
 }
 
@@ -143,7 +182,8 @@ socket.on('connect', async () => {
   setConn('ok', 'online');
   await ready;
   lastCols = term.cols;
-  socket.emit('hello', { token: load(TOKEN_KEY), cols: term.cols });
+  const token = load(TOKEN_KEY);
+  socket.emit('hello', { token, cols: term.cols, keepScreen: shown && !!token });
 });
 
 socket.on('disconnect', () => {
@@ -153,7 +193,10 @@ socket.on('disconnect', () => {
 
 socket.io.on('reconnect_failed', () => setConn('down', 'offline'));
 
-socket.on('out', (text: string) => term.write(text));
+socket.on('out', (text: string) => {
+  term.write(text);
+  keepScreen(text);
+});
 
 socket.on('mode', (mode: { echo: boolean; prompt: string }) => {
   echo = mode.echo;
@@ -164,7 +207,9 @@ socket.on('mode', (mode: { echo: boolean; prompt: string }) => {
 
 socket.on('session', (token: string | null) => {
   store(TOKEN_KEY, token);
+  if (token) shown = true;
   if (!token) {
+    shown = false;
     statusInfo.replaceChildren();
     exitsEl.replaceChildren();
   }
@@ -222,6 +267,7 @@ function submit(line: string) {
   }
   if (echo) {
     term.write(`\x1b[2m> ${line}\x1b[0m\n`);
+    keepScreen(`\x1b[2m> ${line}\x1b[0m\n`);
     if (line.trim() && history[history.length - 1] !== line) {
       history.push(line);
       if (history.length > HISTORY_MAX) history = history.slice(-HISTORY_MAX);
@@ -262,6 +308,85 @@ input.addEventListener('keydown', (e) => {
     term.scrollPages(1);
   }
 });
+
+// Touch scrolling: the terminal doesn't scroll on a swipe by itself, so swipes are turned into
+// line scrolls here, with a little momentum on a flick. Captured before the terminal sees them.
+let touchY: number | null = null;
+let carry = 0; // pixels moved but not yet a whole line
+let velocity = 0; // pixels per millisecond, for the flick
+let lastMove = 0;
+let glide: number | null = null;
+
+function rowHeight(): number {
+  const row = termEl.querySelector('.xterm-rows > div') as HTMLElement | null;
+  return row?.getBoundingClientRect().height || 20;
+}
+
+function scrollByPixels(dy: number) {
+  carry += dy;
+  const h = rowHeight();
+  const lines = Math.trunc(carry / h);
+  if (lines) {
+    term.scrollLines(-lines);
+    carry -= lines * h;
+  }
+}
+
+function stopGlide() {
+  if (glide !== null) cancelAnimationFrame(glide);
+  glide = null;
+}
+
+termEl.addEventListener(
+  'touchstart',
+  (e) => {
+    if (e.touches.length !== 1) return;
+    stopGlide();
+    touchY = e.touches[0].clientY;
+    carry = 0;
+    velocity = 0;
+    lastMove = performance.now();
+  },
+  { passive: true, capture: true },
+);
+
+termEl.addEventListener(
+  'touchmove',
+  (e) => {
+    if (touchY === null || e.touches.length !== 1) return;
+    const y = e.touches[0].clientY;
+    const dy = y - touchY;
+    const now = performance.now();
+    velocity = dy / Math.max(1, now - lastMove);
+    lastMove = now;
+    touchY = y;
+    scrollByPixels(dy);
+    e.preventDefault();
+    e.stopPropagation();
+  },
+  { passive: false, capture: true },
+);
+
+termEl.addEventListener(
+  'touchend',
+  () => {
+    if (touchY === null) return;
+    touchY = null;
+    // A flick keeps going and slows down, like any phone page.
+    let v = velocity;
+    let last = performance.now();
+    const step = (t: number) => {
+      const dt = t - last;
+      last = t;
+      v *= Math.pow(0.95, dt / 16);
+      if (Math.abs(v) < 0.05) return stopGlide();
+      scrollByPixels(v * dt);
+      glide = requestAnimationFrame(step);
+    };
+    if (Math.abs(v) > 0.2) glide = requestAnimationFrame(step);
+  },
+  { passive: true, capture: true },
+);
 
 // Clicking the output puts focus back in the input, unless text is being selected.
 termEl.addEventListener('mouseup', () => {
@@ -315,6 +440,15 @@ async function start() {
     /* fall back to whatever font is available */
   }
   term.open(termEl);
+  // Back from a reload: put the old screen back, so history and scrolling survive.
+  const old = savedScreen();
+  if (old && load(TOKEN_KEY)) {
+    screen = old;
+    term.write(old);
+    shown = true;
+  } else if (old) {
+    forgetScreen();
+  }
   fitViewport();
   markReady();
   input.focus();

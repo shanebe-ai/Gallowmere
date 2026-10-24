@@ -23,14 +23,14 @@ class Player {
   mode = { echo: true, prompt: '' };
   status: any = null;
 
-  constructor(token?: string | null, cols = 200) {
+  constructor(token?: string | null, cols = 200, keepScreen = false) {
     this.socket = ioClient(url, { transports: ['websocket'], reconnection: false, forceNew: true });
     sockets.push(this.socket);
     this.socket.on('out', (t: string) => (this.buf += stripAnsi(t)));
     this.socket.on('session', (t: string | null) => (this.token = t));
     this.socket.on('mode', (m) => (this.mode = m));
     this.socket.on('status', (s) => (this.status = s));
-    this.socket.on('connect', () => this.socket.emit('hello', { token: token ?? null, cols }));
+    this.socket.on('connect', () => this.socket.emit('hello', { token: token ?? null, cols, keepScreen }));
   }
 
   send(line: string) {
@@ -250,6 +250,20 @@ describe('Gallowmere end to end', () => {
     expect(b.buf).not.toMatch(/Shane fades/);
     await a2.close();
     await b.close();
+  });
+
+  it('a page that kept its screen is not shown the room again on reconnect', async () => {
+    const a = await login('Shane');
+    const token = a.token;
+    a.drop();
+    await new Promise((r) => setTimeout(r, 200));
+    const a2 = new Player(token, 200, true);
+    await a2.waitFor(/\[Reconnected\]/);
+    await new Promise((r) => setTimeout(r, 400));
+    expect(a2.buf).not.toMatch(/Exits:/);
+    expect(a2.status?.room).toBeTruthy();
+    await a2.do('look', /Exits:/);
+    await a2.close();
   });
 
   it('a second login pushes the first connection out', async () => {
