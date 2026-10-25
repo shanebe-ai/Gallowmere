@@ -158,8 +158,27 @@ describe('Gallowmere end to end', () => {
     await p.do('wrongpass', /Wrong password/);
     await p.do('secret1', /Exits:/);
     await p.do('u', /can't go that way/);
-    await p.do('dance wildly', /Huh\?|What\?|doesn't mean|fog swallows/);
+    await p.do('frobnicate wildly', /Huh\?|What\?|doesn't mean|fog swallows/);
     await p.close();
+  });
+
+  it('emotes: alone, at a player, at a character who reacts, and in your own words', async () => {
+    morda = () => reply('', { type: 'none' }, 'waves back with a dishrag');
+    await (await create('Emi')).close();
+    await (await create('Ozzy')).close();
+    const a = await login('Emi', 'drowned_rat');
+    const b = await login('Ozzy', 'drowned_rat');
+    await a.do('wave', /You wave\./);
+    await b.waitFor(/Emi waves\./);
+    await a.do('laugh at ozzy', /You laugh at Ozzy\./);
+    await b.waitFor(/Emi laughs at you\./);
+    await a.do('wave morda', /You wave at Morda the barkeep\.[\s\S]*Morda waves back with a dishrag/);
+    await a.do('dance wildly', /You dance wildly\./);
+    await b.waitFor(/Emi dances wildly\./);
+    await a.do('emotes', /Emotes[\s\S]*wave/);
+    await a.do('/nod', /You nod\./);
+    await a.close();
+    await b.close();
   });
 
   it('a new name needs a plain y or n before anything else happens', async () => {
@@ -464,7 +483,7 @@ describe('Gallowmere end to end', () => {
     await p.do('w', /The Back Room/);
     await p.do('pick up the ledger', /put it\s+back exactly where it was/);
     await p.do('read ledger', /The Drowned Rat,\s+everything/);
-    await p.do('dance with the barrels', /Huh\?|What\?|doesn't mean|fog swallows/);
+    await p.do('juggle the barrels', /Huh\?|What\?|doesn't mean|fog swallows/);
     await p.do('take the moon', /don't see that here/);
     await p.close();
   });

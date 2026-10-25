@@ -7,6 +7,7 @@ import { Commerce } from './commerce.js';
 import { Combat, MAX_LEVEL, maxHealthFor, xpForLevel } from './combat.js';
 import { Town } from './town.js';
 import { Wilds } from './wilds.js';
+import { SOCIALS, socialEvent, socialLines } from './socials.js';
 import { PlagueCart, type CartOptions } from './cart.js';
 import type { AIService } from '../ai/service.js';
 import { avg, BENCH_DEFAULTS, BENCH_LINES, runBench, type LiveModel } from '../ai/bench.js';
@@ -191,7 +192,7 @@ const HELP: Record<string, string> = {
   look: 'look (l): look around.  look <someone> (l <someone>): look at a player or NPC.',
   move: 'north, south, east, west, up, down (n s e w u d): walk through an exit. Exits in the room text can be clicked.',
   say: "say <text> (or ' <text>): speak to everyone in the room. Name someone in it and they answer: say hi guard. A bare greeting works too: hello Morda.",
-  emote: 'emote <text> (or : <text>): act it out. ": leans on the bar" shows "Shane leans on the bar".',
+  emote: 'emote <text> (or : <text>): act it out. ": leans on the bar" shows "Shane leans on the bar".  emotes: the ready made ones, like wave, laugh, nod, bow, hug, shrug, wink, dance. Alone or at someone: wave morda, laugh at bob.',
   talk: 'talk <npc> <text> (or say to <npc> <text>): speak to someone directly. talk guard on its own just says hello.',
   ask: 'ask <npc> about <topic>, or ask <npc> <question>: ask someone something. Alone with someone, the name can be left off.',
   things: 'Things listed under You see can be used: look, touch, take, open, push, knock, read, search, smell, listen, sit, climb, use, kick. Looking at something shows what it responds to.',
@@ -786,6 +787,8 @@ export class Game {
     if (!line) return;
     if (s.travelling && !retried) this.stopTravel(s, 'You stop walking.');
     if (s.busy && !retried) this.stopBusy(s, true);
+    // A habit from chat apps: "/wave" means wave.
+    line = line.replace(/^\/(?=[a-z])/i, '');
     line = this.expandAlias(s, line);
     const me = this.combat.state(s.player!.id);
     if (me && this.town.isOut(me) && !/^(quit|exit|logout|health|hp|score|sc|help)\b/i.test(line)) {
@@ -905,7 +908,12 @@ export class Game {
       case 'bow':
       case 'clap':
       case 'pray':
-        return this.wilds.step(s, verb as 'bow' | 'clap' | 'pray');
+        // At the shrine these are the ritual; anywhere else they are just manners.
+        if (s.player!.roomId === 'shrine') return this.wilds.step(s, verb as 'bow' | 'clap' | 'pray');
+        return this.social(s, verb, rest);
+      case 'emotes':
+      case 'socials':
+        return this.listSocials(s);
       case 'follow':
         if (/fox/i.test(rest)) return this.wilds.followFox(s);
         return s.out('Follow whom?');
@@ -1054,6 +1062,7 @@ export class Game {
         if (this.isAdmin(s)) return this.ringForCart(s);
         break;
     }
+    if (SOCIALS[verb]) return this.social(s, verb, rest);
     if (VERBS[verb]) {
       const action = VERBS[verb];
       if (action === 'light' && rest && (await this.wilds.light(s, rest))) return;
@@ -1552,6 +1561,42 @@ export class Game {
     return hits.find((n) => n.kind === 'ai') ?? hits.find((n) => n.kind === 'light') ?? hits[0];
   }
 
+  /** wave, laugh, bow and the rest: alone, or at someone here, who may react. */
+  private social(s: Session, verb: string, rest: string): void {
+    const social = SOCIALS[verb];
+    const p = s.player!;
+    const t = cleanTarget(rest.replace(/^(at|to|for|with|before)\s+/i, ''));
+    if (!t || social.to === undefined) {
+      const lines = socialLines(social, p.name);
+      s.out(lines.mine);
+      return this.toRoom(p.roomId, `${c.player(p.name)} ${lines.room.slice(p.name.length + 1)}`, s);
+    }
+    const npc = this.world.findNpc(p.roomId, t);
+    const other = npc ? undefined : this.findPlayerHere(s, t);
+    if (!npc && !other) {
+      // Not someone here: take it as how you do it. "dance wildly".
+      const how = sanitize(rest, 80);
+      if (this.blockIfFlagged(s, how)) return;
+      s.out(`You ${social.you} ${how}.`);
+      return this.toRoom(p.roomId, `${c.player(p.name)} ${social.they} ${how}.`, s);
+    }
+    const name = npc ? (npc.card.listName ?? npc.name) : other!.player!.name;
+    const lines = socialLines(social, p.name, name);
+    s.out(lines.mine);
+    if (other) other.out(`${c.player(p.name)} ${lines.theirs!.slice(p.name.length + 1)}`);
+    this.toRoom(p.roomId, `${c.player(p.name)} ${lines.room.slice(p.name.length + 1)}`, s, other);
+    if (npc) {
+      if (npc.kind === 'scripted') void this.npcRespond(s, npc, verb);
+      else void this.npcRespond(s, npc, socialEvent(social), 'event');
+    }
+  }
+
+  private listSocials(s: Session): void {
+    s.out(c.title('Emotes'));
+    s.out(Object.keys(SOCIALS).sort().join(', '));
+    s.out(c.dim('Alone, or at someone here: wave, wave morda, laugh at bob, hug tilly. For anything else: emote <words>.'));
+  }
+
   private emote(s: Session, text: string): void {
     if (!text) return s.out('Do what?');
     if (this.blockIfFlagged(s, text)) return;
@@ -1803,6 +1848,7 @@ export class Game {
   private help(s: Session, topic: string): void {
     const t = topic.toLowerCase();
     const alias: Record<string, string> = {
+      emotes: 'emote', socials: 'emote', wave: 'emote', laugh: 'emote',
       attack: 'fight', kill: 'fight', flee: 'fight', combat: 'fight', die: 'death', dead: 'death', corpse: 'corpses', loot: 'corpses', bounty: 'corpses', plague: 'cart', bell: 'cart',
       forest: 'road', north: 'road', brigands: 'road', vesna: 'road', fog: 'road', fish: 'fishing', rod: 'fishing', bait: 'fishing', worms: 'fishing',
       make: 'crafting', craft: 'crafting', recipes: 'crafting', snare: 'crafting', torch: 'crafting', dark: 'crafting', light: 'crafting',

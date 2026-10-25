@@ -262,6 +262,7 @@ Gallowmere isn't a nice town, but it has rules.
 | Talk to someone | `' evening Morda`, `hello guard`, `talk morda ...` |
 | Ask about something | `ask morda about the docks` or `ask morda who runs the docks?` |
 | Act | `: leans on the bar`, `emote ...` |
+| Emotes | `wave`, `laugh at bob`, `nod morda`, `hug tilly`, `dance wildly`; `emotes` lists them all |
 | Use things | `take`, `touch`, `open`, `pull`, `push`, `knock`, `read`, `search`, `smell`, `sit`, `climb`, `play`, `drink`, `kick` |
 | Your pack | `i`, `take`, `drop`, `give bread to bob`, `give 2 coins to morda` |
 | Eat, drink, use | `eat bread`, `drink ale`, `light lamp`, `read`, `open` |
