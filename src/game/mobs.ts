@@ -13,7 +13,19 @@ export type MobKind =
   | 'big_rat'
   | 'giant_rat'
   | 'cart_rat'
-  | 'rat_king';
+  | 'rat_king'
+  | 'fox'
+  | 'deer'
+  | 'goat'
+  | 'wolf'
+  | 'boar'
+  | 'heron'
+  | 'otter'
+  | 'brigand'
+  | 'cutthroat'
+  | 'bear'
+  | 'captain'
+  | 'wight';
 
 export interface MobSpec {
   kind: MobKind;
@@ -35,7 +47,18 @@ export interface MobSpec {
   mute?: boolean;
   /** Animals and beasts have no personal name. */
   named: boolean;
-  corpse: 'street' | 'rat';
+  /** What is left when they die: 'none' for things that crumble to dust. */
+  corpse: 'street' | 'rat' | 'beast' | 'none';
+  /** Attacks players who come into its room. */
+  aggressive?: boolean;
+  /** Joins in when one of its own kind in the room is attacked. */
+  pack?: boolean;
+  /** The watch pays this much a head. */
+  bounty?: number;
+  /** How long until one comes back where it lives, after it dies. */
+  respawnMs?: number;
+  /** "the brigand captain": a fixed name instead of "a wolf". */
+  fixedName?: string;
   card: {
     job: string;
     personality: string;
@@ -203,6 +226,152 @@ export const MOBS: Record<MobKind, MobSpec> = {
       ambient: ['The rat king shifts in the straw, a dozen heads turning.', 'A chorus of squeaks rises and falls, almost like words.'],
     },
   },
+  fox: {
+    kind: 'fox', noun: 'fox', level: 1, health: [8, 10], damage: [1, 2], armour: 0, coin: [0, 0],
+    carries: [['fox_pelt', 1]], flee: 0.6, hits: 'bites', moves: 'slinks', street: false, mute: true, named: false, corpse: 'beast',
+    card: {
+      job: 'a red fox of the Edgewood', personality: 'wary, clever, quick to run', speech: 'none', wants: 'rabbits, scraps, to not be seen',
+      knows: 'every run and earth in the wood',
+      look: ['A red fox, lean and bright eyed, with a white tipped brush. It watches you sideways, ready to vanish.'],
+      scripted: ['The fox yips and backs away.', 'The fox flattens its ears.'],
+      ambient: ['A fox trots across the clearing with something in its mouth.', 'The fox sits and scratches behind one ear.'],
+    },
+  },
+  deer: {
+    kind: 'deer', noun: 'deer', level: 1, health: [10, 12], damage: [1, 2], armour: 0, coin: [0, 0],
+    carries: [['venison', 1], ['deer_hide', 1]], flee: 0.95, hits: 'kicks', moves: 'bounds', street: false, mute: true, named: false, corpse: 'beast',
+    card: {
+      job: 'a red deer hind', personality: 'skittish, alert, gone at the first wrong sound', speech: 'none', wants: 'grass, quiet',
+      knows: 'the deer paths',
+      look: ['A red deer hind, ears turning like weathervanes, every muscle ready to run.'],
+      scripted: ['The deer stamps a hoof.', 'The deer freezes, staring at you.'],
+      ambient: ['The deer lifts its head, listens, and goes back to grazing.', 'The deer flicks its ears at a fly.'],
+    },
+  },
+  goat: {
+    kind: 'goat', noun: 'mountain goat', level: 2, health: [12, 15], damage: [1, 3], armour: 0, coin: [0, 0],
+    carries: [['goat_meat', 1]], flee: 0.3, hits: 'butts', moves: 'clatters', street: false, mute: true, named: false, corpse: 'beast',
+    card: {
+      job: 'a shaggy mountain goat of the crags', personality: 'stubborn, bold, sure footed, rude', speech: 'none', wants: 'the path to itself',
+      knows: 'every ledge on the crags',
+      look: ['A shaggy grey goat with curling horns and yellow eyes with square pupils, looking at you as if you were in its way. You are.'],
+      scripted: ['The goat lowers its horns.', 'The goat bleats rudely.'],
+      ambient: ['The goat chews something it shouldn\'t.', 'Stones clatter down where the goat jumped.'],
+    },
+  },
+  wolf: {
+    kind: 'wolf', noun: 'grey wolf', level: 3, health: [18, 22], damage: [2, 4], armour: 0, coin: [0, 0],
+    carries: [['wolf_pelt', 1]], flee: 0.2, hits: 'bites', moves: 'lopes', street: false, mute: true, named: false, corpse: 'beast', pack: true,
+    card: {
+      job: 'a grey wolf of the Blackwood', personality: 'patient, wary, deadly in a pack', speech: 'none', wants: 'meat, the pack, the dark',
+      knows: 'the Blackwood',
+      look: ['A grey wolf, lean and long legged, its yellow eyes fixed on you without blinking.'],
+      scripted: ['The wolf growls, low.', 'The wolf\'s hackles rise.'],
+      ambient: ['A wolf lifts its nose to the wind.', 'Somewhere close, a wolf howls, and another answers.'],
+    },
+  },
+  boar: {
+    kind: 'boar', noun: 'wild boar', level: 4, health: [24, 28], damage: [2, 5], armour: 1, coin: [0, 0],
+    carries: [['boar_meat', 1], ['tusk', 0.7]], flee: 0.1, hits: 'gores', moves: 'crashes', street: false, mute: true, named: false, corpse: 'beast',
+    card: {
+      job: 'a wild boar of the Blackwood', personality: 'bad tempered, fearless, charges first', speech: 'none', wants: 'mud, roots, you gone',
+      knows: 'the wallow',
+      look: ['A wild boar, black bristled and humped, with yellow tusks curling from its jaw and small red eyes full of grudge.'],
+      scripted: ['The boar paws the ground.', 'The boar grunts and lowers its head.'],
+      ambient: ['The boar roots in the mud, grunting.', 'The boar rubs its flank against a tree, hard.'],
+    },
+  },
+  heron: {
+    kind: 'heron', noun: 'grey heron', level: 1, health: [6, 8], damage: [1, 2], armour: 0, coin: [0, 0],
+    carries: [], flee: 0.9, hits: 'stabs', moves: 'flaps', street: false, mute: true, named: false, corpse: 'beast',
+    card: {
+      job: 'a grey heron fishing the reeds', personality: 'patient, solemn, a thief', speech: 'none', wants: 'fish, especially yours',
+      knows: 'the shallows',
+      look: ['A tall grey heron standing on one leg in the shallows, still as a post, its dagger beak ready.'],
+      scripted: ['The heron gives you a long, unfriendly look.', 'The heron croaks.'],
+      ambient: ['The heron stabs the water and comes up with a fish.', 'The heron stands on one leg, perfectly still.'],
+    },
+  },
+  otter: {
+    kind: 'otter', noun: 'otter', level: 1, health: [8, 10], damage: [1, 2], armour: 0, coin: [0, 0],
+    carries: [], flee: 0.8, hits: 'bites', moves: 'slides', street: false, mute: true, named: false, corpse: 'beast',
+    card: {
+      job: 'an otter of the plunge pool', personality: 'playful, curious, bold', speech: 'none', wants: 'trout, play',
+      knows: 'the pool',
+      look: ['A sleek brown otter, whiskers dripping, watching you from the water with frank curiosity.'],
+      scripted: ['The otter chirps at you.', 'The otter rolls over in the water.'],
+      ambient: ['The otter slides into the pool without a splash.', 'The otter eats a trout on a rock, crunching.'],
+    },
+  },
+  brigand: {
+    kind: 'brigand', noun: 'brigand', level: 4, health: [26, 32], damage: [2, 5], armour: 1, coin: [3, 10],
+    carries: [['knife', 0.4], ['cudgel', 0.3], ['hand_axe', 0.2], ['padded_jerkin', 0.2]], flee: 0.2, hits: 'hacks at', moves: 'slips', street: false, named: true, corpse: 'street',
+    aggressive: true, pack: true, bounty: 5, respawnMs: 10 * 60_000,
+    card: {
+      job: 'a brigand of the north road, red band on one arm, who robs travellers at Brigand\'s Bend',
+      personality: 'swaggering, greedy, cruel when it pays, loyal to the captain, superstitious about the toll stump',
+      speech: 'rough, mocking, road slang, calls travellers pilgrim or pigeon, loves a threat',
+      wants: 'your purse, a share, a warm fire, to see Vesna\'s gate open',
+      knows: 'the road, the bend, the camp in the Blackwood, that Hook buys their takings, that the captain carries a blade like water, that nobody stops at the toll stump after dark',
+      look: ['Mud to the knees, a red band on one arm, a blade in the belt and a grin with gaps in it.', 'Lean and weathered, in a stolen cloak too good for them, with a red rag tied round one arm.'],
+      scripted: ['"Toll, pigeon. Everyone pays the toll."', '"Look what the road brought us."', 'The brigand spits and grins.'],
+      ambient: ['The brigand cleans their nails with a knife.', 'The brigand laughs at something another brigand said.'],
+    },
+  },
+  cutthroat: {
+    kind: 'cutthroat', noun: 'brigand cutthroat', level: 6, health: [34, 40], damage: [3, 6], armour: 1, coin: [6, 15],
+    carries: [['dirk', 0.8], ['leather_coat', 0.2]], flee: 0.15, hits: 'stabs', moves: 'drifts', street: false, named: true, corpse: 'street',
+    aggressive: true, pack: true, bounty: 8, respawnMs: 15 * 60_000,
+    card: {
+      job: 'a brigand cutthroat, one of the captain\'s hard ones, in the camp in the Blackwood',
+      personality: 'cold, quiet, patient, enjoys the work',
+      speech: 'soft, unhurried, polite in a way that makes it worse',
+      wants: 'the captain\'s favour, a clean kill, no witnesses',
+      knows: 'the camp, the captain, the bend, how many pigeons came through this week',
+      look: ['Quiet, neat and very still, with a dirk in each boot and nothing at all in the eyes.'],
+      scripted: ['"Shh."', 'The cutthroat smiles without any warmth at all.'],
+      ambient: ['The cutthroat sharpens a dirk on a stone, slowly.', 'The cutthroat watches the trees.'],
+    },
+  },
+  bear: {
+    kind: 'bear', noun: 'brown bear', level: 7, health: [50, 56], damage: [3, 7], armour: 2, coin: [0, 0],
+    carries: [['bear_pelt', 1], ['bear_claw', 1]], flee: 0, hits: 'mauls', moves: 'lumbers', street: false, mute: true, named: false, corpse: 'beast',
+    aggressive: true, respawnMs: 30 * 60_000,
+    card: {
+      job: 'a huge brown bear in its cave on the crags', personality: 'territorial, enormous, slow to anger and then unstoppable', speech: 'none', wants: 'its cave, alone',
+      knows: 'the crags',
+      look: ['A brown bear the size of a cart, rising onto its hind legs in the dark until its head brushes the roof. Its breath steams.'],
+      scripted: ['The bear roars, a sound you feel in your teeth.', 'The bear swings its head, huffing.'],
+      ambient: ['The bear shifts in the dark, huge and heavy.', 'The bear huffs, and the cave stinks of it.'],
+    },
+  },
+  captain: {
+    kind: 'captain', noun: 'brigand captain', level: 9, health: [70, 70], damage: [4, 8], armour: 2, coin: [20, 40],
+    carries: [['camp_ledger', 1]], flee: 0, hits: 'cuts', moves: 'strides', street: false, named: false, corpse: 'street',
+    aggressive: true, bounty: 25, respawnMs: 24 * 60 * 60_000, fixedName: 'the brigand captain',
+    card: {
+      job: 'the captain of the brigands of the north road, in a striped tent in the camp deep in the Blackwood',
+      personality: 'charming, educated, utterly ruthless, a fallen gentleman who enjoys the theatre of it',
+      speech: 'courteous, witty, elaborate, calls everyone my friend while measuring them for a shroud',
+      wants: 'the road, the toll, and one day Vesna\'s gate open to them',
+      knows: 'everything on the road; that Hook buys from them and Dace sells them the watch rota; that the blade came from somewhere far beyond the fog',
+      look: ['A tall figure in a stained velvet coat over mail, with a fine grey beard and a long curved blade at the hip whose steel ripples like water.'],
+      scripted: ['"My friend. You came all this way. How very brave."', 'The captain smiles and rests a hand on the hilt.'],
+      ambient: ['The captain studies the maps, humming.', 'The captain pours wine into a silver cup that was once someone else\'s.'],
+    },
+  },
+  wight: {
+    kind: 'wight', noun: 'barrow wight', level: 8, health: [44, 44], damage: [3, 6], armour: 2, coin: [0, 0],
+    carries: [], flee: 0, hits: 'claws', moves: 'drifts', street: false, mute: true, named: false, corpse: 'none',
+    fixedName: 'the barrow wight',
+    card: {
+      job: 'the dead lord of the barrow, woken', personality: 'ancient, cold, wrathful, bound to the barrow', speech: 'none', wants: 'what was taken from it',
+      knows: 'the dark',
+      look: ['A tall shape of bone and rag and dark, crowned with dull gold, with two cold points of light where its eyes should be.'],
+      scripted: ['The wight hisses like wind through a keyhole.', 'The wight reaches for you.'],
+      ambient: ['The wight stands utterly still, watching the doorway.', 'Cold pours off the wight like water.'],
+    },
+  },
 };
 
 /**
@@ -219,14 +388,33 @@ export const STREET_MIX: Array<[MobKind, number, number]> = [
   ['bruiser', 2, 2],
 ];
 
-/** Beasts kept in the sewers: how many of each, and where. */
-export const SEWER_POP: Array<{ kind: MobKind; room: string; count: number }> = [
+/** Beasts and brigands that live in one place: how many of each, and where. */
+export const HOME_POP: Array<{ kind: MobKind; room: string; count: number }> = [
   { kind: 'rat', room: 'sewer_grate', count: 3 },
   { kind: 'big_rat', room: 'grate_tunnel', count: 2 },
   { kind: 'big_rat', room: 'overflow', count: 2 },
   { kind: 'giant_rat', room: 'old_cistern', count: 2 },
   { kind: 'cart_rat', room: 'bone_shelf', count: 1 },
   { kind: 'rat_king', room: 'the_nest', count: 1 },
+  { kind: 'fox', room: 'ew_heath', count: 1 },
+  { kind: 'fox', room: 'ew_runs', count: 1 },
+  { kind: 'fox', room: 'ee_bracken', count: 1 },
+  { kind: 'deer', room: 'ee_deerpath', count: 1 },
+  { kind: 'deer', room: 'bw_trail', count: 1 },
+  { kind: 'deer', room: 'bw_blind', count: 1 },
+  { kind: 'goat', room: 'crag_goatpath', count: 2 },
+  { kind: 'goat', room: 'crag_scree', count: 1 },
+  { kind: 'wolf', room: 'ew_hollow', count: 1 },
+  { kind: 'wolf', room: 'bw_dens', count: 3 },
+  { kind: 'boar', room: 'bw_wallow', count: 2 },
+  { kind: 'heron', room: 'mere_reeds', count: 1 },
+  { kind: 'otter', room: 'falls_pool', count: 1 },
+  { kind: 'brigand', room: 'camp_stockade', count: 2 },
+  { kind: 'brigand', room: 'camp_tents', count: 2 },
+  { kind: 'cutthroat', room: 'camp_tents', count: 1 },
+  { kind: 'cutthroat', room: 'camp_lookout', count: 1 },
+  { kind: 'bear', room: 'bear_cave', count: 1 },
+  { kind: 'captain', room: 'captains_tent', count: 1 },
 ];
 
 const FIRST = [
@@ -279,10 +467,9 @@ export function generate(kind: MobKind, r: () => number): Generated {
   const look = pick(spec.card.look, r);
   if (!spec.named) {
     const a = /^[aeiou]/.test(spec.noun) ? 'an' : 'a';
-    const listName = kind === 'rat_king' ? 'the rat king' : kind === 'dog' ? 'a stray dog' : `${a} ${spec.noun}`;
-    const keywords = [...new Set([...spec.noun.split(' '), spec.noun, 'rat', kind === 'dog' ? 'stray' : '', kind === 'dog' ? 'mutt' : ''])].filter(
-      (k) => k && (kind === 'dog' ? k !== 'rat' : true),
-    );
+    const listName = spec.fixedName ?? (kind === 'rat_king' ? 'the rat king' : kind === 'dog' ? 'a stray dog' : `${a} ${spec.noun}`);
+    const extra = spec.corpse === 'rat' ? ['rat'] : kind === 'dog' ? ['stray', 'mutt'] : kind === 'captain' ? ['captain', 'brigand'] : kind === 'wight' ? ['wight', 'dead'] : [];
+    const keywords = [...new Set([...spec.noun.split(' '), spec.noun, ...extra])].filter(Boolean);
     return { name: listName.replace(/^(a|an|the) /, ''), listName, keywords, health, coin, items, quirk: null, look };
   }
   const first = pick(FIRST, r);

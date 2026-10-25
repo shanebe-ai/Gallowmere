@@ -3,7 +3,7 @@
 
 import { query } from '../db/pool.js';
 import { createItem, deleteItem, itemsOf, moveCoin, moveItem, nudgeStanding, tx, type Item, type ItemTemplate } from './economy.js';
-import { MOBS, SEWER_POP, STREET_MIX, generate, randBetween, type MobKind } from './mobs.js';
+import { HOME_POP, MOBS, STREET_MIX, generate, randBetween, type MobKind } from './mobs.js';
 import type { Session } from './session.js';
 import { c, capitalize } from './text.js';
 import { DIRECTIONS, OPPOSITE, cleanTarget, looseMatch, type Direction, type Npc } from './world.js';
@@ -15,8 +15,11 @@ const CHILL_MS = 10 * 60_000;
 const CORPSE_MS = 30 * 60_000;
 const OWNER_ONLY_MS = 10 * 60_000;
 const ALE_MS = 5 * 60_000;
-const MAX_LEVEL = 10;
+export const MAX_LEVEL = 15;
 const CORPSE_WEIGHT = 15;
+const RAT_WEIGHT = 3;
+/** Rooms where wounds close faster: by a fire, in the temple, on the shrine steps. */
+const RESTFUL = new Set(['drowned_rat', 'nave', 'healers_ward', 'shrine_steps', 'shrine', 'fortune_tree', 'sleeping_lantern', 'burnt_waystation']);
 const MOB_RESPAWN_MS = 5 * 60_000;
 const RAT_KING_RESPAWN_MS = 24 * 60 * 60_000;
 
@@ -34,7 +37,23 @@ export interface PlayerState {
   target: string | null;
   lastFight: number;
   carrying: number | null; // a corpse id
+  carryingWeight: number;
   dirty: boolean;
+  /** How drunk: about one point a drink, wearing off over time. */
+  drink: number;
+  drinkAt: number;
+  /** Out cold in the road until then. */
+  outUntil: number;
+  /** Carrying a lit light until then. */
+  lightUntil: number;
+  /** The shrine's fox: a steadier hand until then. */
+  favourUntil: number;
+  /** A bad fortune kept: a shakier hand until then. */
+  curseUntil: number;
+  /** Paid the old man at the toll stump: the brigands let you be until then. */
+  ghostUntil: number;
+  /** Asleep, and whether in a bed paid for. Any command wakes you. */
+  asleep: { rented: boolean; since: number } | null;
 }
 
 export interface Mob {
@@ -50,6 +69,7 @@ export interface Mob {
   nextMove: number;
   passedOut: number; // until when a drunk lies in the road
   home: string | null; // beasts stay where they were put
+  charged?: boolean; // a boar's first hit lands hard, once
 }
 
 interface Fighter {
@@ -96,6 +116,17 @@ function weaponVerb(t: ItemTemplate | null): [string, string] {
   return ['club', 'clubs'];
 }
 
+/** Everything that moves a player's aim, in percent, right now. */
+export function aimOf(st: PlayerState, now = Date.now()): number {
+  let aim = 0;
+  if (st.chillUntil > now) aim -= 15;
+  if (st.aleUntil > now) aim -= 5;
+  if (st.drink >= 5) aim -= 10;
+  if (st.favourUntil > now) aim += 5;
+  if (st.curseUntil > now) aim -= 5;
+  return aim;
+}
+
 export class Combat {
   players = new Map<number, PlayerState>();
   mobs = new Map<string, Mob>();
@@ -133,7 +164,7 @@ export class Combat {
       [p.id],
     );
     const r = rows[0];
-    const carried = await query('SELECT id FROM corpses WHERE carried_by=$1 LIMIT 1', [p.id]);
+    const carried = await query('SELECT id, kind FROM corpses WHERE carried_by=$1 LIMIT 1', [p.id]);
     const st: PlayerState = {
       id: p.id,
       name: p.name,
@@ -148,7 +179,16 @@ export class Combat {
       target: null,
       lastFight: 0,
       carrying: carried.rows[0] ? Number(carried.rows[0].id) : null,
+      carryingWeight: carried.rows[0]?.kind === 'rat' ? RAT_WEIGHT : CORPSE_WEIGHT,
       dirty: false,
+      drink: 0,
+      drinkAt: Date.now(),
+      outUntil: 0,
+      lightUntil: 0,
+      favourUntil: 0,
+      curseUntil: 0,
+      ghostUntil: 0,
+      asleep: null,
     };
     this.players.set(p.id, st);
     return st;
@@ -193,7 +233,8 @@ export class Combat {
   }
 
   extraLoad(id: number): number {
-    return this.players.get(id)?.carrying ? CORPSE_WEIGHT : 0;
+    const st = this.players.get(id);
+    return st?.carrying ? st.carryingWeight : 0;
   }
 
   // ---------------------------------------------------------------- gear
@@ -284,10 +325,15 @@ export class Combat {
     const dmg = weapon?.damage ?? [1, 2];
     s.out(weapon ? `Wielding ${weapon.name}: ${dmg[0]} to ${dmg[1]} damage a hit.` : `Bare fists: ${dmg[0]} to ${dmg[1]} damage a hit. Hamo sells better.`);
     s.out(armour ? `Wearing ${armour.name}: takes ${armour.armour} off every hit you take.` : 'No armour: you take every hit in full.');
-    const aim = 65 + (st.chillUntil > now ? -15 : 0) + (st.aleUntil > now ? -5 : 0);
+    const aim = 65 + aimOf(st, now);
     s.out(`Level ${st.level}: you land about ${aim}% of your blows on someone your own level, more on weaker, fewer on stronger.`);
     if (st.chillUntil > now) s.out(c.dim(`A grave chill is on you for ${Math.ceil((st.chillUntil - now) / 60_000)} more minute(s): your aim is worse.`));
-    if (st.aleUntil > now) s.out(c.dim('Ale in your blood: a point more damage a hit, a little less aim.'));
+    if (st.aleUntil > now) s.out(c.dim('Drink in your blood: a point more damage a hit, a little less aim.'));
+    const drunk = this.game.town.drunkWords(st);
+    if (drunk) s.out(c.dim(drunk));
+    if (st.favourUntil > now) s.out(c.dim(`The fox's favour is on you for ${Math.ceil((st.favourUntil - now) / 60_000)} more minute(s): a steadier hand.`));
+    if (st.curseUntil > now) s.out(c.dim(`A bad fortune hangs on you for ${Math.ceil((st.curseUntil - now) / 60_000)} more minute(s): your hand shakes. Tie it to the fortune tree.`));
+    if (st.lightUntil > now) s.out(c.dim('You carry a light.'));
     if (st.health < max / 3) s.out(c.error('The cart men would take you for dead like this. Get indoors and get healed.'));
     else if (st.health < max) s.out(c.dim('Rest by the fire in the Drowned Rat or in the nave to heal faster, or use a bandage.'));
   }
@@ -303,10 +349,11 @@ export class Combat {
       if (st.health > before) s.out(c.dim(`You feel better. (${st.health}/${maxHealthFor(st.level)})`));
       this.game.updateStatus(s);
     }
-    if (t.id === 'ale') {
+    if (t.id === 'ale' || t.id === 'gin') {
       st.aleUntil = Date.now() + ALE_MS;
       s.out(c.dim('Dutch courage: you hit a little harder, and a little less often, for a while.'));
     }
+    this.game.town.consumed(s, st, t);
   }
 
   async bandage(s: Session): Promise<void> {
@@ -351,7 +398,7 @@ export class Combat {
         armour: armour?.armour ?? 0,
         hit2: weaponVerb(weapon)[0],
         hit3: weaponVerb(weapon)[1],
-        aim: (st.chillUntil > now ? -15 : 0) + (st.aleUntil > now ? -5 : 0),
+        aim: aimOf(st, now),
         extra: st.aleUntil > now ? 1 : 0,
       };
     }
@@ -419,6 +466,15 @@ export class Combat {
       const m = this.mobs.get(npc.id)!;
       if (!m.target) m.target = `p:${p.id}`;
       m.passedOut = 0;
+      // Wolves and brigands stand together.
+      if (MOBS[m.kind].pack) {
+        for (const o of this.mobsIn(roomId)) {
+          if (o === m || o.target || !MOBS[o.kind].pack) continue;
+          if (MOBS[o.kind].corpse !== MOBS[m.kind].corpse) continue;
+          o.target = `p:${p.id}`;
+          this.game.toRoom(roomId, c.error(`${capitalize(this.mobName(o))} joins in!`));
+        }
+      }
       // One line of talk as the fight starts; the fight itself never waits for it.
       if (!MOBS[m.kind].mute) void this.game.npcRespond(s, npc, 'attacks you', 'event').catch(() => undefined);
     } else {
@@ -545,7 +601,13 @@ export class Combat {
       this.game.toRoom(a.roomId, c.dim(`${capitalize(a.name)} swings at ${d.name} and misses.`), aS, dS);
       return;
     }
-    const dmg = Math.max(1, randBetween(a.damage, this.r) + a.extra - d.armour);
+    let dmg = Math.max(1, randBetween(a.damage, this.r) + a.extra - d.armour);
+    const am = key.startsWith('m:') ? this.mobs.get(key.slice(2)) : undefined;
+    if (am?.kind === 'boar' && !am.charged) {
+      am.charged = true;
+      dmg *= 2;
+      this.game.toRoom(a.roomId, c.error(`${capitalize(a.name)} lowers its head and charges!`));
+    }
     const left = Math.max(0, d.health - dmg);
     this.setHealth(targetKey, left);
     const how = left > 0 ? woundWords(left, d.maxHealth) : 'finished';
@@ -554,6 +616,14 @@ export class Combat {
     this.game.toRoom(a.roomId, `${capitalize(a.name)} ${a.hit3} ${d.name}.`, aS, dS);
     if (dS) this.game.updateStatus(dS);
     if (left <= 0) return this.die(targetKey, key);
+    // A goat on a narrow path can put you off it.
+    if (am?.kind === 'goat' && dS && (a.roomId === 'crag_goatpath' || a.roomId === 'crag_ledge') && this.r() < 0.12) {
+      this.endFightsWith(targetKey);
+      dS.out(c.error('The goat puts its head down and shoves, and the path is suddenly not under your feet. You slide all the way down the scree.'));
+      this.game.toRoom(a.roomId, `${capitalize(d.name)} is shoved off the path by the goat and slides away down the scree.`, dS);
+      await this.game.placePlayer(dS, 'crag_scree', `${c.player(d.name)} comes sliding down the scree in a shower of stones.`);
+      return;
+    }
     // Street folk run when it goes badly.
     if (targetKey.startsWith('m:')) {
       const m = this.mobs.get(targetKey.slice(2));
@@ -608,7 +678,8 @@ export class Combat {
       const max = maxHealthFor(st.level);
       if (st.target || st.health >= max || st.health <= 0) continue;
       const room = this.game.playerRoom(st.id);
-      const rate = room === 'drowned_rat' || room === 'nave' || room === 'healers_ward' ? 3 : 1;
+      // A paid bed puts you right in a few minutes; sleeping rough or by a fire is slower.
+      const rate = st.asleep?.rented ? Math.ceil(max / 4) : st.asleep || (room && RESTFUL.has(room)) ? 3 : 1;
       st.health = Math.min(max, st.health + rate);
       st.dirty = true;
       const s = this.game.sessionOf(st.id);
@@ -637,11 +708,20 @@ export class Combat {
     const name = this.mobName(m);
     const roomId = m.npc.roomId;
     this.removeMob(m);
-    this.game.toRoom(roomId, c.error(how ?? `${capitalize(name)} collapses and lies still.`));
-    const corpseId = await this.makeCorpse(spec.corpse, null, name, roomId, m.coin, m.items, 0);
+    if (spec.corpse === 'none') {
+      this.game.toRoom(roomId, c.error(how ?? `${capitalize(name)} comes apart into dust and old bone, and is gone.`));
+    } else {
+      this.game.toRoom(roomId, c.error(how ?? `${capitalize(name)} collapses and lies still.`));
+    }
+    const corpseId = spec.corpse === 'none' ? 0 : await this.makeCorpse(spec.corpse, null, name, roomId, m.coin, m.items, 0, m.kind);
     await query('INSERT INTO kills (killer_id, victim_kind, victim_name, room_id) VALUES ($1,$2,$3,$4)', [killer?.id ?? null, m.kind, name, roomId]);
     if (killer) await this.gainXp(killer, m.level);
-    if (m.home) this.respawnAt.set(`${m.home}:${m.kind}#${m.id}`, Date.now() + (m.kind === 'rat_king' ? RAT_KING_RESPAWN_MS : MOB_RESPAWN_MS));
+    if (m.home) this.respawnAt.set(`${m.home}:${m.kind}#${m.id}`, Date.now() + (m.kind === 'rat_king' ? RAT_KING_RESPAWN_MS : spec.respawnMs ?? MOB_RESPAWN_MS));
+    if (killer && (m.kind === 'captain' || m.kind === 'rat_king' || m.kind === 'bear')) {
+      const what = m.kind === 'captain' ? 'killed the brigand captain in his own tent' : m.kind === 'rat_king' ? 'killed the rat king down in the sewers' : 'killed the great bear on the crags';
+      await this.game.town.rumour(killer.id, `${killer.name} ${what}`);
+    }
+    await this.game.wilds.onMobDeath(m, killer);
     return corpseId;
   }
 
@@ -706,6 +786,9 @@ export class Combat {
     st.worn = protectedNew ? st.worn : null;
     st.target = null;
     st.lastFight = 0; // the dead are out of the fight
+    st.asleep = null;
+    st.outUntil = 0;
+    st.drink = 0;
     st.dirty = true;
     await this.save(id);
     void mob;
@@ -726,12 +809,12 @@ export class Combat {
     return corpseId;
   }
 
-  private async makeCorpse(kind: 'player' | 'street' | 'rat', playerId: number | null, name: string, roomId: string, coin: number, items: string[], ownerMs: number): Promise<number> {
+  private async makeCorpse(kind: 'player' | 'street' | 'rat' | 'beast', playerId: number | null, name: string, roomId: string, coin: number, items: string[], ownerMs: number, mobKind?: string): Promise<number> {
     return tx(async (cl) => {
       const { rows } = await cl.query(
-        `INSERT INTO corpses (kind, player_id, name, room_id, coin, open_at, expires_at)
-         VALUES ($1,$2,$3,$4,$5, now() + ($6 || ' milliseconds')::interval, now() + ($7 || ' milliseconds')::interval) RETURNING id`,
-        [kind, playerId, name, roomId, coin, String(ownerMs), String(CORPSE_MS)],
+        `INSERT INTO corpses (kind, player_id, name, room_id, coin, open_at, expires_at, mob_kind)
+         VALUES ($1,$2,$3,$4,$5, now() + ($6 || ' milliseconds')::interval, now() + ($7 || ' milliseconds')::interval, $8) RETURNING id`,
+        [kind, playerId, name, roomId, coin, String(ownerMs), String(CORPSE_MS), mobKind ?? null],
       );
       const id = Number(rows[0].id);
       for (const t of items) if (this.game.catalog.templates.has(t)) await createItem(cl, t, { type: 'corpse', id });
@@ -770,7 +853,7 @@ export class Combat {
     if (!k) return false;
     const { rows } = await query('SELECT coin FROM corpses WHERE id=$1', [k.id]);
     const items = await itemsOf(this.game.catalog, { type: 'corpse', id: k.id });
-    s.out(`The corpse of ${k.name}${k.kind === 'rat' ? ', already stiffening' : ', face down in the muck'}.`);
+    s.out(`The corpse of ${k.name}${k.kind === 'rat' || k.kind === 'beast' ? ', already stiffening' : ', face down in the muck'}.`);
     const what = [...items.map((i) => i.template.name), ...(rows[0]?.coin ? [`${rows[0].coin} coin`] : [])];
     s.out(what.length ? `On the body: ${what.join(', ')}.` : 'Nothing worth taking on it.');
     const mineOnly = k.kind === 'player' && k.playerId !== s.player!.id && k.openAt > Date.now();
@@ -833,16 +916,14 @@ export class Combat {
       s.out('You already have a body over your shoulder.');
       return true;
     }
-    if (k.kind === 'rat') {
-      s.out('Nobody pays for dead rats. Take the tail, leave the rest.');
-      return true;
-    }
+
     if (k.kind === 'player' && k.playerId !== p.id && k.openAt > Date.now()) {
       s.out(`Leave it a few minutes. ${k.name} might still come back for it.`);
       return true;
     }
+    const weight = k.kind === 'rat' ? RAT_WEIGHT : CORPSE_WEIGHT;
     const mine = await this.game.commerce.myItems(s);
-    if (mine.reduce((w, i) => w + i.template.weight, 0) + CORPSE_WEIGHT > 20) {
+    if (mine.reduce((w, i) => w + i.template.weight, 0) + weight > 20) {
       s.out("You can't lift a body with your pack that full.");
       return true;
     }
@@ -852,7 +933,8 @@ export class Combat {
       return true;
     }
     st.carrying = k.id;
-    s.out(`You heave the corpse of ${k.name} over your shoulder. It's heavier than it looks.`);
+    st.carryingWeight = weight;
+    s.out(k.kind === 'rat' ? `You pick up the corpse of ${k.name} by the tail. Only the Gatherers' Hall would pay for it, and not much.` : `You heave the corpse of ${k.name} over your shoulder. It's heavier than it looks.`);
     this.game.toRoom(p.roomId, `${c.player(p.name)} heaves the corpse of ${k.name} over one shoulder.`, s);
     return true;
   }
@@ -894,6 +976,7 @@ export class Combat {
       st.carrying = null;
       return s.out('The body is gone.');
     }
+    if (k.kind === 'rat' || k.kind === 'beast') return s.out(c.npc('Father Osmund looks at the carcass and then at you. "I bury people. Take that to the butcher, or the Gatherers."'));
     const pay = k.kind === 'player' ? 2 : 3;
     await tx(async (cl) => {
       if (k.kind === 'player' && k.player_id) {
@@ -932,6 +1015,7 @@ export class Combat {
       return s.out('The body is gone.');
     }
     if (k.kind === 'player') return s.out(c.npc('The butcher looks at the body, then at you. "Not that kind. Take it to the priest."'));
+    if (k.kind === 'rat') return s.out(c.npc('The butcher snorts. "Rats? I\'ve got my own. Try the Gatherers\' Hall, next door."'));
     await tx(async (cl) => {
       await cl.query(`DELETE FROM items WHERE owner_type='corpse' AND owner_id=$1`, [String(corpseId)]);
       await cl.query('DELETE FROM corpses WHERE id=$1', [corpseId]);
@@ -943,6 +1027,7 @@ export class Combat {
     if (this.r() < 1 / 3) {
       await nudgeStanding('osmund', p.id, -1);
       s.out(c.dim('Word gets around. Father Osmund will hear of this.'));
+      await this.game.town.rumour(p.id, `${p.name} was seen selling a body to the butcher, no questions asked`);
     }
     this.game.updateStatus(s);
   }
@@ -994,17 +1079,22 @@ export class Combat {
   async bounty(s: Session): Promise<void> {
     const p = s.player!;
     if (p.roomId !== 'watch_house') return s.out('Bounties are paid at the watch house, north of the barracks yard.');
-    const owed = await tx(async (cl) => {
+    const rates: Record<string, number> = { cutpurse: 4 };
+    for (const spec of Object.values(MOBS)) if (spec.bounty) rates[spec.kind] = spec.bounty;
+    const paid = await tx(async (cl) => {
       const { rows } = await cl.query(
-        `UPDATE kills SET bounty_paid = TRUE WHERE killer_id=$1 AND victim_kind='cutpurse' AND bounty_paid = FALSE RETURNING id`,
-        [p.id],
+        `UPDATE kills SET bounty_paid = TRUE WHERE killer_id=$1 AND victim_kind = ANY($2) AND bounty_paid = FALSE RETURNING victim_kind`,
+        [p.id, Object.keys(rates)],
       );
-      const pay = rows.length * 4;
-      if (pay) await moveCoin(cl, p.id, pay, 0, `bounty on ${rows.length} cutpurse(s)`);
-      return rows.length;
+      const pay = rows.reduce((n, r) => n + rates[r.victim_kind], 0);
+      if (pay) await moveCoin(cl, p.id, pay, 0, `bounty on ${rows.length} head(s)`);
+      return { heads: rows.map((r) => r.victim_kind as string), pay };
     });
-    if (!owed) return s.out('The duty sergeant checks his ledger. "Nothing owed to you. Bring me cutpurses."');
-    s.out(`The duty sergeant runs a thumb down his ledger, grunts, and counts out ${owed * 4} coin. "${owed} cutpurse${owed > 1 ? 's' : ''}. The town thanks you. Don't make a habit of enjoying it."`);
+    if (!paid.heads.length) return s.out('The duty sergeant checks his ledger. "Nothing owed to you. Bring me cutpurses. Or brigands, if you\'re feeling brave."');
+    const counts = new Map<string, number>();
+    for (const h of paid.heads) counts.set(h, (counts.get(h) ?? 0) + 1);
+    const words = [...counts].map(([k, n]) => `${n} ${k === 'captain' ? 'brigand captain' : k === 'cutthroat' ? 'cutthroat' : k}${n > 1 ? 's' : ''}`).join(', ');
+    s.out(`The duty sergeant runs a thumb down his ledger, grunts, and counts out ${paid.pay} coin. "${words}. The town thanks you. Don't make a habit of enjoying it."`);
     this.game.updateStatus(s);
   }
 
@@ -1068,14 +1158,54 @@ export class Combat {
       for (let i = 0; i < n; i++) this.spawnStreet(this.mobs.size > 0 && i === 0);
     }
     if (this.opts.streetFolk === 0) return;
-    for (const pop of SEWER_POP) {
+    for (const pop of HOME_POP) {
       const have = [...this.mobs.values()].filter((m) => m.home === pop.room && m.kind === pop.kind).length;
       for (let i = have; i < pop.count; i++) {
         const waiting = [...this.respawnAt].find(([k]) => k.startsWith(`${pop.room}:${pop.kind}#`));
         if (waiting && waiting[1] > now) break;
         if (waiting) this.respawnAt.delete(waiting[0]);
-        this.spawn(pop.kind, pop.room, pop.room);
+        const m = this.spawn(pop.kind, pop.room, pop.room);
+        if (m.kind === 'captain') this.armCaptain(m);
       }
+    }
+  }
+
+  /** There is only ever one captain's blade: the captain carries it only when nobody else has it. */
+  private armCaptain(m: Mob): void {
+    void query(`SELECT 1 FROM items WHERE template_id='captain_blade' LIMIT 1`)
+      .then(({ rows }) => {
+        const held = [...this.mobs.values()].some((o) => o !== m && o.items.includes('captain_blade'));
+        if (!rows.length && !held && this.mobs.has(m.id)) m.items.push('captain_blade');
+      })
+      .catch(() => undefined);
+  }
+
+  /** A player has just come into a room: anything there that attacks strangers does. */
+  onArrive(s: Session): void {
+    const p = s.player!;
+    if (this.sanctuary(p.roomId)) return;
+    const st = this.players.get(p.id);
+    if (!st) return;
+    const now = Date.now();
+    for (const m of this.mobsIn(p.roomId)) {
+      const spec = MOBS[m.kind];
+      if (!spec.aggressive || m.target || m.passedOut) continue;
+      const brigand = spec.corpse === 'street';
+      if (this.isNew(st)) {
+        if (brigand) s.out(c.dim(`${capitalize(this.mobName(m))} looks you over and laughs. "Come back when you're worth robbing, pigeon."`));
+        else if (m.kind === 'wight') s.out(c.dim('Something in the dark stirs, considers you, and lets you be.'));
+        else continue;
+        continue;
+      }
+      // The old man's favour keeps the road safe, not the captain's own tent.
+      if (brigand && st.ghostUntil > now && m.kind !== 'captain') {
+        s.out(c.dim(`${capitalize(this.mobName(m))} looks at you, goes pale, and looks away. Something about you says you have paid the old man.`));
+        continue;
+      }
+      m.target = `p:${p.id}`;
+      const line = m.kind === 'bear' ? 'The bear rises out of the dark with a roar and comes for you!' : `${capitalize(this.mobName(m))} goes for you!`;
+      s.out(c.error(line));
+      this.game.toRoom(p.roomId, c.error(`${capitalize(this.mobName(m))} goes for ${p.name}!`), s);
     }
   }
 
@@ -1147,7 +1277,7 @@ export class Combat {
     return m;
   }
 
-  private removeMob(m: Mob): void {
+  removeMob(m: Mob): void {
     this.endFightsWith(`m:${m.id}`);
     this.mobs.delete(m.id);
     this.game.world.npcs.delete(m.id);

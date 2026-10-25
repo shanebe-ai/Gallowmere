@@ -454,7 +454,7 @@ describe('Milestone 3 end to end', () => {
 
   it('travel walks you to places you know, and stops when you type or get into a fight', async () => {
     const p = await create('Uri', 'north_gate', { old: true });
-    await p.do('travel nave', /You don't know the way there yet/);
+    await p.do('travel tilly', /You don't know the way there yet/);
     for (const step of ['s', 'e', 'e', 'e']) await p.do(step, /Exits:/);
     await p.do('travel', /Places you know the way to:[\s\S]*The Nave/);
     await p.do('travel gate', /set off for The North Gate, 4 steps away/);

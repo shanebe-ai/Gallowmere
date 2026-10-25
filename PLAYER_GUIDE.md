@@ -143,7 +143,7 @@ Selling works the same way: `sell lamp` takes their offer, `sell lamp for 5` sta
 
 ## The town, as far as you're allowed to see it
 
-**The North Gate.** The only road in. A rusted portcullis, a gate guard with his hand out and a gibbet that's never quite empty. Stairs climb to the wall walk. North, the moor road runs into fog and stops. Not yet.
+**The North Gate.** The only road in. A rusted portcullis, a gate guard with his hand out and a gibbet that's never quite empty. Stairs climb to the wall walk. North, the moor road runs out across the heather, ten miles to a town called Vesna.
 
 **Gate Road and the Barracks.** Shuttered houses that listen. The watch drills in the yard when it can be bothered. Read the notice board. Someone named Dace keeps coming up. The watch house, the captain's office and the lockup are north of the yard. The captain is never in.
 
@@ -153,11 +153,31 @@ Selling works the same way: `sell lamp` takes their offer, `sell lamp for 5` sta
 
 **Smithy Row.** The hammer never stops. Hamo sells knives, tools and, at last, the real blades from under the tarp. Coats and jerkins too, for those who'd rather not bleed.
 
-**The Drowned Rat.** The only warm room in town. Rooms upstairs, a dice cellar below for the serious games, a yard out back. Mind the curtain on the west wall. Nobody looks at it for long.
+**The Drowned Rat.** The only warm room in town. Rooms upstairs, a dice cellar below for the serious games, a yard out back. Mind the curtain on the west wall. Nobody looks at it for long. Through the yard, the Sleeping Lantern: Old Peg's inn, where the beds are clean and nobody gets stabbed.
+
+**The Gatherers' Hall.** East off Butcher's Alley, cold and scrubbed and smelling of lime. Warden Crane pays for the dead, by the body, and writes every one of them down.
 
 **Wet Lane and the Docks.** Never dry, never honest. The fish market, the harbourmaster's office, the net loft and a beached wreck called The Patience. The harbourmaster takes bribes on Tuesdays. Today is not Tuesday.
 
 **The Sewers.** Iron bars bent wide enough for someone thin. Down through them, a tunnel, an overflow, and at the end an iron door, chained and painted red: DO NOT. Something on the other side knocks. If you get through, there's a cistern of black water, a shelf of bones the cart men tip there, a passage up to the old wreck, and a nest. Don't go in the nest.
+
+## Beyond the wall
+
+The fog has drawn back from the moor road at last.
+
+**The road.** Ten rooms of rutted dirt north from the Moor Road: Heather Rise, the Gibbet Milestone, Drovers' Ford, the Toll Stump, Brigand's Bend, the Burnt Waystation, Mile Oak, the Long Climb, and at the end the shut gate of Vesna. Knock if you like. Someone always answers. Nobody opens it.
+
+**The forest.** Woods all round the road, in places with their own names and their own business. The Edgewood is thin and friendly, mostly. West of the ford a black lake lies still as tar, with a jetty, a ferryman and an island. Up the stream, a waterfall. West of the Long Climb, the crags, the goats, and a cave that smells of bear. East of the Toll Stump the trees go black and close: the Blackwood, wolves, boar, and somewhere deep in it, the brigands' camp. And south east, past the bracken, a ring of old stones and a mound nobody digs into. Walk into the fog at the edges and you'll come back where you went in, colder.
+
+**Brigands.** They wait at Brigand's Bend and ask a toll: `pay` and walk on poorer, or fight. They never trouble anyone in their first two hours. The watch pays bounties on brigands, more on their cutthroats, and a great deal on their captain.
+
+**The shrine.** Up the stone steps from Mile Oak, through a tunnel of red gates, an old woman keeps a small wooden shrine. It asks for calm, not coin. Keep to the side of the path through the gates. Purify at the water basin, then at the shrine `offer 1`, `ring bell`, `bow`, `bow`, `clap`, `clap`, `pray`, `bow`. Do it right and, once a day, it closes every wound you have. Draw a fortune at the tree behind it for a coin. If it's bad, tie it to the tree and leave it there.
+
+**Living off the land.** Maud sells rods. `dig` for worms in soft wet ground, or use bread, then `fish` at the docks, the ford, the lake or the plunge pool. Gather sticks in the woods (`take stick`). `make` turns junk into torches, bandages, bait, snares and campfire stew; `recipes` lists them. Set a snare on a rabbit run in the Edgewood and come back later. Pelts, hides, meat and fish all sell, and Morda will cook whatever you bring her, for a coin.
+
+**The dark.** Some places are dark. Without a light you'll see nothing at all. Light a torch, a candle or a lamp first.
+
+**Surprises.** There are things out there nobody will tell you about straight. Listen to the people who live out there. Look closely. Go back to places at different times.
 
 ## The people
 
@@ -181,6 +201,10 @@ Selling works the same way: `sell lamp` takes their offer, `sell lamp for 5` sta
 
 **The rats.** Big ones. Bigger than rats should be. They don't run from you. They fight back. Think about that.
 
+**Out past the wall.** Cole the charcoal burner, grey with soot, who buys hides and sells torches. The old ferryman on the mere, who says very little and most of it about a fish. The shrine keeper, who will show you how without a word of reproach. And whoever it is behind the gate of Vesna.
+
+**Around town.** The duty sergeant at the watch house, who pays bounties and hates paperwork. Bess the fishwife and Hook's runner Nib at the fish market. Amos the gravedigger, far too cheerful, in the ossuary. Tobin the lamplighter, who walks every street and sees who goes where after dark. Wendel, who has propped up the end of Morda's bar for twenty years. Warden Crane of the Gatherers. Old Peg at the Sleeping Lantern.
+
 **The street folk.** Different faces every day. Drunks, rag pickers, a preacher, cutpurses, rat catchers, bruisers. They'll talk if you talk to them, and every one of them has something on their mind.
 
 ## Steel and blood
@@ -199,7 +223,7 @@ You'll want to know about fighting. Everyone does.
 
 **Death.** It isn't the end, but it costs. You wake on the cold floor of the Temple of Ash with a grave chill: half your health and a shaky arm for ten minutes. Your coin and your pack stay on your corpse where you fell. For ten minutes only you can touch it. After that, anyone can. After half an hour it's gone. Or pay Father Osmund to send a boy for it. Banked coin never moves. The newly arrived keep their things.
 
-**Getting about.** You keep a notebook: `journal`, or just `j`, lists every useful place you've found, who's there, what they buy and sell, and the word to travel there. Once you've found a place on foot, `travel` takes you back there, one room at a time: `travel nave`, `travel tavern`, `travel bank`. It's still the streets. A fight stops you, the cart can catch you, and typing anything stops you where you stand. When it's going badly, a pilgrim's token from Father Osmund will do better: `crush token` and you're kneeling in the nave. Not with someone's hands on you, though.
+**Getting about.** You keep a notebook: `journal`, or just `j`. Father Osmund has tucked a note inside the cover, and the nave is already in it, so `travel nave` works from your first minute. It lists every useful place you've found, who's there, what they buy and sell, and the word to travel there. Once you've found a place on foot, `travel` takes you back there, one room at a time: `travel nave`, `travel tavern`, `travel bank`. It's still the streets. A fight stops you, the cart can catch you, and typing anything stops you where you stand. When it's going badly, a pilgrim's token from Father Osmund will do better: `crush token` and you're kneeling in the nave. Not with someone's hands on you, though.
 
 **Healing.** Wounds close slowly on their own, faster by the fire in the Drowned Rat or on a bench in the nave. Bandages help (`bandage`). Morda's stew helps. Father Osmund will make you whole for a few coin (`heal`).
 
@@ -207,7 +231,13 @@ You'll want to know about fighting. Everyone does.
 
 **The dead pay, if you're not squeamish.** `loot corpse` takes what a body carried. `take corpse` puts it over your shoulder. Carry a body to Father Osmund in the nave and he'll pay for the burial. The butcher pays more, and doesn't ask, and word gets around. Carry another player's body to the temple and Osmund sends their things home to them, and pays you for the kindness.
 
-**Bounties and tails.** The watch house pays for every cutpurse you put down (`bounty`). Maud pays a copper for every rat tail. The rats are under the grate.
+**The Gatherers' Hall.** Crane pays best for the dead. `join gatherers` for a coin, then carry bodies in and `deliver`. Fresh ones pay full; after a quarter of an hour, half; after twenty five minutes she won't take them. A rat is a coin, street folk three to five, beasts and brigands six to ten, the brigand captain twenty five. `board` shows who wants which bodies this hour, and pays their price. The more you bring, the higher your rank, and each rank is worth a coin more a body.
+
+**Drink.** Ale and Morda's rotgut gin add up. Merry heals you a little. Tipsy, you burp. Drunk, your words slur, your feet take wrong turns, your aim goes, and Morda cuts you off. Legless, you're out cold in the road, where cutpurses go through your pockets and the cart men take you for dead. Water, food and sleep sober you up. `health` tells you how far gone you are.
+
+**The Sleeping Lantern.** `rent bed` (2 coin) or `rent room` (6 coin, private, with a chest), then `sleep`. You wake whole and clear headed. `store` and `retrieve` keep things safe in your room's chest while you're out on the road. Sleep in the street instead and you take your chances.
+
+**Bounties and tails.** The watch house pays for every cutpurse you put down (`bounty`), and for brigands too. Maud pays a copper for every rat tail. The rats are under the grate.
 
 **The sewers.** Rats by the grate, bigger ones in the tunnels. The iron door at the end opens for a key, or for someone strong enough to force it. Hook sells keys. Rat catchers sometimes carry one. What's behind it is the worst fight in Gallowmere, and it comes back every day.
 
@@ -245,11 +275,17 @@ Gallowmere isn't a nice town, but it has rules.
 | Your body | `health` (or `hp`): wounds, weapon damage, armour, your odds |
 | Your notebook | `journal` (or `j`): the useful places you've found, what's there, and the word to travel there |
 | Get somewhere | `travel nave`, `travel tavern`, `travel` on its own for the places you know |
-| Get out | `crush token` (a pilgrim's token from Father Osmund) |
+| Get out | `crush token` (a pilgrim's token from Father Osmund), `crush charm` (a fox charm from the shrine keeper) |
 | Arm up | `wield cudgel`, `wear jerkin`, `remove` |
 | Heal | `bandage`, `heal` (in the nave) |
 | The dead | `loot corpse`, `take corpse`, `give corpse to osmund`, `sell corpse to butcher`, `recover` (in the nave) |
 | Bounties | `bounty` at the watch house |
+| The shrine | `purify`, `offer 1`, `ring bell`, `bow`, `clap`, `pray`, `draw fortune`, `tie fortune`, `keep to the side` |
+| The road | `pay` (a toll), `knock gate`, `ferry` |
+| Fish and forage | `fish`, `dig`, `take stick`, `set snare`, `check snare` |
+| Make things | `recipes`, `make torch`, `light torch` |
+| Gatherers | `join gatherers`, `deliver`, `board` |
+| The inn | `rent bed`, `rent room`, `sleep`, `store bread`, `retrieve bread` |
 | Who's in town | `who` |
 | Your details | `score` |
 | Shortcuts | `alias tm talk morda`, then `tm hello` |

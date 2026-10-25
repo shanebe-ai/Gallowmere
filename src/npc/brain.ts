@@ -106,7 +106,9 @@ export function buildPrompt(input: NpcTurnInput): { system: string; user: string
 
   const light = !!npc.light;
   const system = [
-    `You are ${npc.name}, ${npc.job} in Gallowmere, a grim walled river town. Low magic, a bit corrupt, dark humour.`,
+    /Vesna/.test(npc.job)
+      ? `You are ${npc.name}, ${npc.job}. Vesna is a walled town at the end of a ten mile road north of Gallowmere, a grim walled river town. Low magic, a bit corrupt, dark humour.`
+      : `You are ${npc.name}, ${npc.job} in Gallowmere, a grim walled river town. Low magic, a bit corrupt, dark humour.`,
     `Personality: ${npc.personality}.`,
     npc.mute ? 'You cannot speak. You are an animal and act only through what you do.' : `Speech: ${npc.speech}.`,
     `Wants: ${npc.wants}.`,

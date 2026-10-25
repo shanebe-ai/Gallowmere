@@ -114,9 +114,20 @@ export class PlagueCart {
         s.out(c.dim('One of the cart men looks you over, decides you are too fresh off the road to bother with, and walks on.'));
         continue;
       }
-      if (st.health < maxHealthFor(st.level) / 3) {
-        this.game.toRoom(roomId, c.error(`The cart men seize ${st.name}, who is too hurt to stop them, and throw them on the cart.`), s);
-        await this.combat.killPlayer(st.id, null, undefined, 'Hooks catch your arms. You are too weak to fight them. The last thing you see is sacking, and then the dark.');
+      const senseless = st.outUntil > Date.now() || (!!st.asleep && !st.asleep.rented);
+      if (st.health < maxHealthFor(st.level) / 3 || senseless) {
+        this.game.toRoom(
+          roomId,
+          c.error(senseless ? `The cart men find ${st.name} lying senseless in the road, take them for dead, and swing them up onto the cart.` : `The cart men seize ${st.name}, who is too hurt to stop them, and throw them on the cart.`),
+          s,
+        );
+        await this.combat.killPlayer(
+          st.id,
+          null,
+          undefined,
+          senseless ? 'You wake to hooks in your coat and sacking over your face, and then the dark. The cart men do not check.' : 'Hooks catch your arms. You are too weak to fight them. The last thing you see is sacking, and then the dark.',
+        );
+        await this.game.town.rumour(st.id, `${st.name} was taken by the plague cart${senseless ? ', dead drunk or dead asleep, and the cart men never checked' : ''}`);
         continue;
       }
       if (this.tolled.has(st.id)) {

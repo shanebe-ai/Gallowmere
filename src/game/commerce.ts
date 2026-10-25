@@ -51,6 +51,12 @@ export interface GameHooks {
   extraLoad?(playerId: number): number;
   onConsume?(s: Session, template: Item['template']): void;
   gearLines?(s: Session): Promise<string[]>;
+  /** A shopkeeper may refuse a sale: Morda and the very drunk. */
+  refuseSale?(s: Session, npc: Npc, templateId: string): string | null;
+  /** Giving something special to someone special (fish to Morda). True when handled. */
+  giveToNpc?(s: Session, npc: Npc, item: Item): Promise<boolean>;
+  /** Dropping something somewhere special (the barrow). True when handled. */
+  dropHere?(s: Session, item: Item): Promise<boolean>;
 }
 
 export interface Haggle {
@@ -227,6 +233,7 @@ export class Commerce {
     const item = findItem(await this.myItems(s), rest);
     if (!item) return s.out("You aren't carrying that.");
     if (item.template.kind === 'job') return s.out("Maud would skin you. Give it to her instead.");
+    if (await this.game.dropHere?.(s, item)) return;
     const ok = await tx((cl) => moveItem(cl, item.id, { type: 'player', id: p.id }, { type: 'room', id: p.roomId }));
     if (!ok) return s.out("You aren't carrying that anymore.");
     s.out(`You drop ${item.template.name}.`);
@@ -330,6 +337,7 @@ export class Commerce {
     // Giving to an NPC: Maud's job sack, or a gift.
     if (item.template.id === 'turnip_sack') return this.deliverSack(s, npc!, item);
     if (item.template.kind === 'job') return s.out(`${npc!.name} doesn't want that.`);
+    if (await this.game.giveToNpc?.(s, npc!, item)) return;
     const ok = await tx((cl) => deleteItem(cl, item.id, { type: 'player', id: p.id }));
     if (!ok) return s.out("You aren't carrying that anymore.");
     s.out(`You give ${item.template.name} to ${toName}.`);
@@ -463,6 +471,8 @@ export class Commerce {
     const item = findItem(stock, m[1]);
     if (!item) return s.out(`${npc.name} doesn't have that. Type list.`);
     const offer = m[2] ? Number(m[2]) : null;
+    const refusal = this.game.refuseSale?.(s, npc, item.template.id);
+    if (refusal) return s.out(refusal);
 
     let h = this.haggleFor(s);
     if (!h || h.mode !== 'buy' || h.templateId !== item.template.id) {

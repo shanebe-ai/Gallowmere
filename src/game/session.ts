@@ -33,6 +33,8 @@ export class Session {
   quitting = false;
   /** A walk in progress (travel): any other command stops it. */
   travelling: NodeJS.Timeout | null = null;
+  /** Something that takes a moment, like a cast of the line: any command interrupts it. */
+  busy: { timer: NodeJS.Timeout; stop: string } | null = null;
 
   constructor(public conn: Connection) {}
 

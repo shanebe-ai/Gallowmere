@@ -187,3 +187,32 @@ CREATE TABLE IF NOT EXISTS visited_rooms (
   room_id   TEXT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
   PRIMARY KEY (player_id, room_id)
 );
+
+-- Milestone 3.5: the north road, the forest, the Gatherers' Hall and the inn.
+
+ALTER TABLE corpses DROP CONSTRAINT IF EXISTS corpses_kind_check;
+ALTER TABLE corpses ADD CONSTRAINT corpses_kind_check CHECK (kind IN ('player', 'street', 'rat', 'beast'));
+-- What it was before it died, so the Gatherers' Hall knows what to pay.
+ALTER TABLE corpses ADD COLUMN IF NOT EXISTS mob_kind TEXT;
+
+-- A rented room's chest holds things too.
+ALTER TABLE items DROP CONSTRAINT IF EXISTS items_owner_type_check;
+ALTER TABLE items ADD CONSTRAINT items_owner_type_check CHECK (owner_type IN ('player', 'room', 'shop', 'corpse', 'chest'));
+
+-- Snares set in the Edgewood. Kept here so they survive a restart.
+CREATE TABLE IF NOT EXISTS snares (
+  id        BIGSERIAL PRIMARY KEY,
+  player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  room_id   TEXT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+  set_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS snares_player ON snares (player_id);
+
+-- Things players did that the town talks about, for a day.
+CREATE TABLE IF NOT EXISTS rumours (
+  id        BIGSERIAL PRIMARY KEY,
+  player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+  text      TEXT NOT NULL,
+  at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS rumours_at ON rumours (at);

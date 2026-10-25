@@ -3,7 +3,7 @@
     "id": "north_gate",
     "district": "gate",
     "title": "The North Gate",
-    "description": "A gatehouse of black stone squats over the only road into Gallowmere. The portcullis is raised, rusted in place, and an old gibbet creaks from the arch above it. Beyond the walls the moor road runs north into grey fog. Stone stairs climb to the wall walk, and the road runs south into town.",
+    "description": "A gatehouse of black stone squats over the only road into Gallowmere. The portcullis is raised, rusted in place, and an old gibbet creaks from the arch above it. Beyond the walls the moor road runs north across the heather. Stone stairs climb to the wall walk, and the road runs south into town.",
     "flags": [
       "start"
     ],
@@ -562,9 +562,10 @@
     "id": "moor_road",
     "district": "gate",
     "title": "The Moor Road",
-    "description": "The road north runs out of town and straight into the fog. A few yards on, a cart lies on its side with one wheel still turning in the wind. Past it the ruts vanish into wet heather. Whatever is out there, farms or worse, the road is not ready to take you yet. The gate lies south.",
+    "description": "The road north runs out of town across the open moor. The fog has drawn back at last, and someone has heaved the overturned cart into the ditch, where one wheel still turns in the wind. The ruts climb north up a rise of heather. The gate lies south.",
     "exits": {
-      "south": "north_gate"
+      "south": "north_gate",
+      "north": "heather_rise"
     },
     "features": [
       {
@@ -573,7 +574,7 @@
           "cart",
           "wheel"
         ],
-        "look": "A farm cart on its side, its load of turnips scattered and half eaten by something with small teeth. The wheel still turns, slowly, though there's no wind you can feel.",
+        "look": "A farm cart heaved into the ditch, its load long since eaten by things with small teeth. The wheel still turns, slowly, though there's no wind you can feel.",
         "actions": {
           "search": "You go through the spilled load. Turnips, a broken harness and a muddy boot print far too big for a horse. You leave the rest to the fog.",
           "push": "You heave at the cart. It rocks, settles back and the wheel keeps turning."
@@ -586,10 +587,10 @@
           "mist",
           "heather"
         ],
-        "look": "Thick, grey and patient. Somewhere inside it a dog barks twice and stops.",
+        "look": "The fog has pulled back from the road to lie along the edges of the world, grey and patient. It does not come closer. Not yet.",
         "actions": {
           "touch": "Cold and wet. It clings to your fingers like it wants to come back into town with you.",
-          "climb": "You take a few steps into the fog and lose sight of the gate at once. You turn back while you still can."
+          "climb": "You walk to the edge of the moor and into the fog a few steps, lose all sense of direction, and come out exactly where you went in, a little colder."
         }
       }
     ]
@@ -951,9 +952,10 @@
     "id": "butchers_alley",
     "district": "market",
     "title": "Butcher's Alley",
-    "description": "A slick, narrow alley behind Market East where the butcher hangs his meat and the flies hang around it. The cobbles run red after rain and sometimes before it. A chopping block stands under an awning. Market East is south.",
+    "description": "A slick, narrow alley behind Market East where the butcher hangs his meat and the flies hang around it. The cobbles run red after rain and sometimes before it. A chopping block stands under an awning. A scrubbed stone doorway east leads into the Gatherers' Hall. Market East is south.",
     "exits": {
-      "south": "market_east"
+      "south": "market_east",
+      "east": "gatherers_hall"
     },
     "features": [
       {
@@ -1232,9 +1234,10 @@
     "id": "rats_yard",
     "district": "tavern",
     "title": "The Rat's Yard",
-    "description": "A muddy yard behind the tavern, walled in, with a privy, a woodpile and a midden heap that steams in the cold. Empty casks are stacked against the wall. The back door to the tavern is west.",
+    "description": "A muddy yard behind the tavern, walled in, with a privy, a woodpile and a midden heap that steams in the cold. Empty casks are stacked against the wall. The back door to the tavern is west, and a lane runs south to a door under a lantern.",
     "exits": {
-      "west": "drowned_rat"
+      "west": "drowned_rat",
+      "south": "sleeping_lantern"
     },
     "features": [
       {
@@ -1803,6 +1806,2798 @@
     ],
     "flags": [
       "sewer"
+    ]
+  },
+  {
+    "id": "heather_rise",
+    "district": "moor",
+    "title": "Heather Rise",
+    "description": "The road climbs a low rise of wet heather and the wind finds you at once. Behind you the walls of Gallowmere squat black on the moor; ahead the ruts run on north. Thin woods begin on either side, birches to the east and a heath edge to the west. The Moor Road is south.",
+    "exits": {
+      "south": "moor_road",
+      "north": "gibbet_milestone",
+      "west": "ew_heath",
+      "east": "ee_birches"
+    },
+    "features": [
+      {
+        "name": "the heather",
+        "keywords": [
+          "heather",
+          "moor"
+        ],
+        "look": "Knee high, brown and purple, soaked through. It hides the ground well enough to turn an ankle.",
+        "actions": {
+          "touch": "Cold and wet. Your sleeve is soaked to the elbow.",
+          "search": "You part the heather and find a sheep's skull, a lost hobnail and a great many beetles."
+        }
+      },
+      {
+        "name": "the town walls",
+        "keywords": [
+          "walls",
+          "town",
+          "gallowmere"
+        ],
+        "look": "From out here Gallowmere looks smaller, and darker, and very much like it is watching you go.",
+        "actions": {
+          "listen": "Faintly, on the wind, the temple bell counting the hour. Then only wind.",
+          "touch": "Too far to touch. Close enough to feel."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "gibbet_milestone",
+    "district": "moor",
+    "title": "The Gibbet Milestone",
+    "description": "A squat milestone leans beside the road with GALLOWMERE 1 cut deep into its face, and beside it stands a gibbet, empty but for a few links of chain. The woods close in on both sides here: a clearing with a smudge of smoke to the west, a deer path to the east. The road runs north and south.",
+    "exits": {
+      "south": "heather_rise",
+      "north": "drovers_ford",
+      "west": "ew_clearing",
+      "east": "ee_deerpath"
+    },
+    "features": [
+      {
+        "name": "the milestone",
+        "keywords": [
+          "milestone",
+          "stone"
+        ],
+        "look": "GALLOWMERE 1, cut deep and filled with lichen. On the north face, fainter, someone has scratched VESNA 9 and a little drawing of a closed eye.",
+        "actions": {
+          "read": "South face: GALLOWMERE 1. North face, scratched by a later hand: VESNA 9, and a small closed eye.",
+          "touch": "The letters are worn smooth by hands. People touch it for luck, or the opposite.",
+          "sit": "You sit on the milestone. It is exactly as comfortable as a stone."
+        }
+      },
+      {
+        "name": "the gibbet",
+        "keywords": [
+          "gibbet",
+          "chain",
+          "chains"
+        ],
+        "look": "A tall post and crossbar with a short length of chain swinging from it. The ground below is bare, as if nothing will grow there.",
+        "actions": {
+          "touch": "The chain is cold and swings at your touch, chiming against the post.",
+          "climb": "You get halfway up the post before the creaking makes you think better of it.",
+          "search": "Under the gibbet the ground is bare and trodden. A single bootlace, rotted through."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "drovers_ford",
+    "district": "moor",
+    "title": "Drovers' Ford",
+    "description": "A stream crosses the road here, wide and shallow over flat stones, loud with its own business. Drovers watered their herds at this ford once; their stakes still stand in the mud. The stream runs away west toward the black shine of a lake, and a wet ditch runs east into the trees. The road goes on north and south.",
+    "exits": {
+      "south": "gibbet_milestone",
+      "north": "toll_stump",
+      "west": "mere_stream",
+      "east": "ee_ditch"
+    },
+    "features": [
+      {
+        "name": "the stream",
+        "keywords": [
+          "stream",
+          "water",
+          "ford"
+        ],
+        "look": "Clear, quick and cold. Minnows flick between the stones, and now and then something bigger holds still in the deeper run.",
+        "actions": {
+          "drink": "You cup your hands and drink. Cold enough to hurt your teeth, and clean, which is more than the town water ever was.",
+          "touch": "So cold your fingers ache at once.",
+          "listen": "The ford talks to itself over the stones, endlessly, about nothing."
+        }
+      },
+      {
+        "name": "the drovers' stakes",
+        "keywords": [
+          "stakes",
+          "stake",
+          "posts"
+        ],
+        "look": "Old wooden stakes driven into the bank, grey and split. A few still have rope burned into them.",
+        "actions": {
+          "touch": "Soft with rot. One wobbles like a bad tooth.",
+          "search": "Wedged between two stakes, a rotten halter and a drover's tally stick with notches on it."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ]
+  },
+  {
+    "id": "toll_stump",
+    "district": "moor",
+    "title": "The Toll Stump",
+    "description": "A burnt out toll house stands beside the road, four black walls around nothing, and in front of it the stump of the old toll bar. Nobody collects here any more. Supposedly. A track leads east into a darker wood. The road runs north and south.",
+    "exits": {
+      "south": "drovers_ford",
+      "north": "brigands_bend",
+      "east": "bw_edge"
+    },
+    "features": [
+      {
+        "name": "the toll stump",
+        "keywords": [
+          "stump",
+          "bar",
+          "post"
+        ],
+        "look": "The stump of a toll bar, burnt black, with an iron box bolted to it. The box has a slot for coins and no lid.",
+        "actions": {
+          "search": "The toll box is empty. Inside, worn into the iron, the shape of thousands of coins dropped one at a time.",
+          "touch": "Cold iron, colder than the day.",
+          "knock": "You rap on the toll box. Hollow. You feel, for a moment, that someone is waiting for you to pay."
+        }
+      },
+      {
+        "name": "the burnt toll house",
+        "keywords": [
+          "house",
+          "toll house",
+          "walls",
+          "ruin"
+        ],
+        "look": "Four black walls with the sky for a roof. A hearth stone, a door frame, and a smell of old smoke that never quite went away.",
+        "actions": {
+          "search": "Charcoal, broken slates and a tin plate. A ledger once, by the curl of burnt paper. Nothing you can read.",
+          "touch": "The charred wood comes away black on your fingers.",
+          "listen": "Wind in the empty windows. It sounds a little like someone counting."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "brigands_bend",
+    "district": "moor",
+    "title": "Brigand's Bend",
+    "description": "The road bends sharply between two high banks thick with holly, so you cannot see ten yards ahead or behind. It is a good place to be ambushed and everyone knows it. Through a gap in the east bank, a path climbs up into the trees. The road runs north and south.",
+    "exits": {
+      "south": "toll_stump",
+      "north": "burnt_waystation",
+      "east": "bw_highbank"
+    },
+    "features": [
+      {
+        "name": "the high banks",
+        "keywords": [
+          "banks",
+          "bank",
+          "holly"
+        ],
+        "look": "Steep earth banks crowned with holly. The kind of place where a man can crouch for an hour and not be seen.",
+        "actions": {
+          "climb": "You scramble up the bank and find a flattened patch in the holly, still warm, and a gnawed apple core. You scramble back down.",
+          "search": "Boot prints in the soft earth at the top of the bank. Several. Recent.",
+          "listen": "Nothing. Which is somehow worse than something."
+        }
+      },
+      {
+        "name": "the warning",
+        "keywords": [
+          "warning",
+          "cross",
+          "scratches"
+        ],
+        "look": "Someone has cut a cross and three short lines into a holly trunk at head height. A traveller's warning, or a brigand's tally.",
+        "actions": {
+          "read": "A cross and three lines. Travellers' code for robbed here, three times, or brigands' code for three this week.",
+          "touch": "The cuts are fresh enough to still be pale."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "burnt_waystation",
+    "district": "moor",
+    "title": "The Burnt Waystation",
+    "description": "A coaching inn once, burnt to its stone shell. Four walls stand and one corner of the roof, and under it a great hearth that still draws, black with other people's fires. Travellers stop here to cook and dry out. The road runs north and south.",
+    "exits": {
+      "south": "brigands_bend",
+      "north": "mile_oak"
+    },
+    "features": [
+      {
+        "name": "the hearth",
+        "keywords": [
+          "hearth",
+          "fire",
+          "fireplace"
+        ],
+        "look": "A wide stone hearth with a fire somebody keeps going, or a fire that keeps itself going. A pot hook hangs over it.",
+        "actions": {
+          "touch": "Warm. Your hands come back to life for the first time since the gate.",
+          "sit": "You sit by the hearth and let the heat soak in. The road feels further off.",
+          "use": "You hang your hands over the fire. Food can be cooked here: make campfire stew."
+        }
+      },
+      {
+        "name": "the old sign",
+        "keywords": [
+          "sign",
+          "board"
+        ],
+        "look": "A blackened sign hanging by one chain: a painted coach and four, and a name burnt away to THE ... AND ...",
+        "actions": {
+          "read": "THE ... AND ... The rest is charcoal. Underneath, scratched fresh: DON'T SLEEP HERE.",
+          "touch": "It swings and squeaks and drops flakes of soot on you."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "fire"
+    ]
+  },
+  {
+    "id": "mile_oak",
+    "district": "moor",
+    "title": "Mile Oak",
+    "description": "An oak older than the town stands at a fork in the road, so broad that six people could not join hands around it. Ribbons and scraps of cloth are tied to its lower branches. East, a path of worn stone steps climbs away toward a glimpse of red between the trees. The road runs north and south.",
+    "exits": {
+      "south": "burnt_waystation",
+      "north": "long_climb",
+      "east": "shrine_steps"
+    },
+    "features": [
+      {
+        "name": "the great oak",
+        "keywords": [
+          "oak",
+          "tree",
+          "trunk"
+        ],
+        "look": "Vast, grey and furrowed, with roots like the backs of buried animals. Somebody has driven nails into the trunk to hang things on.",
+        "actions": {
+          "touch": "The bark is warm, as oaks go. You feel foolish and then, oddly, better.",
+          "climb": "You get onto the first great limb and see the road both ways, and a red roof among the trees to the east.",
+          "listen": "Leaves, and somewhere high up a woodpecker hard at work."
+        }
+      },
+      {
+        "name": "the ribbons",
+        "keywords": [
+          "ribbons",
+          "ribbon",
+          "cloth",
+          "rags"
+        ],
+        "look": "Strips of cloth tied to the low branches, faded to the same grey, a few still red or blue. Prayers, or promises, or warnings.",
+        "actions": {
+          "touch": "Damp and stiff. One has a name stitched into it, too faded to read.",
+          "take": "You reach for a ribbon and stop. Somebody tied that there meaning it."
+        }
+      },
+      {
+        "name": "the stone steps",
+        "keywords": [
+          "steps",
+          "path",
+          "stairs"
+        ],
+        "look": "Worn stone steps climbing east into the trees, swept clean. Someone looks after them.",
+        "actions": {
+          "touch": "Swept, and smooth with use.",
+          "search": "Clean steps leading east, toward the red gates of a shrine."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "long_climb",
+    "district": "moor",
+    "title": "The Long Climb",
+    "description": "The road steepens and turns to stone underfoot, climbing toward a dark line of timber walls. West, the land rises in grey scree to the crags. The wind up here smells of snow and woodsmoke from somewhere ahead. Mile Oak is south, and the road goes on north to a gate.",
+    "exits": {
+      "south": "mile_oak",
+      "north": "shut_gate",
+      "west": "crag_scree"
+    },
+    "features": [
+      {
+        "name": "the scree",
+        "keywords": [
+          "scree",
+          "crags",
+          "rocks"
+        ],
+        "look": "Loose grey stone runs up from the road to the cliffs. A goat path zigzags across it.",
+        "actions": {
+          "climb": "You start up the scree and slide back down in a small avalanche of your own making.",
+          "search": "Among the stones, a blue feather and a bit of goat wool caught on a thorn."
+        }
+      },
+      {
+        "name": "the timber walls",
+        "keywords": [
+          "walls",
+          "vesna",
+          "town",
+          "palisade"
+        ],
+        "look": "Ahead, the road ends at a palisade of sharpened timbers taller than three men, black against the sky. Smoke rises behind it.",
+        "actions": {
+          "listen": "Very faintly, from behind the walls, a dog, a hammer, and someone singing.",
+          "search": "A palisade, a gate, and smoke from chimneys you cannot see."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "shut_gate",
+    "district": "moor",
+    "title": "The Shut Gate",
+    "description": "The road ends at high timber gates bound with black iron, set in a palisade that runs away into the trees on both sides. The gates are barred from the inside. Beyond them you can hear voices, a forge, a cart, the ordinary noise of a town that is not letting you in. A painted board hangs above the gate. The road runs back south.",
+    "exits": {
+      "south": "long_climb"
+    },
+    "features": [
+      {
+        "name": "the gates",
+        "keywords": [
+          "gates",
+          "gate",
+          "doors"
+        ],
+        "look": "Oak timbers as thick as a man, bound with iron, scarred by old axes. A small shuttered hatch is set in one of them at head height.",
+        "actions": {
+          "knock": {
+            "text": "You hammer on the gate. The sound goes away into the wood, and after a moment the hatch scrapes.",
+            "room": "hammers on the gate of Vesna.",
+            "event": "knocks on the gate of Vesna. Answer through the closed hatch",
+            "react": true
+          },
+          "push": "You put your shoulder to the gate. It does not so much as creak. Barred, and barred well.",
+          "listen": "Voices, close behind the timbers. They stop when you press your ear to the wood, and start again when you step back.",
+          "touch": "Cold, wet oak, and nails as big as your thumb."
+        }
+      },
+      {
+        "name": "the painted board",
+        "keywords": [
+          "board",
+          "sign"
+        ],
+        "look": "A board above the gate, freshly painted: VESNA, in tall letters, and under it a line in smaller ones.",
+        "actions": {
+          "read": "VESNA. Underneath: THE GATE OPENS WHEN IT OPENS.",
+          "touch": "Too high to reach."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "ew_heath",
+    "district": "edgewood",
+    "title": "The Heath Edge",
+    "description": "Where the moor gives up and the wood begins: thin rowans, gorse and long tussocks, with sheep tracks wandering through. The road is a stone's throw east. The ground drops west into a bramble hollow, and a smudge of smoke rises among the trees to the north.",
+    "exits": {
+      "east": "heather_rise",
+      "north": "ew_clearing",
+      "west": "ew_hollow"
+    },
+    "features": [
+      {
+        "name": "the gorse",
+        "keywords": [
+          "gorse",
+          "bushes",
+          "furze"
+        ],
+        "look": "Spiny yellow gorse in flower, out of season, smelling faintly of coconut out here where nobody has ever seen one.",
+        "actions": {
+          "smell": "Honey and coconut, absurdly sweet. Your nose doesn't believe it.",
+          "touch": "It bites. Every bit of it bites.",
+          "search": "Under the gorse, a wren's nest, empty, and a dry stick or two."
+        }
+      },
+      {
+        "name": "the sticks",
+        "keywords": [
+          "sticks",
+          "stick",
+          "deadwood",
+          "branches"
+        ],
+        "look": "Dead branches lie everywhere under the rowans, dry enough to burn.",
+        "actions": {
+          "take": "You gather a straight dry stick.",
+          "search": "Plenty of dry sticks here. Take one."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "ew_clearing",
+    "district": "edgewood",
+    "title": "The Charcoal Burner's Clearing",
+    "description": "A round clearing ringed with stacked cordwood, and in its middle a great earth mound smoking from a dozen small vents: a charcoal clamp, burning slow. A turf hut leans against an oak. Everything, including the air, is grey with soot. The road is east, a path drops south to the heath and a stream chuckles somewhere north.",
+    "exits": {
+      "east": "gibbet_milestone",
+      "south": "ew_heath",
+      "west": "ew_runs",
+      "north": "mere_stream"
+    },
+    "features": [
+      {
+        "name": "the charcoal clamp",
+        "keywords": [
+          "clamp",
+          "mound",
+          "smoke"
+        ],
+        "look": "A dome of turf and earth over a stack of slow burning wood, breathing smoke. It will burn for days, and must never be let flare.",
+        "actions": {
+          "touch": "Warm right through the turf, like the flank of a sleeping animal.",
+          "smell": "Sweet woodsmoke and hot earth.",
+          "use": "You warm your hands by the clamp. You could cook here too: make campfire stew."
+        }
+      },
+      {
+        "name": "the cordwood",
+        "keywords": [
+          "cordwood",
+          "wood",
+          "stack",
+          "sticks"
+        ],
+        "look": "Neat stacks of split wood, waiting their turn in the clamp. Loose sticks and offcuts lie all around.",
+        "actions": {
+          "take": "You help yourself to an offcut stick. The charcoal burner sees, and doesn't mind.",
+          "search": "Offcuts and dry sticks, enough for anyone."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "fire",
+      "sticks"
+    ]
+  },
+  {
+    "id": "ew_hollow",
+    "district": "edgewood",
+    "title": "Bramble Hollow",
+    "description": "A damp dip full of brambles and black leaf mould where the light comes down green. The soil here is soft and dark and full of worms; birds work it constantly. The heath edge is east, and a run of rabbit tracks leads north.",
+    "exits": {
+      "east": "ew_heath",
+      "north": "ew_runs"
+    },
+    "features": [
+      {
+        "name": "the leaf mould",
+        "keywords": [
+          "mould",
+          "soil",
+          "earth",
+          "ground"
+        ],
+        "look": "Rich black earth under rotting leaves. Turn it with your hands and it heaves with worms.",
+        "actions": {
+          "search": "Worms, beetles and a lost brass button. You could dig here for bait.",
+          "smell": "Wet earth and rot. Good fishing smell, a ditch man would say."
+        }
+      },
+      {
+        "name": "the brambles",
+        "keywords": [
+          "brambles",
+          "bramble",
+          "blackberries"
+        ],
+        "look": "Brambles everywhere, hung with the last shrivelled blackberries of the year.",
+        "actions": {
+          "eat": "You pick a few late blackberries. Sour and seedy, and better than nothing.",
+          "touch": "Thorns. Of course, thorns."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "worms",
+      "snare",
+      "sticks"
+    ]
+  },
+  {
+    "id": "ew_runs",
+    "district": "edgewood",
+    "title": "The Rabbit Runs",
+    "description": "Short turf between hawthorns, criss crossed with narrow rabbit runs worn down to the earth. Droppings everywhere, and the white flash of a tail now and then. A good place to set a snare. The clearing is east, the hollow south, and the lake shore opens out to the north.",
+    "exits": {
+      "east": "ew_clearing",
+      "south": "ew_hollow",
+      "north": "mere_shore"
+    },
+    "features": [
+      {
+        "name": "the rabbit runs",
+        "keywords": [
+          "runs",
+          "run",
+          "tracks",
+          "burrows"
+        ],
+        "look": "Narrow paths through the grass, worn by generations of rabbits all going the same way to the same places.",
+        "actions": {
+          "search": "Burrow mouths under every hawthorn, and runs between them. Set a snare on one: set snare.",
+          "touch": "The earth is beaten hard along the runs."
+        }
+      },
+      {
+        "name": "the hawthorns",
+        "keywords": [
+          "hawthorns",
+          "hawthorn",
+          "thorns"
+        ],
+        "look": "Low, wind bent hawthorns with red berries and wicked thorns.",
+        "actions": {
+          "touch": "A thorn finds your thumb at once.",
+          "search": "Under the hawthorns, dry sticks and a tuft of grey fur."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "snare",
+      "sticks"
+    ]
+  },
+  {
+    "id": "ee_birches",
+    "district": "edgewood",
+    "title": "The Birch Thicket",
+    "description": "Silver birches crowd together here, white trunks marked with black eyes where branches fell. Their leaves shiver at nothing. The road is just west, a deer path runs north, and the ground slopes east into brown bracken.",
+    "exits": {
+      "west": "heather_rise",
+      "north": "ee_deerpath",
+      "east": "ee_bracken"
+    },
+    "features": [
+      {
+        "name": "the birches",
+        "keywords": [
+          "birches",
+          "birch",
+          "trees"
+        ],
+        "look": "White bark peeling in papery curls, and black knots like eyes that all seem to face the road.",
+        "actions": {
+          "touch": "Papery bark. It peels off in your hand like old skin.",
+          "take": "You peel off a curl of birch bark. Good tinder, if you had a fire to start.",
+          "listen": "The leaves never quite stop moving, even when the wind does."
+        }
+      },
+      {
+        "name": "the fallen branches",
+        "keywords": [
+          "branches",
+          "sticks",
+          "stick"
+        ],
+        "look": "Birch branches brought down by the wind, light and dry.",
+        "actions": {
+          "take": "You pick out a good straight stick.",
+          "search": "Dry sticks, plenty of them."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "ee_deerpath",
+    "district": "edgewood",
+    "title": "The Deer Path",
+    "description": "A narrow trodden path winds between hazels and old oaks, marked with slots in the mud where deer have passed. The road is close by to the west. The path runs south toward the birches and north toward wetter ground.",
+    "exits": {
+      "west": "gibbet_milestone",
+      "south": "ee_birches",
+      "north": "ee_ditch"
+    },
+    "features": [
+      {
+        "name": "the slots",
+        "keywords": [
+          "slots",
+          "tracks",
+          "prints"
+        ],
+        "look": "Neat split hoof prints, deep and fresh, all heading the same way.",
+        "actions": {
+          "search": "Deer, two of them, an hour ago. And among them, one big print with claws that is not a deer.",
+          "touch": "The edges are still sharp. Fresh."
+        }
+      },
+      {
+        "name": "the hazels",
+        "keywords": [
+          "hazels",
+          "hazel",
+          "nuts"
+        ],
+        "look": "Hazel coppice, tall straight rods, and nuts in the leaf litter that the squirrels missed.",
+        "actions": {
+          "eat": "You crack a hazelnut with your teeth. Sweet. Then another.",
+          "take": "You cut a straight hazel rod. It would make a good stick."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "ee_ditch",
+    "district": "edgewood",
+    "title": "The Wet Ditch",
+    "description": "The Drovers' stream spills into a long wet ditch here and spreads out into a black, stinking bog under alders. Frogs plop into the water as you come. The ford is west, and north the trees grow darker and closer together. The deer path is south.",
+    "exits": {
+      "west": "drovers_ford",
+      "south": "ee_deerpath",
+      "north": "bw_edge"
+    },
+    "features": [
+      {
+        "name": "the ditch",
+        "keywords": [
+          "ditch",
+          "bog",
+          "mud",
+          "water"
+        ],
+        "look": "Black water and blacker mud, crawling with life. Worms by the hundred in the soft banks.",
+        "actions": {
+          "search": "You turn over the bank mud. Worms, a leech, and a horseshoe rusted to lace. Good place to dig for bait.",
+          "smell": "Rot and marsh gas. Your eyes water.",
+          "drink": "You think about it, look at the leech, and don't."
+        }
+      },
+      {
+        "name": "the alders",
+        "keywords": [
+          "alders",
+          "alder",
+          "roots"
+        ],
+        "look": "Alders with their roots in the water and their bark grey green with moss.",
+        "actions": {
+          "touch": "Slippery with moss.",
+          "climb": "You climb a crooked alder a little way and see the dark of the Blackwood beginning just north."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "worms"
+    ]
+  },
+  {
+    "id": "ee_bracken",
+    "district": "edgewood",
+    "title": "The Bracken Slope",
+    "description": "Dead bracken, waist high and rust red, covers a long slope falling away to the south east. Paths through it are made by animals. In the distance below, grey stones stand in a ring. The birches are west.",
+    "exits": {
+      "west": "ee_birches",
+      "south": "stones_track"
+    },
+    "features": [
+      {
+        "name": "the bracken",
+        "keywords": [
+          "bracken",
+          "ferns"
+        ],
+        "look": "Rusty dead fronds taller than your waist, crackling as you push through. Ticks, probably.",
+        "actions": {
+          "search": "Pushing through the bracken you find a fox's run and a scatter of feathers.",
+          "touch": "Dry and brittle; it breaks under your hands."
+        }
+      },
+      {
+        "name": "the distant stones",
+        "keywords": [
+          "stones",
+          "ring",
+          "circle"
+        ],
+        "look": "A ring of standing stones on a low rise to the south east, grey as the sky. A track leads down to them.",
+        "actions": {
+          "listen": "The wind changes note as it crosses the slope toward them.",
+          "search": "Grey stones in a ring, and a green mound beside them."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "snare",
+      "sticks"
+    ]
+  },
+  {
+    "id": "stones_track",
+    "district": "stones",
+    "title": "The Stones Track",
+    "description": "A sunken track runs between grassy banks toward a ring of standing stones. The fog is close here, a grey wall only a field away to the south, and it does not move with the wind. The bracken slope is north, and the stones stand east.",
+    "exits": {
+      "north": "ee_bracken",
+      "east": "stone_ring"
+    },
+    "features": [
+      {
+        "name": "the fog wall",
+        "keywords": [
+          "fog",
+          "wall",
+          "mist"
+        ],
+        "look": "A wall of fog, close and still, as if it were waiting at a border it had agreed not to cross.",
+        "actions": {
+          "touch": "You reach in. Your hand comes back wet, cold to the bone, and smelling of somewhere else.",
+          "listen": "Nothing at all comes out of the fog. Not wind, not birds."
+        }
+      },
+      {
+        "name": "the sunken track",
+        "keywords": [
+          "track",
+          "banks",
+          "ruts"
+        ],
+        "look": "A track worn deep by feet and carts over a very long time, deeper than the road to town.",
+        "actions": {
+          "search": "Old ruts, older than wheels should be. A flint scraper, chipped by hand, lies in the bank.",
+          "touch": "The banks are smooth, worn by passing shoulders."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "stone_ring",
+    "district": "stones",
+    "title": "The Old Stones",
+    "description": "Nine grey stones stand in a ring on a low rise, leaning a little inward like people listening. In the middle the grass is short and very green. Beside the ring a long mound rises, turf over stone, and at its end a low dark doorway goes down into the earth. The track is west.",
+    "exits": {
+      "west": "stones_track",
+      "down": "barrow"
+    },
+    "features": [
+      {
+        "name": "the standing stones",
+        "keywords": [
+          "stones",
+          "stone",
+          "ring"
+        ],
+        "look": "Nine stones, each taller than a man, crusted with lichen in rings and whorls. One has a hollow worn in it at hand height.",
+        "actions": {
+          "touch": "Cold, then not. Under your palm the stone seems to hum, very faintly, and stop.",
+          "listen": "Put your ear to a stone and you hear, or think you hear, the sea.",
+          "search": "In the hollow of one stone, offerings: a bead, a tooth, a copper gone green."
+        }
+      },
+      {
+        "name": "the barrow mound",
+        "keywords": [
+          "mound",
+          "barrow",
+          "doorway"
+        ],
+        "look": "A long mound of turf over piled stone, older than anything in Gallowmere. The doorway at its end is low and black and smells of earth.",
+        "actions": {
+          "listen": "From the doorway, the slow drip of water. And something else, like breath.",
+          "touch": "The lintel stone is carved with spirals, worn almost away.",
+          "search": "A low doorway down into the barrow. Utterly dark inside. You would want a light."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "barrow",
+    "district": "stones",
+    "title": "The Barrow",
+    "description": "A long low passage of fitted stone running back into the mound, with side chambers like the pews of a church. Bones lie in them, very old, laid with care. At the far end, on a stone shelf, something gleams. The way out is up.",
+    "exits": {
+      "up": "stone_ring"
+    },
+    "features": [
+      {
+        "name": "the side chambers",
+        "keywords": [
+          "chambers",
+          "bones",
+          "chamber"
+        ],
+        "look": "Small stone cells either side of the passage. In each, bones laid with their knees drawn up, and little pots beside them.",
+        "actions": {
+          "search": "Pots of dust, a bone comb, flint arrowheads. You put it all back exactly as it was.",
+          "touch": "The bones are light as paper. You stop touching them."
+        }
+      },
+      {
+        "name": "the stone shelf",
+        "keywords": [
+          "shelf",
+          "torc",
+          "gleam"
+        ],
+        "look": "A shelf at the end of the barrow. On it lies a twisted torc of dull gold, beside a skull that has been watching the door for three thousand years.",
+        "actions": {
+          "touch": "The torc is cold. The skull is colder.",
+          "search": "A gold torc, heavy and plain, laid in front of a skull. The rest of the shelf is dust."
+        }
+      }
+    ],
+    "flags": [
+      "dark"
+    ]
+  },
+  {
+    "id": "mere_stream",
+    "district": "mere",
+    "title": "The Stream Bank",
+    "description": "The Drovers' stream runs west here between banks of yellow flag and kingcups, slowing as it nears the lake. Water voles plop in and out. The ford is east, the charcoal burner's clearing south, and the lake shore opens to the west.",
+    "exits": {
+      "east": "drovers_ford",
+      "south": "ew_clearing",
+      "west": "mere_shore"
+    },
+    "features": [
+      {
+        "name": "the stream",
+        "keywords": [
+          "stream",
+          "water",
+          "run"
+        ],
+        "look": "Slow and brown and deep enough to swim, curling under the banks.",
+        "actions": {
+          "drink": "You drink. Cold and faintly peaty.",
+          "touch": "Cold. A vole surfaces, looks at you, and vanishes."
+        }
+      },
+      {
+        "name": "the yellow flags",
+        "keywords": [
+          "flags",
+          "flag",
+          "irises",
+          "kingcups"
+        ],
+        "look": "Wild yellow iris along the bank, and gold kingcups at its foot.",
+        "actions": {
+          "smell": "Green and wet and faintly sweet.",
+          "take": "You pick a flag. It droops at once, as if it knew."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ]
+  },
+  {
+    "id": "mere_shore",
+    "district": "mere",
+    "title": "The Mere Shore",
+    "description": "A black lake lies under the sky, still as poured tar, so dark you cannot see a hand's depth into it. A shingle beach curves away to a jetty in the west. Reeds stand thick to the north. The stream bank is east and the rabbit runs south.",
+    "exits": {
+      "east": "mere_stream",
+      "south": "ew_runs",
+      "west": "mere_jetty",
+      "north": "mere_reeds"
+    },
+    "features": [
+      {
+        "name": "the mere",
+        "keywords": [
+          "mere",
+          "lake",
+          "water"
+        ],
+        "look": "Black water, still and deep. Far out, a ring spreads where something rose and sank again. There is an island out there, low and wooded, half lost in haze.",
+        "actions": {
+          "drink": "You drink from your cupped hands. It tastes of iron and old leaves.",
+          "touch": "Colder than the stream. Much colder. Your hand looks white under the surface.",
+          "listen": "Water lapping at the shingle, and very far out, something heavy turning over."
+        }
+      },
+      {
+        "name": "the shingle",
+        "keywords": [
+          "shingle",
+          "beach",
+          "pebbles"
+        ],
+        "look": "Flat grey pebbles, worn smooth. Some are almost perfectly round.",
+        "actions": {
+          "search": "Pebbles, a broken net float, and the bones of a large fish, as long as your arm, its teeth like needles.",
+          "take": "You pick up a flat pebble and skim it. Four bounces. Something takes it on the fifth."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ]
+  },
+  {
+    "id": "mere_jetty",
+    "district": "mere",
+    "title": "The Jetty",
+    "description": "A long wooden jetty runs out over the black water on posts green with weed. A flat bottomed boat is tied at the end, and an old man sits beside it on an upturned crate. Out across the water a low wooded island floats in the haze. The shore is east, and a ruined boathouse squats to the west.",
+    "exits": {
+      "east": "mere_shore",
+      "west": "mere_boathouse",
+      "north": "mere_island"
+    },
+    "features": [
+      {
+        "name": "the boat",
+        "keywords": [
+          "boat",
+          "punt",
+          "ferry"
+        ],
+        "look": "A flat bottomed boat, tarred black, with a pole and one oar. It rides low and steady.",
+        "actions": {
+          "touch": "Tarred wood, warm in the sun. The old man watches your hand.",
+          "use": "The ferryman rows people across, for a coin. Try: ferry."
+        }
+      },
+      {
+        "name": "the jetty boards",
+        "keywords": [
+          "boards",
+          "planks",
+          "jetty"
+        ],
+        "look": "Grey planks with gaps between them through which the black water looks up at you.",
+        "actions": {
+          "search": "Between two planks, a hook and a coil of line someone dropped long ago.",
+          "kick": "You kick a plank. The ferryman looks at you as if you'd kicked his dog."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ],
+    "hiddenExits": [
+      "north"
+    ]
+  },
+  {
+    "id": "mere_boathouse",
+    "district": "mere",
+    "title": "The Drowned Boathouse",
+    "description": "A boathouse built half over the water, its far end sunk so that the floor slopes down and simply goes under. Old boats lie in the black water inside like drowned cattle. Nets hang from the rafters, rotted to lace. The jetty is east.",
+    "exits": {
+      "east": "mere_jetty"
+    },
+    "features": [
+      {
+        "name": "the sunken boats",
+        "keywords": [
+          "boats",
+          "boat",
+          "hulls"
+        ],
+        "look": "Hulls under the water, ribs showing, weed waving from them. One still has its name painted on the stern.",
+        "actions": {
+          "read": "On one stern, just under the surface: GRANDMOTHER'S GRUDGE. Someone had a sense of humour, or a reason.",
+          "touch": "The water inside is very still, and very cold."
+        }
+      },
+      {
+        "name": "the rotten nets",
+        "keywords": [
+          "nets",
+          "net",
+          "rafters"
+        ],
+        "look": "Nets hanging from the rafters, grey and full of holes, still holding a few dried fish skeletons.",
+        "actions": {
+          "search": "Among the nets, a broken rod, floats and a hook as big as your hand, bent straight by something.",
+          "take": "The net comes apart in your hands into dust and string."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ]
+  },
+  {
+    "id": "mere_reeds",
+    "district": "mere",
+    "title": "The Reed Beds",
+    "description": "Reeds taller than your head close in on a squelching path of planks laid over the mud. Herons stand in the shallows like grey old men. The water here is open in places, dark pools among the stems. The shore is south, deep water opens west, and a stream comes tumbling down from the north.",
+    "exits": {
+      "south": "mere_shore",
+      "west": "mere_deep",
+      "north": "falls_path"
+    },
+    "features": [
+      {
+        "name": "the reeds",
+        "keywords": [
+          "reeds",
+          "reed",
+          "rushes"
+        ],
+        "look": "Brown reeds whispering against each other, with feathery heads. The planks between them are slippery.",
+        "actions": {
+          "listen": "Rustling everywhere, and now and then a bittern booming like someone blowing over a jar.",
+          "take": "You cut a reed. It's hollow and makes a thin, sad whistle."
+        }
+      },
+      {
+        "name": "the planks",
+        "keywords": [
+          "planks",
+          "path",
+          "boards"
+        ],
+        "look": "Old planks laid end to end across the mud, half sunk.",
+        "actions": {
+          "touch": "Slimy and soft.",
+          "search": "Under a plank, eel holes in the mud, and an old bait tin with a picture of a pike on it."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ]
+  },
+  {
+    "id": "mere_deep",
+    "district": "mere",
+    "title": "The Black Water's Edge",
+    "description": "A spit of land runs out into the mere and ends at a drop where the lake bed simply falls away. The water here is blacker than anywhere else, and it moves when nothing moves it. The fog stands on the far side of the lake like a cliff. The reeds are east.",
+    "exits": {
+      "east": "mere_reeds"
+    },
+    "features": [
+      {
+        "name": "the deep water",
+        "keywords": [
+          "water",
+          "deep",
+          "drop",
+          "mere"
+        ],
+        "look": "Black water dropping straight down. Things move in it, big things, slow, a long way down.",
+        "actions": {
+          "touch": "You dip your fingers. Something nudges them from below. You take them out.",
+          "listen": "A deep, slow sound, as if the lake were breathing.",
+          "drink": "You do not drink from here. Something about it says not to."
+        }
+      },
+      {
+        "name": "the fog cliff",
+        "keywords": [
+          "fog",
+          "cliff",
+          "mist"
+        ],
+        "look": "The fog lies along the far shore like a wall, white and still.",
+        "actions": {
+          "touch": "Too far across the water to touch.",
+          "search": "The fog stands along the far shore. Nobody has come out of it in living memory."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ]
+  },
+  {
+    "id": "mere_island",
+    "district": "mere",
+    "title": "The Island",
+    "description": "A small wooded island in the middle of the mere, all yew and holly, with a ruined hermit's cell of piled stone at its heart. The water laps at a little shingle landing. Out here the lake is very quiet, and the shore you came from looks a long way off.",
+    "exits": {
+      "south": "mere_jetty"
+    },
+    "features": [
+      {
+        "name": "the hermit's cell",
+        "keywords": [
+          "cell",
+          "hut",
+          "ruin",
+          "stones"
+        ],
+        "look": "A beehive of piled stone with a low door, roof fallen in. Inside, a stone bench and a niche in the wall.",
+        "actions": {
+          "search": "In the niche, a wax stub and a smooth stone with a hole through it. Someone lived very simply here, a long time.",
+          "touch": "The stones are warm on the sunny side and cold on the other, as if two seasons lived here."
+        }
+      },
+      {
+        "name": "the old yew",
+        "keywords": [
+          "yew",
+          "tree",
+          "roots"
+        ],
+        "look": "An enormous yew, split down the middle and still alive, its roots heaving up the ground like a sleeper turning.",
+        "actions": {
+          "touch": "The bark is red and flaking. Under your hand the roots feel almost soft, as if the ground beneath them had been turned.",
+          "search": "Between the roots the ground is soft and sunk a little, as if something was buried and the earth settled.",
+          "listen": "Bees, deep inside the split trunk."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ],
+    "hiddenExits": [
+      "south"
+    ]
+  },
+  {
+    "id": "falls_path",
+    "district": "falls",
+    "title": "The Stream Climb",
+    "description": "The stream comes tumbling down a rocky staircase between mossy boulders, loud and white. A path climbs beside it, wet and green. You can hear the roar of a waterfall above. The reed beds are south.",
+    "exits": {
+      "south": "mere_reeds",
+      "north": "falls_pool"
+    },
+    "features": [
+      {
+        "name": "the boulders",
+        "keywords": [
+          "boulders",
+          "rocks",
+          "moss"
+        ],
+        "look": "Great round boulders furred with moss and ferns, wet with spray.",
+        "actions": {
+          "climb": "You scramble up a boulder and get a face full of spray and a view of the falls ahead.",
+          "touch": "Moss, soft as a pelt and soaking wet."
+        }
+      },
+      {
+        "name": "the stream",
+        "keywords": [
+          "stream",
+          "water",
+          "rapids"
+        ],
+        "look": "White water dropping over ledges in a hurry to get to the lake.",
+        "actions": {
+          "drink": "You drink. Cold, fast and sweet.",
+          "listen": "Too loud to hear yourself think, which is not unpleasant."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ]
+  },
+  {
+    "id": "falls_pool",
+    "district": "falls",
+    "title": "The Plunge Pool",
+    "description": "A waterfall drops forty feet off a lip of black rock into a deep round pool, throwing up a mist that hangs rainbows in the air. The pool is clear and green, and trout hang in it like knives. A wet ledge runs up behind the falls. The path back is south.",
+    "exits": {
+      "south": "falls_path",
+      "up": "falls_ledge"
+    },
+    "features": [
+      {
+        "name": "the waterfall",
+        "keywords": [
+          "waterfall",
+          "falls",
+          "water"
+        ],
+        "look": "A white curtain of water falling forever, so loud you feel it in your chest. Behind it, darkness.",
+        "actions": {
+          "listen": "A roar like the whole world breathing out.",
+          "touch": "The spray soaks you in a moment.",
+          "search": "The falls pour off the lip in a heavy curtain. Behind the water, where the rock should be, it looks darker than rock."
+        }
+      },
+      {
+        "name": "the pool",
+        "keywords": [
+          "pool",
+          "trout",
+          "plunge"
+        ],
+        "look": "Green, clear water, deep, with trout holding steady against the current.",
+        "actions": {
+          "drink": "You drink. Cold as winter.",
+          "touch": "Your hand goes numb almost at once."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ]
+  },
+  {
+    "id": "falls_ledge",
+    "district": "falls",
+    "title": "The Wet Ledge",
+    "description": "A slick ledge of black rock runs along the cliff beside the falls, so close to the water that the spray hits you like rain. The rock is green with slime. Far below, the pool churns. The ledge climbs on up to the head of the falls, and back down to the pool.",
+    "exits": {
+      "down": "falls_pool",
+      "up": "falls_head",
+      "west": "behind_falls"
+    },
+    "features": [
+      {
+        "name": "the curtain of water",
+        "keywords": [
+          "water",
+          "curtain",
+          "falls",
+          "waterfall"
+        ],
+        "look": "The falls thunder past an arm's length away. Where the ledge meets the water there is a gap, a darker dark behind the curtain.",
+        "actions": {
+          "touch": "The weight of it nearly takes your arm off. You pull back fast.",
+          "search": "The ledge runs on behind the falling water, into a gap in the rock. You could go west, if the rock is not too slick today."
+        }
+      },
+      {
+        "name": "the slime",
+        "keywords": [
+          "slime",
+          "rock",
+          "ledge"
+        ],
+        "look": "Green black slime on wet rock. Every step is a guess.",
+        "actions": {
+          "touch": "Slick as soap.",
+          "search": "Scratches in the slime, as if someone else came this way and kept going west."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ],
+    "hiddenExits": [
+      "west"
+    ]
+  },
+  {
+    "id": "behind_falls",
+    "district": "falls",
+    "title": "Behind the Falls",
+    "description": "A cave behind the waterfall, the falling water a moving grey wall at its mouth. The air is wet and loud and full of a strange green light. The walls are covered in carvings. Somebody lived here once, or hid. The ledge is east.",
+    "exits": {
+      "east": "falls_ledge"
+    },
+    "features": [
+      {
+        "name": "the carvings",
+        "keywords": [
+          "carvings",
+          "walls",
+          "pictures"
+        ],
+        "look": "Carvings cover the walls: boats, fish, a fox with many tails, a gate with an eye over it, and long lines of tally marks.",
+        "actions": {
+          "read": "Boats, fish, a fox with nine tails leading a little figure along a path. A gate with a closed eye above it. Tally marks, hundreds. Someone counted something here for a very long time.",
+          "touch": "The cuts are deep and old, smoothed by damp."
+        }
+      },
+      {
+        "name": "the old bedding",
+        "keywords": [
+          "bedding",
+          "straw",
+          "pallet"
+        ],
+        "look": "A pallet of rotted straw against the back wall, and beside it a skeleton in the rags of a pilgrim's cloak, curled as if asleep.",
+        "actions": {
+          "search": "The pilgrim's cloak still has something in its pocket.",
+          "touch": "The straw turns to mush at your touch."
+        }
+      }
+    ],
+    "flags": [
+      "dark"
+    ]
+  },
+  {
+    "id": "falls_head",
+    "district": "falls",
+    "title": "The Falls Head",
+    "description": "The top of the falls: the stream slides glassy over a lip of rock and drops out of sight with a roar. Upstream it winds away into the hills. The view goes all the way to the lake, black and flat, with its island. A ledge goes down beside the falls, and the scree slope runs east toward the road.",
+    "exits": {
+      "down": "falls_ledge",
+      "east": "crag_scree"
+    },
+    "features": [
+      {
+        "name": "the lip",
+        "keywords": [
+          "lip",
+          "edge",
+          "drop"
+        ],
+        "look": "Smooth rock where the water goes over. One step too far and you'd go with it.",
+        "actions": {
+          "touch": "You lie flat and reach out to the edge. The water tugs at your fingers like a dog at a rope.",
+          "search": "Straight down, forty feet of white water and the green pool. Your stomach goes first."
+        }
+      },
+      {
+        "name": "the view",
+        "keywords": [
+          "view",
+          "lake",
+          "island",
+          "mere"
+        ],
+        "look": "The whole mere spread out below, black as a mirror, with its wooded island in the middle and the fog beyond.",
+        "actions": {
+          "listen": "The roar of the falls, and under it, from the lake, a faint bell? Gone.",
+          "search": "Black water, a wooded island, a jetty with a tiny boat, and beyond everything the fog."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "water"
+    ]
+  },
+  {
+    "id": "crag_scree",
+    "district": "crags",
+    "title": "The Scree",
+    "description": "A long slope of loose grey stone under cliffs, rattling down at every step. Goat droppings everywhere. A goat path zigzags up toward the cliffs to the north. The Long Climb is east, and the falls head lies west.",
+    "exits": {
+      "east": "long_climb",
+      "west": "falls_head",
+      "north": "crag_goatpath"
+    },
+    "features": [
+      {
+        "name": "the loose stone",
+        "keywords": [
+          "stone",
+          "scree",
+          "stones"
+        ],
+        "look": "Grey shards from the size of a coin to the size of a cart, all of it ready to move.",
+        "actions": {
+          "kick": "You kick a stone. It takes forty others with it, all the way down.",
+          "search": "Among the scree, a fossil shell, curled tight. The sea was here once."
+        }
+      },
+      {
+        "name": "the cliffs",
+        "keywords": [
+          "cliffs",
+          "cliff",
+          "crags"
+        ],
+        "look": "Grey cliffs stained black with seeping water, ledges white with bird lime. Something big nests up there.",
+        "actions": {
+          "climb": "Not without the goat path. The cliff laughs at you.",
+          "listen": "An eagle's cry, high and thin, and stones trickling."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "crag_goatpath",
+    "district": "crags",
+    "title": "The Goat Path",
+    "description": "A path no wider than your boot traces a zigzag across the face of the crags, with a long drop on one side and rock on the other. Goats use it as if it were a high road. The scree is south below you, and the path climbs up to a ledge.",
+    "exits": {
+      "south": "crag_scree",
+      "up": "crag_ledge"
+    },
+    "features": [
+      {
+        "name": "the drop",
+        "keywords": [
+          "drop",
+          "edge",
+          "fall"
+        ],
+        "look": "Air, then scree, a long way down.",
+        "actions": {
+          "kick": "You kick a pebble off the edge and count. You stop counting.",
+          "search": "It's a long way down. The scree looks soft from here. It is not."
+        }
+      },
+      {
+        "name": "the goat path",
+        "keywords": [
+          "path",
+          "track",
+          "droppings"
+        ],
+        "look": "A narrow shelf worn into the rock by goats, littered with their droppings.",
+        "actions": {
+          "touch": "Polished smooth by hooves.",
+          "search": "Tufts of goat wool on every thorn, and a bell on a broken strap."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "crag_ledge",
+    "district": "crags",
+    "title": "The High Ledge",
+    "description": "A broad ledge high on the crags, sheltered from the wind by an overhang. Bones are scattered about, gnawed. To the west a cave mouth gapes black in the cliff. A chimney of rock climbs on up to the summit. The goat path is down.",
+    "exits": {
+      "down": "crag_goatpath",
+      "up": "eagle_lookout",
+      "west": "cave_mouth"
+    },
+    "features": [
+      {
+        "name": "the gnawed bones",
+        "keywords": [
+          "bones",
+          "bone"
+        ],
+        "look": "Goat bones, cracked for the marrow by jaws stronger than a wolf's.",
+        "actions": {
+          "search": "Goat bones, cracked open. Big teeth did this. Claw marks on the rock, at the height of your head.",
+          "touch": "Fresh enough to be greasy."
+        }
+      },
+      {
+        "name": "the rock chimney",
+        "keywords": [
+          "chimney",
+          "crack",
+          "summit"
+        ],
+        "look": "A crack in the rock with footholds worn into it, climbing to the very top of the crags.",
+        "actions": {
+          "climb": "Up is that way. You could go up.",
+          "search": "Footholds, worn into the rock by hands and hooves."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "eagle_lookout",
+    "district": "crags",
+    "title": "The Eagle's Lookout",
+    "description": "The summit of the crags: a bare dome of rock with the whole country laid out below like a map. The road runs south to the black walls of Gallowmere and north to the timber walls of Vesna. The forest spreads all around, and beyond everything, on every side, the fog. An eagle's nest of sticks the size of a cart sits on a ledge below. The way down is a chimney in the rock.",
+    "exits": {
+      "down": "crag_ledge"
+    },
+    "features": [
+      {
+        "name": "the view",
+        "keywords": [
+          "view",
+          "map",
+          "country",
+          "land"
+        ],
+        "look": "Everything. The road, the two towns, the black mere and its island, the falls, the dark Blackwood, the red roof of the shrine. And the fog, all round, like the edge of the world.",
+        "actions": {
+          "listen": "Wind, and the eagle, and very far off, the bell of the temple tolling the hour.",
+          "search": "North: Vesna, smoke rising behind its palisade. South: Gallowmere, the bell tower. East: the Blackwood, and deep in it a thin line of smoke where no one should be. West: the mere, the falls. Everywhere else: fog."
+        }
+      },
+      {
+        "name": "the eagle's nest",
+        "keywords": [
+          "nest",
+          "eagle",
+          "sticks"
+        ],
+        "look": "A heap of sticks on the ledge below, wide as a cart, littered with the bones of hares and lambs.",
+        "actions": {
+          "search": "You lean out as far as you dare. Bones, a shining buckle, and an eagle's feather as long as your forearm. Out of reach.",
+          "take": "The eagle appears out of nowhere and makes its opinion of that very clear. You pull back."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "cave_mouth",
+    "district": "crags",
+    "title": "The Cave Mouth",
+    "description": "A wide cave mouth in the cliff, the floor trampled and strewn with bones and fur. A smell comes out of the dark: rank, musky, animal. Claw marks score the rock at the entrance higher than you can reach. The ledge is east, and the cave goes on west into darkness.",
+    "exits": {
+      "east": "crag_ledge",
+      "west": "bear_cave"
+    },
+    "features": [
+      {
+        "name": "the claw marks",
+        "keywords": [
+          "marks",
+          "claws",
+          "scratches"
+        ],
+        "look": "Long parallel scores in the rock, higher than your head. Something stood up here and stretched.",
+        "actions": {
+          "touch": "Your fingers fit in the grooves with room to spare.",
+          "search": "Four long scores, well above your head. Bear. Big bear."
+        }
+      },
+      {
+        "name": "the bones and fur",
+        "keywords": [
+          "bones",
+          "fur"
+        ],
+        "look": "Old bones and tufts of brown fur, trampled into the dirt.",
+        "actions": {
+          "search": "Bones, fur, and a broken boar spear with the head bitten off.",
+          "smell": "Musky, rank and very close."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "bear_cave",
+    "district": "crags",
+    "title": "The Bear's Cave",
+    "description": "A deep cave smelling overpoweringly of bear. The floor is a nest of dry bracken and bones. Water drips somewhere further in. The cave mouth is east, a grey shape of daylight.",
+    "exits": {
+      "east": "cave_mouth"
+    },
+    "features": [
+      {
+        "name": "the bracken nest",
+        "keywords": [
+          "nest",
+          "bracken",
+          "bed"
+        ],
+        "look": "A great hollow scraped out and lined with bracken, warm and stinking.",
+        "actions": {
+          "touch": "Warm. Very recently warm.",
+          "search": "In the bracken, among the bones, a rusted knife and a silver button."
+        }
+      },
+      {
+        "name": "the drip",
+        "keywords": [
+          "drip",
+          "water",
+          "pool"
+        ],
+        "look": "Somewhere back in the dark, water drips into a pool. Plink. Plink.",
+        "actions": {
+          "listen": "Plink. Plink. And breathing that is not yours.",
+          "drink": "You find the little pool by touch and drink. Cold and tasting of stone."
+        }
+      }
+    ],
+    "flags": [
+      "dark"
+    ]
+  },
+  {
+    "id": "bw_edge",
+    "district": "blackwood",
+    "title": "The Blackwood Edge",
+    "description": "The wood changes all at once: the birches stop, and black trunked oaks and firs take over, close together, the light going green and then grey. The ground is soft with needles and very quiet. The Toll Stump is west, the wet ditch south, a high bank rises north, and a deer trail runs east.",
+    "exits": {
+      "west": "toll_stump",
+      "south": "ee_ditch",
+      "north": "bw_highbank",
+      "east": "bw_trail"
+    },
+    "features": [
+      {
+        "name": "the black trunks",
+        "keywords": [
+          "trunks",
+          "trees",
+          "firs",
+          "oaks"
+        ],
+        "look": "Oaks black with damp and firs dark as ink, so close together their branches knit overhead.",
+        "actions": {
+          "touch": "Damp bark, cold as a cellar wall.",
+          "listen": "The forest swallows sound. Your own breathing is the loudest thing here.",
+          "search": "Dry sticks under the firs, and a snapped arrow fletched with crow feathers."
+        }
+      },
+      {
+        "name": "the needles",
+        "keywords": [
+          "needles",
+          "ground",
+          "floor",
+          "sticks"
+        ],
+        "look": "A deep brown carpet of needles and twigs.",
+        "actions": {
+          "take": "You pick out a good dry stick.",
+          "search": "Under the needles, sticks and a few mushrooms you would not eat."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "bw_highbank",
+    "district": "blackwood",
+    "title": "The High Bank",
+    "description": "A ridge of high ground above Brigand's Bend, thick with holly. From here you can look straight down on the road through the leaves without being seen. Someone has made themselves comfortable: a log to sit on, a ring of stones for a small fire, bones. The bend is west, down the bank. The wood goes on east, and the edge is south.",
+    "exits": {
+      "west": "brigands_bend",
+      "south": "bw_edge",
+      "east": "bw_oaks"
+    },
+    "features": [
+      {
+        "name": "the watcher's log",
+        "keywords": [
+          "log",
+          "seat"
+        ],
+        "look": "A log dragged into the holly as a seat, worn smooth on top, with a clear view of the road below.",
+        "actions": {
+          "sit": "You sit on the brigands' log. It's a good view. You can see why they like it.",
+          "search": "Carved into the log: a list of initials and numbers. A tally of travellers."
+        }
+      },
+      {
+        "name": "the fire ring",
+        "keywords": [
+          "ring",
+          "fire",
+          "ashes"
+        ],
+        "look": "A ring of stones around cold ashes. Small fires only, the kind you can't see from the road.",
+        "actions": {
+          "touch": "The ashes are cold. Mostly.",
+          "search": "Chicken bones, a rind of cheese, a cracked clay pipe."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "bw_trail",
+    "district": "blackwood",
+    "title": "The Deer Trail",
+    "description": "A deer trail winds through the Blackwood, a narrow thread of beaten earth between the trunks. The trees here are huge. The edge is west, the old oaks north, and the trail goes on east toward a hunter's blind.",
+    "exits": {
+      "west": "bw_edge",
+      "north": "bw_oaks",
+      "east": "bw_blind"
+    },
+    "features": [
+      {
+        "name": "the trail",
+        "keywords": [
+          "trail",
+          "path",
+          "tracks"
+        ],
+        "look": "Beaten earth with slots in it. Deer, and boar, and once, one print as wide as a dinner plate.",
+        "actions": {
+          "search": "Deer slots, boar tracks, and one great pad print with claws. Old, you hope.",
+          "touch": "Packed hard and damp."
+        }
+      },
+      {
+        "name": "the huge trees",
+        "keywords": [
+          "trees",
+          "trunk",
+          "oak"
+        ],
+        "look": "Oaks so old their trunks are hollow, big enough to stand inside.",
+        "actions": {
+          "search": "Inside a hollow oak, a dry space, dead leaves, and sticks.",
+          "climb": "Too wide to climb. You might as well climb a house."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "bw_oaks",
+    "district": "blackwood",
+    "title": "The Old Oaks",
+    "description": "A grove of oaks so old they have gone strange, twisted into knots and arches, hung with moss like grey hair. Mistletoe grows in the crowns. The ground is lumpy with roots. Paths go every way: west to the high bank, south to the trail, east to a wallow and north to the dens.",
+    "exits": {
+      "south": "bw_trail",
+      "west": "bw_highbank",
+      "east": "bw_wallow",
+      "north": "bw_dens"
+    },
+    "features": [
+      {
+        "name": "the twisted oaks",
+        "keywords": [
+          "oaks",
+          "oak",
+          "arches",
+          "knots"
+        ],
+        "look": "Trunks that split and rejoin, branches that grow down to the ground and root again. Faces in the bark, if you look too long.",
+        "actions": {
+          "touch": "The moss is cold and wet.",
+          "listen": "Creaks, all around, like old men shifting in their chairs.",
+          "search": "If you look long enough, every trunk has a face. You stop looking."
+        }
+      },
+      {
+        "name": "the mistletoe",
+        "keywords": [
+          "mistletoe",
+          "berries"
+        ],
+        "look": "Bunches of mistletoe high in the crowns, white berries like pearls.",
+        "actions": {
+          "take": "Too high to reach.",
+          "search": "White berries high up, like a crown of pearls on an old head."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "bw_blind",
+    "district": "blackwood",
+    "title": "The Hunter's Blind",
+    "description": "A hunter's blind of woven branches stands at the edge of a small glade where the deer come to drink at a spring. Inside it there's room for two people and a bow. Nobody has used it lately. The trail is west, a wallow north, and the trees grow strange and dark to the east.",
+    "exits": {
+      "west": "bw_trail",
+      "north": "bw_wallow",
+      "east": "bw_hanging"
+    },
+    "features": [
+      {
+        "name": "the blind",
+        "keywords": [
+          "blind",
+          "hide",
+          "branches"
+        ],
+        "look": "A low shelter of woven hazel and fern, with a slot to look through.",
+        "actions": {
+          "sit": "You crouch in the blind and watch the glade. A deer comes, sees nothing, and drinks.",
+          "search": "Inside the blind: a broken bowstring, a flask, empty, and a tally of deer scratched on a rod."
+        }
+      },
+      {
+        "name": "the spring",
+        "keywords": [
+          "spring",
+          "water",
+          "glade"
+        ],
+        "look": "A spring bubbling up among stones into a little pool, the mud around it trampled by hooves.",
+        "actions": {
+          "drink": "You drink from the spring. Sweet and very cold.",
+          "touch": "Icy."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "bw_wallow",
+    "district": "blackwood",
+    "title": "The Boar Wallow",
+    "description": "A churned up hollow of black mud where wild boar come to wallow, stinking of pig. The trees around are scraped bare at hip height by tusks. The oaks are west, the blind south, a thicket of thorns north, and a fallen giant of a tree lies to the east.",
+    "exits": {
+      "west": "bw_oaks",
+      "south": "bw_blind",
+      "north": "bw_thicket",
+      "east": "bw_fallen"
+    },
+    "features": [
+      {
+        "name": "the mud",
+        "keywords": [
+          "mud",
+          "wallow",
+          "hollow"
+        ],
+        "look": "Black mud, churned to soup, full of the prints of cloven hooves. Some of them very big.",
+        "actions": {
+          "smell": "Pig, mud and a thick musk that sticks in your throat.",
+          "touch": "Your hand sinks to the wrist. You pull it out with a suck."
+        }
+      },
+      {
+        "name": "the scraped trees",
+        "keywords": [
+          "trees",
+          "bark",
+          "rubbing"
+        ],
+        "look": "Bark rubbed and torn away at hip height, and tusk marks in the wood.",
+        "actions": {
+          "touch": "The wood is smooth with rubbing, slick with mud.",
+          "search": "Coarse black bristles caught in the bark."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "bw_dens",
+    "district": "blackwood",
+    "title": "The Wolf Dens",
+    "description": "A rocky bank with dark holes dug under the roots of the trees above it. The ground is littered with bones and the place smells of dog. A thorn thicket blocks the way east, though there's a path through, and the old oaks are south.",
+    "exits": {
+      "south": "bw_oaks",
+      "east": "bw_thicket"
+    },
+    "features": [
+      {
+        "name": "the den holes",
+        "keywords": [
+          "holes",
+          "dens",
+          "den"
+        ],
+        "look": "Dark holes under the roots, the earth around them smooth with use. Yellow eyes, sometimes.",
+        "actions": {
+          "listen": "Breathing, and a low growl, very low.",
+          "search": "Not without a light and a wish to die.",
+          "smell": "Dark holes. Something looks back from one of them, then doesn't."
+        }
+      },
+      {
+        "name": "the scattered bones",
+        "keywords": [
+          "bones",
+          "bone"
+        ],
+        "look": "Deer bones, cracked and scattered, and the skull of a sheep.",
+        "actions": {
+          "search": "Bones, and a brass collar with a name on it: BRAN. Somebody's dog, once.",
+          "touch": "Gnawed smooth."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "bw_thicket",
+    "district": "blackwood",
+    "title": "The Thorn Thicket",
+    "description": "A tangle of blackthorn and briar so dense it makes its own dusk. A tunnel runs through it at the height of a crouching man, where animals push through. Shreds of cloth hang on the thorns, and not from animals. The dens are west and the wallow south.",
+    "exits": {
+      "south": "bw_wallow",
+      "west": "bw_dens"
+    },
+    "features": [
+      {
+        "name": "the thorn tunnel",
+        "keywords": [
+          "tunnel",
+          "thorns",
+          "blackthorn"
+        ],
+        "look": "A tunnel through the thorns, rubbed smooth at the sides.",
+        "actions": {
+          "search": "Caught on the thorns, threads of red wool. Somebody comes this way often.",
+          "touch": "Your sleeve catches on three thorns at once."
+        }
+      },
+      {
+        "name": "the cloth shreds",
+        "keywords": [
+          "cloth",
+          "shreds",
+          "rags",
+          "wool"
+        ],
+        "look": "Strips of red wool torn off on the thorns.",
+        "actions": {
+          "take": "You pull off a thread of red wool. Brigand red, the town would say.",
+          "search": "Red wool, the colour the brigands wear on their arms."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest"
+    ]
+  },
+  {
+    "id": "bw_hanging",
+    "district": "blackwood",
+    "title": "The Hanging Wood",
+    "description": "A dark stand of yews where the light barely reaches. Things hang from the branches: old boots, a lantern, the skull of a horse, little wooden figures turning slowly on strings. Nobody knows who hangs them. The blind is west and a fallen tree lies north.",
+    "exits": {
+      "west": "bw_blind",
+      "north": "bw_fallen"
+    },
+    "features": [
+      {
+        "name": "the hanging things",
+        "keywords": [
+          "things",
+          "figures",
+          "skull",
+          "boots",
+          "lantern"
+        ],
+        "look": "Wooden figures, boots, a horse skull, an iron lantern with no glass, all turning slowly on cords from the yew branches.",
+        "actions": {
+          "touch": "The figures are carved like people, each one different. One looks a lot like Father Osmund.",
+          "take": "You reach for a figure. The cord is tied with a knot you have never seen and do not want to undo.",
+          "listen": "They knock together softly in the breeze, like someone tapping on a door."
+        }
+      },
+      {
+        "name": "the yews",
+        "keywords": [
+          "yews",
+          "yew",
+          "trees"
+        ],
+        "look": "Old yews, dark and poisonous, their red bark peeling.",
+        "actions": {
+          "touch": "Red flaking bark, oddly warm.",
+          "eat": "The berries of yew are poison. Even you know that."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ]
+  },
+  {
+    "id": "bw_fallen",
+    "district": "blackwood",
+    "title": "The Fallen Giant",
+    "description": "An enormous oak has come down here, roots and all, leaving a crater and a wall of earth and roots taller than a house. Its trunk lies away east into the wood like a road. The hanging wood is south and the wallow west.",
+    "exits": {
+      "south": "bw_hanging",
+      "west": "bw_wallow",
+      "east": "camp_stockade"
+    },
+    "features": [
+      {
+        "name": "the fallen trunk",
+        "keywords": [
+          "trunk",
+          "tree",
+          "oak",
+          "log"
+        ],
+        "look": "A trunk as wide as a doorway, lying east along the ground and crusted with fungus.",
+        "actions": {
+          "search": "Along the top of the trunk, worn bark and muddy boot prints heading east. People walk this trunk like a road, into the wood.",
+          "climb": "You climb onto the trunk. It runs away east like a raised road, and boot prints run with it.",
+          "touch": "Soft with rot on top, hard as iron underneath."
+        }
+      },
+      {
+        "name": "the root wall",
+        "keywords": [
+          "roots",
+          "wall",
+          "crater"
+        ],
+        "look": "A wall of earth and torn roots twice your height, with stones caught in it.",
+        "actions": {
+          "search": "In the root wall, a hollow someone has used as a cache. Empty now, but for a twist of red wool.",
+          "touch": "Earth crumbles around your fingers."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "forest",
+      "sticks"
+    ],
+    "hiddenExits": [
+      "east"
+    ]
+  },
+  {
+    "id": "camp_stockade",
+    "district": "camp",
+    "title": "The Stockade Gate",
+    "description": "A rough stockade of sharpened stakes rings a clearing deep in the Blackwood, and its gate stands open, guarded. Inside, smoke and tents and the noise of people who think nobody can find them. A red rag flies from a pole. The trunk path back is west.",
+    "exits": {
+      "west": "bw_fallen",
+      "north": "camp_tents"
+    },
+    "features": [
+      {
+        "name": "the stockade",
+        "keywords": [
+          "stockade",
+          "stakes",
+          "fence"
+        ],
+        "look": "Stakes as thick as your arm, sharpened and lashed, with gaps a child could slip through.",
+        "actions": {
+          "touch": "Rough and newly cut. They haven't been here long.",
+          "climb": "You start to climb and a voice above says, quite pleasantly, that it would put an arrow in you."
+        }
+      },
+      {
+        "name": "the red rag",
+        "keywords": [
+          "rag",
+          "flag",
+          "pole"
+        ],
+        "look": "A red rag on a pole: the brigands' colours.",
+        "actions": {
+          "take": "Too high, and too many people watching.",
+          "search": "A red rag, snapping in the wind. The colour of the arm bands."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "camp"
+    ]
+  },
+  {
+    "id": "camp_tents",
+    "district": "camp",
+    "title": "The Tents",
+    "description": "A muddy clearing full of patched tents and lean tos around a big fire. Stolen goods lie in heaps: a cart wheel, a saddle, sacks of meal. A ladder climbs a tall pine to a lookout. A bigger tent, striped and grand, stands to the east. The gate is south.",
+    "exits": {
+      "south": "camp_stockade",
+      "up": "camp_lookout",
+      "east": "captains_tent"
+    },
+    "features": [
+      {
+        "name": "the stolen goods",
+        "keywords": [
+          "goods",
+          "heaps",
+          "loot",
+          "sacks"
+        ],
+        "look": "Everything that ever went down the road and didn't arrive: sacks of meal, a cart wheel, a saddle, a church candlestick.",
+        "actions": {
+          "search": "Meal, salt, a saddle, a candlestick with Father Osmund's mark on the base. Nothing you could carry off with all these eyes on you.",
+          "take": "A dozen hands go to a dozen knives. You leave it."
+        }
+      },
+      {
+        "name": "the camp fire",
+        "keywords": [
+          "fire",
+          "pot",
+          "cauldron"
+        ],
+        "look": "A big fire with a cauldron hung over it. Something is stewing that smells better than anything in Gallowmere.",
+        "actions": {
+          "smell": "Venison, onions and stolen pepper.",
+          "touch": "Hot. Very hot."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "camp",
+      "fire"
+    ]
+  },
+  {
+    "id": "camp_lookout",
+    "district": "camp",
+    "title": "The Lookout Tree",
+    "description": "A platform of boards nailed high in a pine, swaying with the tree. From here you can see the road through gaps in the trees, the bend, the toll stump, and travellers coming long before they see you. A horn hangs on a nail. The ladder is down.",
+    "exits": {
+      "down": "camp_tents"
+    },
+    "features": [
+      {
+        "name": "the horn",
+        "keywords": [
+          "horn"
+        ],
+        "look": "A cow horn on a cord, for warning the camp.",
+        "actions": {
+          "use": "You raise the horn to your lips and think better of it. Every brigand in the wood would come up that ladder.",
+          "touch": "Smooth and greasy from many hands."
+        }
+      },
+      {
+        "name": "the view of the road",
+        "keywords": [
+          "view",
+          "road",
+          "gaps"
+        ],
+        "look": "Through the trees: Brigand's Bend, the toll stump, and a long stretch of road both ways.",
+        "actions": {
+          "listen": "The road is quiet. The camp below is not.",
+          "search": "The road is laid out below like a stage. You can see exactly how they do it."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "camp"
+    ]
+  },
+  {
+    "id": "captains_tent",
+    "district": "camp",
+    "title": "The Captain's Tent",
+    "description": "A tent of striped canvas, the kind a lord might take to a tourney, now stained and patched. Inside: a camp bed with a fur on it, a table covered in maps and a strongbox, and a chair carved like a throne that came from someone's hall. The tents are west.",
+    "exits": {
+      "west": "camp_tents"
+    },
+    "features": [
+      {
+        "name": "the maps",
+        "keywords": [
+          "maps",
+          "map",
+          "table"
+        ],
+        "look": "Maps of the road and the forest, marked with crosses and dates. One shows the town walls with notes in the margin.",
+        "actions": {
+          "read": "The road, marked with crosses for every ambush. The town walls with the guard changes noted. And at the top, the palisade of Vesna, circled twice, with a question mark.",
+          "search": "Under the maps, a list of names with sums beside them. Hook's name is on it. So is Dace's."
+        }
+      },
+      {
+        "name": "the strongbox",
+        "keywords": [
+          "strongbox",
+          "box",
+          "chest"
+        ],
+        "look": "An iron strongbox, chained to the bed frame and locked.",
+        "actions": {
+          "open": "Locked tight, and chained to the bed.",
+          "kick": "It barely moves. Full, then."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "camp"
+    ]
+  },
+  {
+    "id": "shrine_steps",
+    "district": "shrine",
+    "title": "The Stone Steps",
+    "description": "Worn stone steps climb east through cedars, swept clean by someone who comes every morning. Moss grows in the joints and little stone foxes sit on either side every few steps, some wearing faded red bibs. Ahead, red gates rise between the trees. Mile Oak is down the steps to the west.",
+    "exits": {
+      "west": "mile_oak",
+      "east": "shrine_gates"
+    },
+    "features": [
+      {
+        "name": "the stone foxes",
+        "keywords": [
+          "foxes",
+          "fox",
+          "statues",
+          "bibs"
+        ],
+        "look": "Small stone foxes in pairs, one with a key in its mouth, one with a jewel. Their red bibs are faded pink.",
+        "actions": {
+          "touch": "Cold stone, worn smooth on the head by many hands.",
+          "search": "Behind one fox, someone has left a rice cake and a coin. You leave them.",
+          "listen": "Pairs of stone foxes, guardians of the path. One holds a key in its mouth, the other a jewel. They are watching, politely."
+        }
+      },
+      {
+        "name": "the swept steps",
+        "keywords": [
+          "steps",
+          "stone",
+          "stairs"
+        ],
+        "look": "Old steps, each hollowed in the middle by centuries of feet, swept so clean you could eat off them.",
+        "actions": {
+          "sit": "You sit on the steps a while. The forest is very quiet here, and so are you.",
+          "touch": "Smooth and cool, worn hollow."
+        }
+      }
+    ],
+    "flags": [
+      "outside"
+    ]
+  },
+  {
+    "id": "shrine_gates",
+    "district": "shrine",
+    "title": "The Red Gates",
+    "description": "A long row of gates painted vermilion stands one after another so close together that they make a tunnel of red, the path running through. Each post is painted with black characters. The light through them is warm and strange. Walkers keep to the side of the path; the middle is left for the god. The steps are west and the shrine's water basin is east.",
+    "exits": {
+      "west": "shrine_steps",
+      "east": "shrine_basin"
+    },
+    "features": [
+      {
+        "name": "the red gates",
+        "keywords": [
+          "gates",
+          "gate",
+          "torii",
+          "posts"
+        ],
+        "look": "Two posts and two crossbeams, painted vermilion, over and over in a row. The black characters on the posts are names, and dates.",
+        "actions": {
+          "read": "Names and dates, one on each gate: the people who gave them. Some go back to before Gallowmere had walls.",
+          "touch": "Smooth painted wood, warm as if in sun.",
+          "search": "A tunnel of red gates. The path down the middle is worn smoother than the edges, and yet everyone who comes here keeps to the edges."
+        }
+      },
+      {
+        "name": "the middle of the path",
+        "keywords": [
+          "middle",
+          "path",
+          "centre",
+          "center"
+        ],
+        "look": "The very centre of the path, left clear. It is said that the centre belongs to the god who lives here.",
+        "actions": {
+          "touch": "Not a speck of dust on it.",
+          "search": "Nobody walks the middle. You can keep to the side of the path: keep to the side, then walk on east."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "sanctuary"
+    ]
+  },
+  {
+    "id": "shrine_basin",
+    "district": "shrine",
+    "title": "The Water Basin",
+    "description": "Under a little roof on four posts sits a stone basin brimming with water from a bamboo pipe, with long handled wooden ladles laid across it. Here pilgrims purify their hands and mouths before going on to the shrine. The red gates are west and the shrine is east.",
+    "exits": {
+      "west": "shrine_gates",
+      "east": "shrine"
+    },
+    "features": [
+      {
+        "name": "the water basin",
+        "keywords": [
+          "basin",
+          "water",
+          "ladle",
+          "ladles"
+        ],
+        "look": "A trough of grey stone, always full, always overflowing a little. Ladles of pale wood lie across it.",
+        "actions": {
+          "use": "You take up a ladle. To do it properly: purify.",
+          "drink": "You know better than to drink straight from the basin. You rinse with the ladle: purify.",
+          "touch": "The water is cold and very clear."
+        }
+      },
+      {
+        "name": "the bamboo pipe",
+        "keywords": [
+          "pipe",
+          "bamboo",
+          "spout"
+        ],
+        "look": "A bamboo pipe leading the water down from a spring higher up, trickling steadily.",
+        "actions": {
+          "listen": "The trickle of water, and nothing else.",
+          "touch": "Green and cool."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "sanctuary"
+    ]
+  },
+  {
+    "id": "shrine",
+    "district": "shrine",
+    "title": "The Shrine",
+    "description": "A small wooden shrine under a sweeping roof of cedar bark, grey with age and perfectly kept. A wooden offering box sits before it, and above the box hangs a thick rope of red and white with a bronze bell at its top. Behind a lattice, the inner shrine is dark. Everything here is quiet. The water basin is west, and the fortune tree is north.",
+    "exits": {
+      "west": "shrine_basin",
+      "north": "fortune_tree"
+    },
+    "features": [
+      {
+        "name": "the offering box",
+        "keywords": [
+          "box",
+          "offering",
+          "slots"
+        ],
+        "look": "A wooden box with a slatted top, worn dark by hands. Coins clink when they fall in.",
+        "actions": {
+          "use": "You stand before the offering box. Offer a coin: offer 1.",
+          "touch": "Smooth wood, worn by a thousand years of hands.",
+          "search": "An old wooden offering box with a slatted lid. Then you ring the bell, bow twice, clap twice, pray, and bow once more."
+        }
+      },
+      {
+        "name": "the bell rope",
+        "keywords": [
+          "rope",
+          "bell",
+          "cord"
+        ],
+        "look": "A thick braided rope of red and white, hanging from a bronze bell above the offering box.",
+        "actions": {
+          "use": "You take hold of the rope. Ring it: ring bell.",
+          "touch": "Rough cord, worn soft where people grip it.",
+          "search": "A bronze bell, green with age, and a thick rope to shake it."
+        }
+      },
+      {
+        "name": "the inner shrine",
+        "keywords": [
+          "inner",
+          "lattice",
+          "sanctum",
+          "shrine"
+        ],
+        "look": "Behind the lattice: darkness, a mirror catching a little light, and the smell of cedar.",
+        "actions": {
+          "touch": "You do not reach through the lattice. Some things are not for touching.",
+          "search": "Darkness, a round mirror, the scent of cedar and old incense."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "sanctuary"
+    ]
+  },
+  {
+    "id": "fortune_tree",
+    "district": "shrine",
+    "title": "The Fortune Tree",
+    "description": "Behind the shrine stands an old plum tree, and its every lower twig is tied with folded paper slips, white against the dark bark, like blossom in the wrong season. A small stall beside it holds a wooden box of fortunes. The shrine is south.",
+    "exits": {
+      "south": "shrine",
+      "north": "fox_grove"
+    },
+    "features": [
+      {
+        "name": "the knotted slips",
+        "keywords": [
+          "slips",
+          "papers",
+          "fortunes",
+          "twigs",
+          "tree"
+        ],
+        "look": "Hundreds of paper fortunes knotted to the twigs, bad luck left behind by people who drew it.",
+        "actions": {
+          "touch": "Paper, soft with rain. Every one of them a bad fortune, tied here and left.",
+          "read": "You don't untie them. They're bad luck, left here for the tree to keep."
+        }
+      },
+      {
+        "name": "the fortune box",
+        "keywords": [
+          "box",
+          "stall",
+          "stick",
+          "sticks"
+        ],
+        "look": "A hexagonal wooden box with a hole in one end. You shake it and a numbered stick falls out, and that number is your fortune.",
+        "actions": {
+          "use": "Draw a fortune for a coin: draw fortune.",
+          "search": "A wooden box of numbered sticks, and drawers of paper slips. One coin a draw."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "sanctuary"
+    ],
+    "hiddenExits": [
+      "north"
+    ]
+  },
+  {
+    "id": "fox_grove",
+    "district": "shrine",
+    "title": "The Fox's Grove",
+    "description": "A hidden glade behind the shrine, ringed by cedars so old they have grown together into a wall. Moss covers everything, deep and soft. In the middle sits a tiny shrine no bigger than a doll's house, and in front of it a stone bowl. Pale lights drift between the trees, there and not there. The way back south is narrow and hard to see.",
+    "exits": {
+      "south": "fortune_tree"
+    },
+    "features": [
+      {
+        "name": "the tiny shrine",
+        "keywords": [
+          "shrine",
+          "house"
+        ],
+        "look": "A shrine the size of a doll's house, perfect in every detail, with a little stone fox at its door.",
+        "actions": {
+          "touch": "Warm. Warmer than stone has any right to be.",
+          "search": "A tiny shrine, cared for by no hand you can see. The fox at its door has nine tails, carved fine as hair."
+        }
+      },
+      {
+        "name": "the stone bowl",
+        "keywords": [
+          "bowl",
+          "offering"
+        ],
+        "look": "A shallow stone bowl, and in it, something that glows a soft blue green, like moonlight on water.",
+        "actions": {
+          "touch": "The light is cool, like a stream.",
+          "search": "In the bowl lies a little ball of pale light, cool and steady."
+        }
+      }
+    ],
+    "flags": [
+      "outside",
+      "sanctuary"
+    ],
+    "hiddenExits": [
+      "south"
+    ]
+  },
+  {
+    "id": "gatherers_hall",
+    "district": "market",
+    "title": "The Gatherers' Hall",
+    "description": "A long cold hall of grey stone, scrubbed and smelling of lime. Slabs line the walls, some of them occupied under clean sacking. A tall desk stands at the far end with a great ledger open on it, and beside it a board of wanted names. Everything is very orderly, and very quiet. Butcher's Alley is west.",
+    "exits": {
+      "west": "butchers_alley"
+    },
+    "features": [
+      {
+        "name": "the slabs",
+        "keywords": [
+          "slabs",
+          "slab",
+          "sacking"
+        ],
+        "look": "Stone slabs, each with a shape under clean sacking and a tag on its toe.",
+        "actions": {
+          "read": "Toe tags: names, where found, by whom, and how much was paid. The handwriting is very neat.",
+          "touch": "Cold stone. Colder sacking.",
+          "search": "You lift a sacking corner. A cutpurse, looking surprised still. You put it back."
+        }
+      },
+      {
+        "name": "the wanted board",
+        "keywords": [
+          "board",
+          "wanted",
+          "names"
+        ],
+        "look": "A board of slates on which bodies wanted by somebody are chalked, with a price.",
+        "actions": {
+          "read": "The wanted board. Type board to read it properly.",
+          "search": "Slates, chalked with wants and prices. Type board."
+        }
+      },
+      {
+        "name": "the great ledger",
+        "keywords": [
+          "ledger",
+          "book",
+          "desk"
+        ],
+        "look": "A ledger as big as a gravestone, every body that ever came through the hall written in it in a careful hand.",
+        "actions": {
+          "read": "Name, place, finder, payment. Pages and pages. Some names appear as finders on one page and as bodies on another.",
+          "touch": "Warden Crane's eyes are on you before your fingers reach it."
+        }
+      }
+    ]
+  },
+  {
+    "id": "sleeping_lantern",
+    "district": "tavern",
+    "title": "The Sleeping Lantern",
+    "description": "A low common room behind the Drowned Rat, warm and quiet and smelling of beeswax and old blankets. A lantern burns in the window day and night. Benches, a hearth, a counter with a key board behind it, and stairs going up to the loft and the rooms. The Rat's yard is north.",
+    "exits": {
+      "north": "rats_yard",
+      "up": "lantern_loft"
+    },
+    "features": [
+      {
+        "name": "the lantern",
+        "keywords": [
+          "lantern",
+          "window",
+          "light"
+        ],
+        "look": "A brass lantern in the window, always lit. Old Peg says if it ever goes out, so does she.",
+        "actions": {
+          "touch": "Warm brass.",
+          "search": "It has never gone out, Old Peg says. You believe her."
+        }
+      },
+      {
+        "name": "the key board",
+        "keywords": [
+          "board",
+          "keys",
+          "key",
+          "counter"
+        ],
+        "look": "A board of hooks behind the counter, two keys on it, and a slate of prices.",
+        "actions": {
+          "read": "LOFT, A BED, 2. ROOM WITH A CHEST, 6. TILL MORNING. NO FIGHTING. NO BODIES. NO EXCEPTIONS.",
+          "take": "Old Peg's hand lands on yours like a lid on a pot. Rent first: rent bed, or rent room."
+        }
+      },
+      {
+        "name": "the hearth",
+        "keywords": [
+          "hearth",
+          "fire",
+          "fireplace"
+        ],
+        "look": "A small banked fire, kept just warm enough.",
+        "actions": {
+          "sit": "You sit by the hearth. Your eyes start to close on their own.",
+          "touch": "Warm stones."
+        }
+      }
+    ],
+    "flags": [
+      "sanctuary",
+      "inn"
+    ]
+  },
+  {
+    "id": "lantern_loft",
+    "district": "tavern",
+    "title": "The Lantern Loft",
+    "description": "A long attic under the thatch with a row of straw beds along each side, blankets folded at the foot of each. Somebody snores. A narrow landing runs off to a door on either side, the private rooms, east and west. The stairs go down.",
+    "exits": {
+      "down": "sleeping_lantern",
+      "east": "lantern_east",
+      "west": "lantern_west"
+    },
+    "features": [
+      {
+        "name": "the straw beds",
+        "keywords": [
+          "beds",
+          "bed",
+          "straw",
+          "blankets"
+        ],
+        "look": "Straw mattresses on the boards, each with a grey blanket. Rented by the night. sleep, once you've paid.",
+        "actions": {
+          "sit": "You sit on a bed. It crackles. Rent one and you can sleep: rent bed, then sleep.",
+          "touch": "Straw, and a blanket that has been washed, recently, which is more than you expected."
+        }
+      },
+      {
+        "name": "the private doors",
+        "keywords": [
+          "doors",
+          "door"
+        ],
+        "look": "Two narrow doors with iron latches, one east and one west. Private rooms, each with a chest.",
+        "actions": {
+          "knock": "You knock. Nobody answers. Rent one from Old Peg: rent room.",
+          "open": "Locked, unless you've rented it."
+        }
+      }
+    ],
+    "flags": [
+      "sanctuary",
+      "inn"
+    ]
+  },
+  {
+    "id": "lantern_east",
+    "district": "tavern",
+    "title": "The East Room",
+    "description": "A tiny room under the eaves with a proper bed, a washstand, a stool and an iron bound chest at the foot of the bed. A small window looks out over the rooftops to the temple bell tower. The door is west.",
+    "exits": {
+      "west": "lantern_loft"
+    },
+    "features": [
+      {
+        "name": "the chest",
+        "keywords": [
+          "chest",
+          "box"
+        ],
+        "look": "An iron bound oak chest with a stout lock. Your things are safe in here while the room is yours: store, retrieve.",
+        "actions": {
+          "open": "Use store <item> and retrieve <item>, while the room is yours.",
+          "touch": "Solid oak and cold iron."
+        }
+      },
+      {
+        "name": "the bed",
+        "keywords": [
+          "bed",
+          "mattress",
+          "pillow"
+        ],
+        "look": "A real bed with a feather pillow. Luxury, by Gallowmere standards.",
+        "actions": {
+          "sit": "You sit on the bed and sink. Sleep here: sleep.",
+          "touch": "Feathers. Actual feathers."
+        }
+      }
+    ],
+    "flags": [
+      "sanctuary",
+      "inn",
+      "private"
+    ]
+  },
+  {
+    "id": "lantern_west",
+    "district": "tavern",
+    "title": "The West Room",
+    "description": "A small room with a sloping ceiling, a bed with a patchwork quilt, a candle on a shelf and an iron bound chest. The window looks down into the Rat's yard. The door is east.",
+    "exits": {
+      "east": "lantern_loft"
+    },
+    "features": [
+      {
+        "name": "the chest",
+        "keywords": [
+          "chest",
+          "box"
+        ],
+        "look": "An iron bound oak chest with a stout lock. Your things are safe in here while the room is yours: store, retrieve.",
+        "actions": {
+          "open": "Use store <item> and retrieve <item>, while the room is yours.",
+          "touch": "Solid oak and cold iron."
+        }
+      },
+      {
+        "name": "the quilt",
+        "keywords": [
+          "quilt",
+          "bed",
+          "patchwork"
+        ],
+        "look": "A patchwork quilt made of a hundred scraps, each one a different shade of brown.",
+        "actions": {
+          "sit": "You sit on the bed. The quilt is heavy and warm. Sleep here: sleep.",
+          "touch": "Warm and heavy."
+        }
+      }
+    ],
+    "flags": [
+      "sanctuary",
+      "inn",
+      "private"
     ]
   }
 ]

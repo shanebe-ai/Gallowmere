@@ -6,7 +6,9 @@
     "sells": {
       "ale": 20,
       "stew": 10,
-      "bread": 10
+      "bread": 10,
+      "gin": 12,
+      "water": 10
     },
     "buys": [],
     "purse": 0,
@@ -34,13 +36,17 @@
       "lamp_oil": 6,
       "candle": 10,
       "tinderbox": 3,
-      "sack": 6
+      "sack": 6,
+      "fishing_rod": 3
     },
     "buys": [
       "food",
       "tool",
       "junk",
-      "tail"
+      "tail",
+      "meat",
+      "fish",
+      "bait"
     ],
     "purse": 30,
     "sellBand": [
@@ -64,7 +70,9 @@
       "hand_axe": 2,
       "shortsword": 1,
       "padded_jerkin": 2,
-      "leather_coat": 1
+      "leather_coat": 1,
+      "mail_shirt": 1,
+      "war_axe": 1
     },
     "buys": [
       "tool",
@@ -116,7 +124,9 @@
     },
     "buys": [
       "junk",
-      "valuable"
+      "valuable",
+      "pelt",
+      "trophy"
     ],
     "purse": 25,
     "sellBand": [
@@ -144,7 +154,11 @@
       "weapon",
       "junk",
       "valuable",
-      "armour"
+      "armour",
+      "pelt",
+      "trophy",
+      "fish",
+      "meat"
     ],
     "purse": 80,
     "sellBand": [
@@ -154,6 +168,68 @@
     "buyBand": [
       0.4,
       0.7
+    ]
+  },
+  {
+    "npc": "fishwife",
+    "room": "fish_market",
+    "haggle": false,
+    "sells": {
+      "bait": 8,
+      "salt_fish": 4
+    },
+    "buys": [
+      "fish",
+      "bait"
+    ],
+    "purse": 30,
+    "sellBand": [
+      1.2,
+      1.2
+    ],
+    "buyBand": [
+      0.5,
+      0.5
+    ]
+  },
+  {
+    "npc": "burner",
+    "room": "ew_clearing",
+    "haggle": false,
+    "sells": {
+      "torch": 4
+    },
+    "buys": [
+      "hide",
+      "pelt"
+    ],
+    "purse": 20,
+    "sellBand": [
+      1.3,
+      1.3
+    ],
+    "buyBand": [
+      0.5,
+      0.5
+    ]
+  },
+  {
+    "npc": "keeper",
+    "room": "shrine",
+    "haggle": false,
+    "sells": {
+      "incense": 10,
+      "fox_charm": 4
+    },
+    "buys": [],
+    "purse": 0,
+    "sellBand": [
+      1.0,
+      1.0
+    ],
+    "buyBand": [
+      0.3,
+      0.3
     ]
   }
 ]

@@ -683,5 +683,666 @@
     "price": 4,
     "look": "A thin disc of fired clay stamped with the temple's ash tree. Crush it and say the words, and you wake in the nave. Father Osmund swears it's faith. It isn't.",
     "actions": {}
+  },
+  {
+    "id": "fishing_rod",
+    "name": "a fishing rod",
+    "keywords": [
+      "rod",
+      "fishing rod",
+      "pole"
+    ],
+    "kind": "tool",
+    "weight": 2,
+    "price": 6,
+    "look": "A hazel rod with a line of waxed thread, a cork float and a bent iron hook. Fish where there's water: fish.",
+    "actions": {
+      "use": "Find some water and type fish. You'll need bait: worms, bread or a ball of bait."
+    }
+  },
+  {
+    "id": "worm",
+    "name": "a fat worm",
+    "keywords": [
+      "worm",
+      "worms"
+    ],
+    "kind": "bait",
+    "weight": 0,
+    "price": 1,
+    "look": "A fat pink worm, writhing. Fish love them. Nobody else does.",
+    "actions": {
+      "eat": {
+        "text": "You eat the worm. It goes down wriggling. Why did you do that?",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "bait",
+    "name": "a ball of bait",
+    "keywords": [
+      "bait",
+      "ball"
+    ],
+    "kind": "bait",
+    "weight": 0,
+    "price": 1,
+    "look": "Bread kneaded with fat and a little blood into a sticky ball. Fish find it hard to resist.",
+    "actions": {
+      "smell": "Bread, fat and something worse. Perfect."
+    }
+  },
+  {
+    "id": "minnow",
+    "name": "a minnow",
+    "keywords": [
+      "minnow",
+      "fish"
+    ],
+    "kind": "fish",
+    "weight": 0,
+    "price": 1,
+    "look": "A tiny silver fish, barely a mouthful.",
+    "actions": {
+      "eat": {
+        "text": "You eat it raw, bones and all. You've had worse. Not much worse.",
+        "consume": true
+      }
+    },
+    "heals": 1
+  },
+  {
+    "id": "roach",
+    "name": "a roach",
+    "keywords": [
+      "roach",
+      "fish"
+    ],
+    "kind": "fish",
+    "weight": 1,
+    "price": 2,
+    "look": "A silvery river fish with red fins. Bony, but it fills a pot.",
+    "actions": {
+      "eat": {
+        "text": "You eat it raw, bones and all. You've had worse. Not much worse.",
+        "consume": true
+      }
+    },
+    "heals": 1
+  },
+  {
+    "id": "perch",
+    "name": "a perch",
+    "keywords": [
+      "perch",
+      "fish"
+    ],
+    "kind": "fish",
+    "weight": 1,
+    "price": 3,
+    "look": "A striped perch with a spiny back fin, green and gold.",
+    "actions": {
+      "eat": {
+        "text": "You eat it raw, bones and all. You've had worse. Not much worse.",
+        "consume": true
+      }
+    },
+    "heals": 1
+  },
+  {
+    "id": "trout",
+    "name": "a brown trout",
+    "keywords": [
+      "trout",
+      "brown trout",
+      "fish"
+    ],
+    "kind": "fish",
+    "weight": 1,
+    "price": 4,
+    "look": "A brown trout, speckled red and black, still cold from the water.",
+    "actions": {
+      "eat": {
+        "text": "You eat it raw, bones and all. You've had worse. Not much worse.",
+        "consume": true
+      }
+    },
+    "heals": 2
+  },
+  {
+    "id": "eel",
+    "name": "an eel",
+    "keywords": [
+      "eel",
+      "fish"
+    ],
+    "kind": "fish",
+    "weight": 1,
+    "price": 3,
+    "look": "A long brown eel that will not stop moving even now.",
+    "actions": {
+      "eat": {
+        "text": "You eat the eel raw. It does not go quietly.",
+        "consume": true
+      }
+    },
+    "heals": 1
+  },
+  {
+    "id": "pike",
+    "name": "a pike",
+    "keywords": [
+      "pike",
+      "fish"
+    ],
+    "kind": "fish",
+    "weight": 3,
+    "price": 6,
+    "look": "A long green pike with a mouth full of needle teeth and a mean yellow eye. Morda could make something of this.",
+    "actions": {
+      "eat": {
+        "text": "You eat it raw, bones and all. You've had worse. Not much worse.",
+        "consume": true
+      }
+    },
+    "heals": 2
+  },
+  {
+    "id": "grandmother_pike",
+    "name": "the Grandmother pike",
+    "keywords": [
+      "grandmother",
+      "pike",
+      "fish",
+      "monster"
+    ],
+    "kind": "fish",
+    "weight": 8,
+    "price": 30,
+    "look": "A pike as long as you are, ancient, scarred, her jaw hung with the rusted hooks of fifty years of fishermen. Nobody in Gallowmere will believe this. You have to carry her back to show them.",
+    "actions": {}
+  },
+  {
+    "id": "old_boot",
+    "name": "an old boot",
+    "keywords": [
+      "boot",
+      "old boot"
+    ],
+    "kind": "junk",
+    "weight": 1,
+    "price": 1,
+    "look": "A sodden leather boot. Someone, somewhere, is walking around with one foot wet.",
+    "actions": {
+      "smell": "River, rot and feet.",
+      "use": "You tip out a tiny crab and some weed."
+    }
+  },
+  {
+    "id": "rabbit",
+    "name": "a dead rabbit",
+    "keywords": [
+      "rabbit",
+      "coney"
+    ],
+    "kind": "meat",
+    "weight": 1,
+    "price": 2,
+    "look": "A plump wild rabbit, its neck broken clean. Maud buys meat, and Morda can cook it.",
+    "actions": {}
+  },
+  {
+    "id": "venison",
+    "name": "a haunch of venison",
+    "keywords": [
+      "venison",
+      "haunch",
+      "meat"
+    ],
+    "kind": "meat",
+    "weight": 2,
+    "price": 5,
+    "look": "A dark red haunch of deer meat. A feast, if you can get it to a fire.",
+    "actions": {}
+  },
+  {
+    "id": "goat_meat",
+    "name": "a joint of goat meat",
+    "keywords": [
+      "goat",
+      "joint",
+      "meat"
+    ],
+    "kind": "meat",
+    "weight": 2,
+    "price": 3,
+    "look": "Stringy, strong smelling goat. Better in a stew than on its own.",
+    "actions": {}
+  },
+  {
+    "id": "boar_meat",
+    "name": "a side of boar",
+    "keywords": [
+      "boar",
+      "side",
+      "meat"
+    ],
+    "kind": "meat",
+    "weight": 3,
+    "price": 6,
+    "look": "A side of wild boar, bristles and all. Morda would give a lot to cook this.",
+    "actions": {}
+  },
+  {
+    "id": "fox_pelt",
+    "name": "a fox pelt",
+    "keywords": [
+      "pelt",
+      "fox pelt",
+      "fur"
+    ],
+    "kind": "pelt",
+    "weight": 1,
+    "price": 4,
+    "look": "A red fox pelt, soft as anything, with a white tip to the brush.",
+    "actions": {
+      "touch": "So soft. You feel a little bad about it."
+    }
+  },
+  {
+    "id": "wolf_pelt",
+    "name": "a wolf pelt",
+    "keywords": [
+      "pelt",
+      "wolf pelt",
+      "fur"
+    ],
+    "kind": "pelt",
+    "weight": 2,
+    "price": 7,
+    "look": "A grey wolf pelt, thick for winter, still smelling of the den.",
+    "actions": {
+      "touch": "Thick, coarse on top and soft underneath."
+    }
+  },
+  {
+    "id": "bear_pelt",
+    "name": "a bear pelt",
+    "keywords": [
+      "pelt",
+      "bear pelt",
+      "fur"
+    ],
+    "kind": "pelt",
+    "weight": 5,
+    "price": 16,
+    "look": "A great brown bear pelt, heavy as a sack of meal. Tilly would weep. Hook would haggle.",
+    "actions": {
+      "touch": "Thick enough to sleep in."
+    }
+  },
+  {
+    "id": "deer_hide",
+    "name": "a deer hide",
+    "keywords": [
+      "hide",
+      "deer hide",
+      "skin"
+    ],
+    "kind": "hide",
+    "weight": 2,
+    "price": 4,
+    "look": "A fresh deer hide, ready for the tanner. The charcoal burner buys them.",
+    "actions": {}
+  },
+  {
+    "id": "tusk",
+    "name": "a boar's tusk",
+    "keywords": [
+      "tusk",
+      "tooth"
+    ],
+    "kind": "trophy",
+    "weight": 1,
+    "price": 5,
+    "look": "A curved yellow tusk as long as your hand, sharp at the tip.",
+    "actions": {
+      "touch": "Sharp. Very sharp."
+    }
+  },
+  {
+    "id": "bear_claw",
+    "name": "a bear claw",
+    "keywords": [
+      "claw",
+      "bear claw"
+    ],
+    "kind": "trophy",
+    "weight": 0,
+    "price": 6,
+    "look": "A black claw as long as your finger. Proof, if anyone asks.",
+    "actions": {
+      "touch": "Hooked and wickedly sharp."
+    }
+  },
+  {
+    "id": "stick",
+    "name": "a dry stick",
+    "keywords": [
+      "stick",
+      "sticks",
+      "branch"
+    ],
+    "kind": "material",
+    "weight": 1,
+    "price": 0,
+    "look": "A dry stick about as long as your arm. Good for torches and snares.",
+    "actions": {}
+  },
+  {
+    "id": "torch",
+    "name": "a pitch torch",
+    "keywords": [
+      "torch"
+    ],
+    "kind": "tool",
+    "weight": 1,
+    "price": 2,
+    "look": "A stick wrapped in oily rags. Light it and it will burn for half an hour.",
+    "actions": {
+      "light": "You light the torch. It roars up yellow and pushes the dark back."
+    }
+  },
+  {
+    "id": "snare",
+    "name": "a rope snare",
+    "keywords": [
+      "snare",
+      "noose"
+    ],
+    "kind": "tool",
+    "weight": 1,
+    "price": 2,
+    "look": "A running noose of rope on a stick peg. Set it on a rabbit run in the Edgewood: set snare.",
+    "actions": {
+      "use": "Set it in the Edgewood where the rabbits run: set snare."
+    }
+  },
+  {
+    "id": "campfire_stew",
+    "name": "a pot of campfire stew",
+    "keywords": [
+      "stew",
+      "pot",
+      "campfire stew"
+    ],
+    "kind": "food",
+    "weight": 1,
+    "price": 2,
+    "look": "Whatever you had, boiled over an open fire with a turnip. It's hot. That's the main thing.",
+    "actions": {
+      "eat": {
+        "text": "You eat the stew straight from the pot, burning your mouth. Worth it.",
+        "consume": true
+      }
+    },
+    "heals": 4
+  },
+  {
+    "id": "pie",
+    "name": "a hot pie",
+    "keywords": [
+      "pie",
+      "hot pie"
+    ],
+    "kind": "food",
+    "weight": 1,
+    "price": 4,
+    "look": "A great raised pie with a glossy crust, steaming. Morda's best, made with whatever you brought her.",
+    "actions": {
+      "eat": {
+        "text": "You eat the pie in great hot mouthfuls. For a moment, Gallowmere is a good place to live.",
+        "consume": true
+      }
+    },
+    "heals": 8
+  },
+  {
+    "id": "gin",
+    "name": "a cup of rotgut gin",
+    "keywords": [
+      "gin",
+      "rotgut",
+      "cup"
+    ],
+    "kind": "drink",
+    "weight": 1,
+    "price": 2,
+    "look": "Clear as water and twice as dangerous. It smells like a lamp.",
+    "actions": {
+      "drink": {
+        "text": "You knock back the gin. It goes down like a lit fuse and goes off somewhere behind your eyes.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "water",
+    "name": "a cup of water",
+    "keywords": [
+      "water",
+      "cup of water"
+    ],
+    "kind": "drink",
+    "weight": 1,
+    "price": 1,
+    "look": "A cup of well water. Morda charges for it on principle.",
+    "actions": {
+      "drink": {
+        "text": "You drink the water. Clearer headed, a little.",
+        "consume": true
+      }
+    }
+  },
+  {
+    "id": "incense",
+    "name": "a bundle of incense",
+    "keywords": [
+      "incense",
+      "sticks of incense",
+      "bundle"
+    ],
+    "kind": "tool",
+    "weight": 0,
+    "price": 1,
+    "look": "Thin sticks of incense from the shrine, smelling of cedar and smoke.",
+    "actions": {
+      "light": "You light the incense. Fragrant smoke curls up, and something in you settles.",
+      "smell": "Cedar, sandalwood and smoke."
+    }
+  },
+  {
+    "id": "fox_charm",
+    "name": "a fox charm",
+    "keywords": [
+      "charm",
+      "fox charm",
+      "amulet"
+    ],
+    "kind": "tool",
+    "weight": 0,
+    "price": 5,
+    "look": "A little carved wooden fox on a red cord, from the shrine. Crush it and the fox takes you back to the shrine: crush charm.",
+    "actions": {
+      "use": "Crush it to go back to the shrine: crush charm."
+    }
+  },
+  {
+    "id": "curse_slip",
+    "name": "a bad fortune",
+    "keywords": [
+      "fortune",
+      "slip",
+      "curse",
+      "paper"
+    ],
+    "kind": "fortune",
+    "weight": 0,
+    "price": 0,
+    "look": "A folded paper fortune with the worst news on it. Tie it to the fortune tree to leave the bad luck behind: tie fortune.",
+    "actions": {
+      "read": "CURSE. Your aim will waver, your purse will leak. Leave this behind you."
+    }
+  },
+  {
+    "id": "mail_shirt",
+    "name": "a mail shirt",
+    "keywords": [
+      "mail",
+      "shirt",
+      "mail shirt",
+      "armour",
+      "armor"
+    ],
+    "kind": "armour",
+    "weight": 6,
+    "price": 30,
+    "look": "Riveted iron rings down to the thigh, heavy and cold. It will turn most blades.",
+    "actions": {},
+    "armour": 3
+  },
+  {
+    "id": "war_axe",
+    "name": "a war axe",
+    "keywords": [
+      "axe",
+      "war axe"
+    ],
+    "kind": "weapon",
+    "weight": 5,
+    "price": 30,
+    "look": "A bearded axe on an ash haft, long enough to need both hands. Hamo's proudest work.",
+    "actions": {},
+    "damage": [
+      4,
+      8
+    ]
+  },
+  {
+    "id": "dirk",
+    "name": "a brigand's dirk",
+    "keywords": [
+      "dirk",
+      "dagger",
+      "knife"
+    ],
+    "kind": "weapon",
+    "weight": 1,
+    "price": 10,
+    "look": "A long thin dagger with a red wool grip. Brigands wear them in the boot.",
+    "actions": {},
+    "damage": [
+      2,
+      5
+    ]
+  },
+  {
+    "id": "captain_blade",
+    "name": "the captain's blade",
+    "keywords": [
+      "blade",
+      "sword",
+      "captain's blade"
+    ],
+    "kind": "weapon",
+    "weight": 3,
+    "price": 60,
+    "look": "A long, slightly curved blade of grey steel with a pattern in it like water, too fine for a brigand. Nobody knows where the captain got it, and there is only one.",
+    "actions": {},
+    "damage": [
+      5,
+      10
+    ]
+  },
+  {
+    "id": "camp_ledger",
+    "name": "the camp ledger",
+    "keywords": [
+      "ledger",
+      "book"
+    ],
+    "kind": "valuable",
+    "weight": 1,
+    "price": 8,
+    "look": "The brigands' accounts, in a cramped hand: takings, shares and buyers.",
+    "actions": {
+      "read": "Takings from the road by the week. Shares: the captain, half. Buyers: Hook, always. A note: TOLL STUMP, DON'T STOP THERE AFTER DARK, PAY THE OLD MAN IF HE ASKS. And another: VESNA. NOT YET."
+    }
+  },
+  {
+    "id": "fox_fire",
+    "name": "a fox fire",
+    "keywords": [
+      "fire",
+      "fox fire",
+      "light",
+      "ball"
+    ],
+    "kind": "light",
+    "weight": 0,
+    "price": 0,
+    "look": "A little ball of pale blue green light that sits in your palm, cool as a stream. It never goes out.",
+    "actions": {
+      "use": "It lights the dark wherever you go, without being lit."
+    }
+  },
+  {
+    "id": "hermit_bell",
+    "name": "a hermit's bell",
+    "keywords": [
+      "bell",
+      "hermit's bell",
+      "handbell"
+    ],
+    "kind": "valuable",
+    "weight": 0,
+    "price": 12,
+    "look": "A small bronze hand bell, green with age, with a fish cast on its side.",
+    "actions": {
+      "use": "You ring the little bell. Its note goes out across the water and does not seem to stop."
+    }
+  },
+  {
+    "id": "pilgrim_journal",
+    "name": "a pilgrim's journal",
+    "keywords": [
+      "journal",
+      "pilgrim's journal",
+      "diary"
+    ],
+    "kind": "valuable",
+    "weight": 0,
+    "price": 6,
+    "look": "A small water stained book in a pilgrim's careful hand.",
+    "actions": {
+      "read": "Most of it has run. What's left: '...the old pike that the ferryman calls Grandmother... the white fox that comes only to those who bow properly... the stones sing at the barrow but take nothing from it... the toll man on the road wants only one coin, and remembers who pays...'"
+    }
+  },
+  {
+    "id": "barrow_torc",
+    "name": "a gold torc",
+    "keywords": [
+      "torc",
+      "gold",
+      "necklace"
+    ],
+    "kind": "valuable",
+    "weight": 2,
+    "price": 20,
+    "look": "A twisted torc of dull, heavy gold, three thousand years old. It is very cold, always.",
+    "actions": {
+      "touch": "Cold, always, as if it were still lying in the dark."
+    }
   }
 ]

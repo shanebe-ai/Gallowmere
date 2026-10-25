@@ -20,16 +20,17 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 ## What's in it now
 
 **The world**
-* 45 rooms across the gate, market, temple, tavern, docks and sewers, plus the road north, closed for now
+* 108 rooms: the town (gate, market, temple, tavern, docks, sewers), the north road to the shut gate of Vesna, and a forest all round it ringed by fog
 * Every room lists its People, Players and the things You see, and everything listed can be used
 * Plain word verbs on things and people: look, take, touch, open, pull, push, knock, read, search, smell, listen, sit, climb, play, drink, kick, and more
 * A hidden fence behind a door the locals hint at, an iron door under the sewers that finally opens, and a few secrets for players who talk to people
 
 **Six AI townsfolk**
-* Morda the barkeep, Dace the gate guard, Hamo the blacksmith, Maud the grocer, Father Osmund and Hook the fence, played by Llama 3.1 8B on Groq
+* Morda the barkeep, Dace the gate guard, Hamo the blacksmith, Maud the grocer, Father Osmund and Hook the fence, played through ai& (Gemma 4 31B), with Groq and Gemini behind it
 * Per player memory in PostgreSQL: short notes, folded into a summary as they pile up, plus a standing score from minus 5 to plus 5 that only code moves
 * They remember you across logins, carry a conversation without being named every line, react in character when you mess with their things, and can turn you away
-* Light AI characters who talk freely but keep no memory: Tilly the pawnbroker, Ingelram the bank clerk, the butcher, the beggar, and every street person and beast
+* Light AI characters who talk freely but keep no memory: Tilly the pawnbroker, Ingelram the bank clerk, the butcher, the beggar, a duty sergeant, Bess the fishwife and Hook's runner, Amos the gravedigger, Tobin the lamplighter on his rounds, Wendel at the bar, Warden Crane, Old Peg, a charcoal burner, a ferryman, a shrine keeper, a voice behind the gate of Vesna, and every street person and beast
+* Shared rooms where characters talk to each other while you listen, and rumours of what players have done that the town repeats for a day
 
 **The economy**
 * Coin, items and a 20 weight pack. Every character starts with 10 coin
@@ -56,6 +57,17 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 * The plague cart: a random bell from the temple tower every one to two hours (the admin can ring it early with `cart` from the bell tower), a round through every street, the dead and the badly hurt collected, a toll of one coin in four, and everything it takes sold to Hook
 * Ways to earn alone: looting, hauling corpses to Osmund or the butcher, carrying another player home, cutpurse bounties, rat tails for Maud, the rat king behind the iron door
 * Sewer beasts that come back, and a rat king that comes back once a day
+
+**Beyond the wall (Milestone 3.5)**
+* The north road: ten rooms of dirt road from the Moor Road to the shut gate of Vesna, which answers a knock and never opens
+* About 50 forest rooms in eight regions: the Edgewood, the Mere and its island, the Falls, the Crags, the Blackwood, a hidden brigand camp, a Shinto style shrine, and the Old Stones. Walk into the fog and you come back where you started
+* Foxes, deer, goats, wolves, wild boar, a bear in a dark cave, brigands who ask a toll at Brigand's Bend, and a brigand captain with the only blade of its kind. Levels now run to 15, with a mail shirt and a war axe at Hamo's
+* The shrine: a ritual done in order (purify, offer, ring the bell, bow, bow, clap, clap, pray, bow) heals you once a day; fortunes for a coin, and curses tied to the tree
+* Fishing at six kinds of water, digging for worms, snares that survive a restart, five crafting recipes, and dark places that need a light
+* The Gatherers' Hall: a guild that pays for fresh bodies by kind, with a wanted board each hour and ranks that pay more
+* Drink that adds up: merry, tipsy (burps), drunk (slurred speech, wrong turns, Morda cuts you off) and legless (out cold, robbed, taken by the cart)
+* The Sleeping Lantern: rent a bed or a private room with a chest, and sleep yourself whole and sober
+* Six surprises, kept out of this README on purpose
 
 **Playing**
 * A `hint` command with directions to wherever you need to go next
@@ -179,6 +191,7 @@ First time setup on a new server:
 1. **Walk the town.** 15 rooms, one AI barkeep with memory, browser and telnet. *Done.*
 2. **A living market.** 41 rooms, six AI townsfolk, items and inventory, haggling inside code set price ranges, a bank, odd jobs, scavenging, bribes. *Done.*
 3. **Blood and the cart.** Street folk, sewer beasts, combat, death and rebirth, the plague cart, and ways to earn by the sword and the shovel. *Done.*
+3.5. **Beyond the wall.** The north road, the forest, the shrine, beasts and brigands, fishing and crafting, the Gatherers' Hall, drink and an inn, rumours, and a few surprises. *Done.*
 4. **Gossip and law.** A rumour board the townsfolk read and spread, guards who remember crimes, bounties. Then an admin only MCP server, so the world can be run from Claude.
 5. **See where it goes.** Guilds, more NPCs, a second area, real players.
 

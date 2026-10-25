@@ -28,7 +28,7 @@ export interface Item {
   template: ItemTemplate;
 }
 
-export type Owner = { type: 'player' | 'room' | 'shop' | 'corpse'; id: string | number };
+export type Owner = { type: 'player' | 'room' | 'shop' | 'corpse' | 'chest'; id: string | number };
 
 /** Static world economy: item templates and shop settings, loaded once. */
 export class Catalog {

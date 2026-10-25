@@ -4,7 +4,9 @@ import { query } from '../db/pool.js';
 import { config } from '../config.js';
 import { NpcBrain, TRADE_ACTIONS, type ActionType, type NpcTurnOutput, type Replies, type TradeContext } from '../npc/brain.js';
 import { Commerce } from './commerce.js';
-import { Combat, maxHealthFor, xpForLevel } from './combat.js';
+import { Combat, MAX_LEVEL, maxHealthFor, xpForLevel } from './combat.js';
+import { Town } from './town.js';
+import { Wilds } from './wilds.js';
 import { PlagueCart, type CartOptions } from './cart.js';
 import type { AIService } from '../ai/service.js';
 import { avg, BENCH_DEFAULTS, BENCH_LINES, runBench, type LiveModel } from '../ai/bench.js';
@@ -34,6 +36,8 @@ const AMBIENT_EVERY_MS = 20_000;
 const RESERVED = new Set([
   'admin', 'god', 'morda', 'guard', 'beggar', 'blacksmith', 'rats', 'rat', 'someone', 'self', 'me', 'all', 'here',
   'dace', 'hamo', 'maud', 'osmund', 'father', 'hook', 'tilly', 'ingelram', 'butcher', 'gerald',
+  'sergeant', 'bess', 'fishwife', 'nib', 'runner', 'amos', 'gravedigger', 'tobin', 'lamplighter', 'cole', 'burner',
+  'ferryman', 'keeper', 'crane', 'warden', 'peg', 'wendel', 'regular', 'voice', 'captain', 'brigand', 'wight', 'vesna',
 ]);
 
 const BANNER = [
@@ -78,9 +82,33 @@ export const JOURNAL: Array<{ group: string; room: string; note: string; travel:
   { group: 'Danger', room: 'sewer_grate', note: 'rats to fight, tails to sell', travel: 'sewer' },
   { group: 'Danger', room: 'sealed_door', note: 'the iron door: a key, or level 5 to force it', travel: 'iron door' },
   { group: 'Danger', room: 'the_nest', note: 'the rat king, back once a day', travel: 'nest' },
-  { group: 'Ways in and out', room: 'north_gate', note: 'Dace: news and bribes. The moor road north is closed', travel: 'gate' },
+  { group: 'Sanctuaries (no fighting)', room: 'sleeping_lantern', note: 'Old Peg: rent a bed or a room, sleep it off, a chest for your things', travel: 'inn' },
+  { group: 'Sanctuaries (no fighting)', room: 'shrine', note: 'the ritual heals you once a day; the keeper sells incense and fox charms; fortunes at the tree behind', travel: 'shrine' },
+  { group: 'Work and bounties', room: 'gatherers_hall', note: 'Warden Crane: join gatherers, deliver bodies, read the board', travel: 'gatherers' },
+  { group: 'Shops', room: 'ew_clearing', note: 'Cole the charcoal burner: buys hides and pelts, sells torches, a fire to cook at', travel: 'clearing' },
+  { group: 'Fishing and the forest', room: 'drovers_ford', note: 'trout and minnows at the ford', travel: 'ford' },
+  { group: 'Fishing and the forest', room: 'mere_jetty', note: 'perch and pike off the jetty; the ferryman rows to the island for a coin', travel: 'jetty' },
+  { group: 'Fishing and the forest', room: 'falls_pool', note: 'trout in the plunge pool', travel: 'falls' },
+  { group: 'Fishing and the forest', room: 'burnt_waystation', note: 'a fire on the road to cook at', travel: 'waystation' },
+  { group: 'Fishing and the forest', room: 'ew_runs', note: 'rabbit runs: set snare, check snare', travel: 'rabbit runs' },
+  { group: 'Danger', room: 'brigands_bend', note: 'brigands stop travellers here and ask a toll', travel: 'bend' },
+  { group: 'Danger', room: 'camp_tents', note: 'the brigand camp, deep in the Blackwood', travel: 'camp' },
+  { group: 'Danger', room: 'bear_cave', note: 'the bear, in the dark', travel: 'bear cave' },
+  { group: 'Ways in and out', room: 'north_gate', note: 'Dace: news and bribes. The north road runs to Vesna', travel: 'gate' },
   { group: 'Ways in and out', room: 'smugglers_cut', note: 'a dry way between the cistern and the hulk', travel: 'smugglers cut' },
+  { group: 'Ways in and out', room: 'shut_gate', note: 'the gate of Vesna, shut. Knock if you like', travel: 'vesna' },
 ];
+
+/** Tucked into the front of every notebook. */
+export const OSMUND_NOTE = [
+  'Welcome to Gallowmere, stranger. You will find it damp, unkind and expensive, and you will stay anyway; everyone does.',
+  'If you are hurt, come to me in the nave, east of the Temple of Ash. Rest there and your wounds close; I can bind them faster, for a coin. Nobody may draw a blade in my house.',
+  'Bank your coin with Ingelram before the bell tolls. And if you die, you will wake on my floor. It happens to the best of us. Mostly to the worst.',
+  'Father Osmund',
+];
+
+/** Places every character knows the way to from the start. */
+export const KNOWN_FROM_START = ['nave'];
 
 /** Verbs for doing things to people and things, mapped to the action names rooms.json uses. */
 /**
@@ -88,7 +116,7 @@ export const JOURNAL: Array<{ group: string; room: string; note: string; travel:
  * drop, fight or quit for you.
  */
 const FORGIVING = [
-  'health', 'travel', 'journal', 'look', 'examine', 'say', 'ask', 'talk', 'tell', 'list', 'wares', 'inventory', 'help', 'score', 'who', 'hint',
+  'health', 'travel', 'journal', 'recipes', 'board', 'look', 'examine', 'say', 'ask', 'talk', 'tell', 'list', 'wares', 'inventory', 'help', 'score', 'who', 'hint',
   'appraise', 'balance', 'emote', 'north', 'south', 'east', 'west', 'down',
   'read', 'search', 'smell', 'listen', 'touch', 'knock', 'climb', 'hello', 'greetings',
 ];
@@ -108,7 +136,7 @@ const VERBS: Record<string, string> = {
   push: 'push', shove: 'push', bang: 'push', swat: 'push',
   knock: 'knock', rap: 'knock',
   read: 'read',
-  search: 'search', rummage: 'search', check: 'search', dig: 'search',
+  search: 'search', rummage: 'search', check: 'search',
   smell: 'smell', sniff: 'smell',
   sit: 'sit', rest: 'sit',
   climb: 'climb',
@@ -177,7 +205,14 @@ const HELP: Record<string, string> = {
   fight: 'attack <someone> (kill, k): start a fight.  flee: run for it.  consider <someone>: size them up.  health (hp): your wounds, your weapon and your odds.  wield <weapon>, wear <armour>, remove.  bandage: bind your wounds out of a fight. No fighting in the temple or the counting house.',
   death: 'If you die you wake in the Temple of Ash with a grave chill. Your goods stay on your corpse for 30 minutes (only yours for the first 10): loot corpse to get them back, or pay Father Osmund to recover them. Banked coin is always safe.',
   corpses: 'loot corpse: take what a body carried.  take corpse: carry it (heavy).  give corpse to osmund in the nave (or drop it in the ossuary): a burial fee.  sell corpse to butcher: better paid, frowned upon.  bounty: collect cutpurse bounties at the watch house.',
-  cart: 'The plague cart: when the bell in the temple tower tolls, get indoors or bank your coin. The cart takes the dead, the badly hurt, and a quarter of what you carry. It comes at no fixed hour, every hour or two.',
+  cart: 'The plague cart: when the bell in the temple tower tolls, get indoors or bank your coin. The cart takes the dead, the badly hurt, the passed out, and a quarter of what you carry. It comes at no fixed hour, every hour or two, and never leaves the town walls.',
+  road: 'The north road: from the North Gate through the Moor Road, ten rooms north to the shut gate of Vesna. The forest lies all round it: the Edgewood, the Mere, the Falls, the Crags, the Blackwood, the Old Stones. Walk into the fog at the edge and you come back where you started. Brigands ask a toll at Brigand\'s Bend: pay, or fight.',
+  shrine: 'The shrine, east of Mile Oak: purify at the water basin, then at the shrine offer 1, ring bell, bow, bow, clap, clap, pray, bow. Once a day it heals you fully and steadies your hand. draw fortune at the fortune tree (1 coin); tie fortune to leave a bad one behind. keep to the side in the red gates.',
+  fishing: 'fish: cast where there is water worth fishing (the docks, the ford, the mere, the plunge pool, the sewer overflow). You need a rod from Maud and bait: dig for worms (dig) in soft wet ground, bread, or make bait. Sell fish to Bess at the fish market or Maud, or give them to Morda to cook.',
+  crafting: 'recipes: what you can make.  make <thing>: bandage, torch, bait, campfire stew (at a fire), snare.  take stick in the forest.  set snare and check snare on rabbit runs in the Edgewood.  light torch, lamp or candle: dark places need a light.',
+  gatherers: "The Gatherers' Hall, east off Butcher's Alley: join gatherers (1 coin), then deliver bodies to Warden Crane for pay by the body, more for fresh ones and for higher ranks. board: who wants which bodies this hour.",
+  drink: 'Ale and gin at the Drowned Rat add up: merry (a little healing), tipsy (burps), drunk (slurred speech, wrong turns, worse aim, and Morda cuts you off), legless (out cold in the road, where thieves and the cart find you). Water, food and sleep sober you. health shows how drunk you are.',
+  inn: "The Sleeping Lantern, south through the Rat's yard: rent bed (2 coin) or rent room (6 coin, with a chest), then sleep. A paid bed heals you to full and sobers you up. store <item> and retrieve <item> in your room. Type anything to wake.",
   who: 'who: everyone in Gallowmere right now.',
   alias: 'alias: list your aliases.  alias <name> <command>: create one.  unalias <name>: remove one.',
   score: 'score: who you are and where you stand.',
@@ -208,6 +243,9 @@ export class Game {
   commerce: Commerce;
   combat: Combat;
   cart: PlagueCart;
+  town: Town;
+  wilds: Wilds;
+  private townTimer: NodeJS.Timeout | null = null;
   private stockDay = '';
 
   constructor(
@@ -221,6 +259,8 @@ export class Game {
       combat?: { tickMs?: number; lifeMs?: number; streetFolk?: number };
       cart?: CartOptions;
       travelStepMs?: number;
+      townMs?: number;
+      wilds?: ConstructorParameters<typeof Wilds>[1];
     } = {},
   ) {
     this.catalog = new Catalog();
@@ -228,11 +268,14 @@ export class Game {
     this.commerce = new Commerce(this, this.catalog);
     this.combat = new Combat(this, opts.combat ?? {});
     this.cart = new PlagueCart(this, this.combat, opts.cart ?? {});
+    this.town = new Town(this);
+    this.wilds = new Wilds(this, opts.wilds ?? {});
   }
 
   /** Stocks the shops and fills their purses. Runs at start and again each new day. */
   async init(): Promise<void> {
     await restockShops(this.catalog);
+    await this.town.init();
     this.stockDay = new Date().toISOString().slice(0, 10);
   }
 
@@ -258,6 +301,14 @@ export class Game {
     this.combat.populate();
     this.combat.start();
     this.cart.start();
+    this.townTimer = setInterval(() => void this.lifeBeat().catch((e) => console.error('town beat failed:', e)), this.opts.townMs ?? 20_000);
+    this.townTimer.unref();
+  }
+
+  /** The slow beat outside fights: drink, sleep, lights, ambushes, the lamplighter, people talking. */
+  async lifeBeat(): Promise<void> {
+    await this.town.tick();
+    this.wilds.tick();
   }
 
   /** Drops expired tokens and stale rate limit entries so memory stays flat. */
@@ -286,6 +337,7 @@ export class Game {
     if (this.cleanupTimer) clearInterval(this.cleanupTimer);
     for (const t of this.loginTimers.values()) clearTimeout(t);
     for (const l of this.linkdead.values()) clearTimeout(l.timer);
+    if (this.townTimer) clearInterval(this.townTimer);
     this.combat.stop();
     this.cart.stop();
   }
@@ -322,6 +374,7 @@ export class Game {
 
   async disconnect(s: Session): Promise<void> {
     this.stopTravel(s);
+    this.stopBusy(s);
     this.sessions.delete(s);
     const lt = this.loginTimers.get(s);
     if (lt) clearTimeout(lt);
@@ -372,6 +425,44 @@ export class Game {
     return this.combat.extraLoad(playerId);
   }
 
+  refuseSale(s: Session, npc: Npc, templateId: string): string | null {
+    return this.town.refuseSale(s, npc, templateId);
+  }
+
+  async giveToNpc(s: Session, npc: Npc, item: { id: number; template: { id: string; kind: string; name: string } }): Promise<boolean> {
+    if (npc.id === 'morda' && (item.template.kind === 'fish' || item.template.kind === 'meat')) {
+      await this.town.cook(s, item.id, this.catalog.template(item.template.id));
+      return true;
+    }
+    return false;
+  }
+
+  async dropHere(s: Session, item: { id: number; template: { id: string } }): Promise<boolean> {
+    if (s.player!.roomId !== 'barrow') return false;
+    if (await this.wilds.blind(s)) return (s.out('It is too dark to see where you are putting anything.'), true);
+    await this.wilds.leaveInBarrow(s, { id: item.id, template: this.catalog.template(item.template.id) });
+    return true;
+  }
+
+  /** Something that takes a moment. Any command cuts it short. */
+  busy(s: Session, ms: number, stop: string, then: () => Promise<void>): void {
+    this.stopBusy(s);
+    const timer = setTimeout(() => {
+      s.busy = null;
+      if (s.state !== 'playing') return;
+      void then().catch((e) => console.error('busy task failed:', e));
+    }, ms);
+    timer.unref();
+    s.busy = { timer, stop };
+  }
+
+  stopBusy(s: Session, say = false): void {
+    if (!s.busy) return;
+    clearTimeout(s.busy.timer);
+    if (say) s.out(c.dim(s.busy.stop));
+    s.busy = null;
+  }
+
   onConsume(s: Session, t: Parameters<Combat['onConsume']>[1]): void {
     this.combat.onConsume(s, t);
   }
@@ -395,6 +486,8 @@ export class Game {
     this.toRoom(roomId, arrival, s);
     await this.showRoom(s);
     this.updateStatus(s);
+    this.combat.onArrive(s);
+    await this.wilds.onArrive(s, null);
   }
 
   async input(s: Session, raw: string): Promise<void> {
@@ -580,6 +673,8 @@ export class Game {
     s.aliases = new Map(rows.map((r) => [r.alias, r.expansion]));
     await this.combat.load(player);
     this.visit(player.id, player.roomId);
+    for (const id of KNOWN_FROM_START) this.visit(player.id, id);
+    await this.town.gathererCount(player.id);
 
     const token = randomBytes(24).toString('hex');
     this.tokens.set(token, { playerId: player.id, expires: Date.now() + TOKEN_TTL_MS });
@@ -632,6 +727,12 @@ export class Game {
 
   async showRoom(s: Session): Promise<void> {
     const room = this.world.room(s.player!.roomId);
+    if (await this.wilds.blind(s)) {
+      s.out(c.title(room.title));
+      s.out('It is too dark to see. Something moves, or doesn\'t. You would need a light.');
+      const back = room.exits.filter((e) => !e.hidden).map((e) => e.direction);
+      return s.out(c.exits(`You can feel your way: ${back.join(', ')}.`));
+    }
     const floor = await this.commerce.roomItems(room.id);
     s.out(c.title(room.title));
     s.out(room.description);
@@ -664,7 +765,16 @@ export class Game {
   async command(s: Session, line: string, retried = false): Promise<void> {
     if (!line) return;
     if (s.travelling && !retried) this.stopTravel(s, 'You stop walking.');
+    if (s.busy && !retried) this.stopBusy(s, true);
     line = this.expandAlias(s, line);
+    const me = this.combat.state(s.player!.id);
+    if (me && this.town.isOut(me) && !/^(quit|exit|logout|health|hp|score|sc|help)\b/i.test(line)) {
+      return s.out(c.dim('You are out cold in the road. The world can wait. It will have to.'));
+    }
+    if (me?.asleep && !retried) {
+      this.town.wake(s);
+      if (/^(wake|stand|get up)\b/i.test(line)) return;
+    }
 
     if (line.startsWith("'") || line.startsWith('"')) return this.say(s, line.slice(1).trim());
     if (line.startsWith(':')) return this.emote(s, line.slice(1).trim());
@@ -747,6 +857,7 @@ export class Game {
       case 'crush':
       case 'break':
         if (/token/i.test(rest)) return this.useToken(s);
+        if (/charm|fox/i.test(rest)) return this.useCharm(s);
         break;
       case 'health':
       case 'hp':
@@ -754,6 +865,66 @@ export class Game {
       case 'diagnose':
       case 'condition':
         return this.combat.diagnose(s);
+      case 'fish':
+      case 'cast':
+        return this.wilds.fish(s);
+      case 'dig':
+        return this.wilds.dig(s);
+      case 'make':
+      case 'craft':
+        return this.wilds.make(s, rest);
+      case 'recipes':
+      case 'recipe':
+        return this.wilds.recipes(s);
+      case 'set':
+        if (/snare|trap/i.test(rest)) return this.wilds.setSnare(s);
+        break;
+      case 'purify':
+      case 'rinse':
+        return this.wilds.purify(s);
+      case 'bow':
+      case 'clap':
+      case 'pray':
+        return this.wilds.step(s, verb as 'bow' | 'clap' | 'pray');
+      case 'follow':
+        if (/fox/i.test(rest)) return this.wilds.followFox(s);
+        return s.out('Follow whom?');
+      case 'keep':
+      case 'side':
+        return this.wilds.keepSide(s);
+      case 'draw':
+        if (/fortune|lot|stick/i.test(rest)) return this.wilds.drawFortune(s);
+        break;
+      case 'tie':
+        if (/fortune|slip|paper|curse/i.test(rest)) return this.wilds.tieFortune(s);
+        return s.out('Tie what?');
+      case 'pay':
+        return this.wilds.pay(s);
+      case 'ferry':
+      case 'row':
+      case 'boat':
+        return this.wilds.ferry(s);
+      case 'join':
+        if (/gather|guild/i.test(rest) || !rest) return this.town.join(s);
+        break;
+      case 'deliver':
+        return this.town.deliver(s);
+      case 'board':
+      case 'wanted':
+        return this.town.board(s);
+      case 'rent':
+        return this.town.rent(s, rest);
+      case 'sleep':
+      case 'nap':
+        return this.town.sleep(s);
+      case 'wake':
+        return s.out("You're awake. Mostly.");
+      case 'store':
+      case 'stash':
+        return this.town.store(s, rest);
+      case 'retrieve':
+      case 'chest':
+        return this.town.retrieve(s, rest);
       case 'loot':
         return this.combat.loot(s, rest);
       case 'bounty':
@@ -777,7 +948,10 @@ export class Game {
         return this.commerce.drop(s, rest);
       case 'give':
       case 'hand':
-        if (this.combat.mentionsCorpse(rest)) return /\bosmund|priest|father\b/i.test(rest) ? this.combat.bury(s) : s.out('Only Father Osmund takes the dead. And the butcher, if you sell.');
+        if (this.combat.mentionsCorpse(rest)) {
+          if (/\bcrane|warden\b/i.test(rest)) return this.town.deliver(s);
+          return /\bosmund|priest|father\b/i.test(rest) ? this.combat.bury(s) : s.out("Father Osmund buries the dead, the butcher buys them, and Warden Crane at the Gatherers' Hall pays best.");
+        }
         return this.commerce.give(s, rest);
       case 'list':
       case 'wares':
@@ -786,9 +960,11 @@ export class Game {
       case 'purchase':
         return this.commerce.buy(s, rest);
       case 'sell':
-        if (this.combat.mentionsCorpse(rest)) return this.combat.sellToButcher(s);
+        if (this.combat.mentionsCorpse(rest)) return s.player!.roomId === 'gatherers_hall' ? this.town.deliver(s) : this.combat.sellToButcher(s);
         return this.commerce.sell(s, rest);
       case 'offer':
+        if (s.player!.roomId === 'shrine') return this.wilds.step(s, 'offer', Number(rest.match(/\d+/)?.[0] ?? 1));
+        return this.commerce.offer(s, rest);
       case 'counter':
         return this.commerce.offer(s, rest);
       case 'accept':
@@ -849,6 +1025,7 @@ export class Game {
       case 'ring':
         // The admin ringing the bell in the tower sends the cart out; anyone else just makes noise.
         if (this.isAdmin(s) && s.player!.roomId === 'bell_tower' && /bell/i.test(rest)) return this.ringForCart(s);
+        if (s.player!.roomId === 'shrine' && (!rest || /bell|rope/i.test(rest))) return this.wilds.step(s, 'ring');
         break;
       case 'aiping':
         if (this.isAdmin(s)) return this.aiPing(s);
@@ -859,6 +1036,17 @@ export class Game {
     }
     if (VERBS[verb]) {
       const action = VERBS[verb];
+      if (action === 'light' && rest && (await this.wilds.light(s, rest))) return;
+      if (verb === 'check' && /snare|trap/i.test(rest)) return this.wilds.checkSnare(s);
+      if (action !== 'light' && (await this.wilds.blind(s))) {
+        const mineOnly = ['eat', 'drink', 'use', 'read', 'smell'].includes(action) && rest && (await this.commerce.itemAction(s, action, rest));
+        if (mineOnly) return;
+        return s.out('It is too dark to see anything. You would need a light.');
+      }
+      if (action === 'take' && /^(a |some |up )?(sticks?|branch(es)?|deadwood)$/i.test(rest.trim()) && (await this.wilds.takeStick(s))) return;
+      if (action === 'take' && s.player!.roomId === 'barrow' && /torc|gold/i.test(rest)) return this.wilds.takeTorc(s);
+      if (action === 'take' && s.player!.roomId === 'fox_grove' && /fire|light|bowl/i.test(rest)) return this.wilds.takeFoxFire(s);
+      if (action === 'search' && s.player!.roomId === 'behind_falls' && /bed|straw|pallet|cloak|pilgrim|skeleton|pocket|body/i.test(rest)) return this.wilds.searchFalls(s);
       if (rest && !/^all\b/i.test(rest)) {
         const target = await this.resolveTarget(s, rest);
         if (target === null) return;
@@ -894,13 +1082,18 @@ export class Game {
   private async move(s: Session, dir: Direction, brief = false): Promise<boolean> {
     const p = s.player!;
     const room = this.world.room(p.roomId);
-    const exit = room.exits.find((e) => e.direction === dir);
-    if (!exit) {
-      if (dir === 'north' && room.id === 'moor_road') return (s.out('The fog swallows the road. Not yet. Something is out there, and the town is not ready to meet it.'), false);
-      return (s.out("You can't go that way."), false);
-    }
     const st = this.combat.state(p.id);
     if (st?.target) return (s.out(c.error("You're in a fight! Flee if you want out.")), false);
+    if (!room.exits.some((e) => e.direction === dir)) {
+      const fog = this.wilds.fogEdge(room);
+      return (s.out(fog ?? "You can't go that way."), false);
+    }
+    // Drunk feet go where they like.
+    dir = (this.town.wrongTurn(s, dir) as Direction | null) ?? dir;
+    const exit = room.exits.find((e) => e.direction === dir)!;
+    const gate = await this.wilds.canEnter(s, room, exit);
+    if (gate === 'handled') return false;
+    if (gate) return (s.out(gate), false);
     const lock = room.locks[dir];
     if (lock) {
       const mine = await this.commerce.myItems(s);
@@ -919,6 +1112,8 @@ export class Game {
     if (brief) await this.showRoomBrief(s);
     else await this.showRoom(s);
     this.updateStatus(s);
+    this.combat.onArrive(s);
+    await this.wilds.onArrive(s, room.id);
     return true;
   }
 
@@ -958,11 +1153,17 @@ export class Game {
       return s.out(c.dim('travel <place>, for example: travel nave, travel tavern, travel bank.'));
     }
     const ALIAS: Record<string, string> = {
-      tavern: 'drowned_rat', rat: 'drowned_rat', inn: 'drowned_rat', pub: 'drowned_rat', bar: 'drowned_rat',
+      tavern: 'drowned_rat', rat: 'drowned_rat', inn: 'sleeping_lantern', pub: 'drowned_rat', bar: 'drowned_rat', morda: 'drowned_rat',
       bank: 'counting_house', temple: 'nave', church: 'nave', osmund: 'nave', priest: 'nave', heal: 'nave',
       gate: 'north_gate', smith: 'smithy_row', smithy: 'smithy_row', hamo: 'smithy_row', blacksmith: 'smithy_row', maud: 'maud_shop', grocer: 'maud_shop',
       tilly: 'curio_shop', pawn: 'curio_shop', hook: 'hook_den', fence: 'hook_den', butcher: 'butchers_alley',
       watch: 'watch_house', bounty: 'watch_house', market: 'market_square', docks: 'river_docks', sewer: 'sewer_grate',
+      lantern: 'sleeping_lantern', peg: 'sleeping_lantern', bed: 'sleeping_lantern', sleep: 'sleeping_lantern', hotel: 'sleeping_lantern',
+      gatherers: 'gatherers_hall', guild: 'gatherers_hall', hall: 'gatherers_hall', crane: 'gatherers_hall',
+      shrine: 'shrine', keeper: 'shrine', fortune: 'fortune_tree', oak: 'mile_oak', ford: 'drovers_ford', mere: 'mere_shore', lake: 'mere_shore',
+      jetty: 'mere_jetty', ferry: 'mere_jetty', ferryman: 'mere_jetty', falls: 'falls_pool', waterfall: 'falls_pool', crags: 'crag_scree',
+      vesna: 'shut_gate', waystation: 'burnt_waystation', clearing: 'ew_clearing', cole: 'ew_clearing', charcoal: 'ew_clearing',
+      bend: 'brigands_bend', camp: 'camp_tents', stones: 'stone_ring', fish: 'fish_market', bess: 'fish_market',
     };
     let dest = ALIAS[t] && known.includes(ALIAS[t]) ? ALIAS[t] : undefined;
     if (!dest) {
@@ -1011,6 +1212,9 @@ export class Game {
     const been = new Set(rows.map((r) => r.room_id as string));
     const found = JOURNAL.filter((e) => been.has(e.room) && this.world.rooms.has(e.room));
     s.out(c.title('Your notebook'));
+    s.out(c.dim('Tucked inside the cover, a note in a cramped, tired hand:'));
+    for (const line of OSMUND_NOTE) s.out(c.dim(`  ${line}`));
+    s.out('');
     if (!found.length) {
       s.out("A few blank pages. Walk about and you'll fill them.");
       return;
@@ -1029,6 +1233,58 @@ export class Game {
     const others = [...been].filter((id) => this.world.rooms.has(id) && !JOURNAL.some((e) => e.room === id)).length;
     const missing = JOURNAL.filter((e) => !been.has(e.room)).length;
     s.out(c.dim(`And ${others} other place${others === 1 ? '' : 's'} you know the way to (travel on its own lists them all).${missing ? ' Some pages are still blank.' : ''}`));
+  }
+
+  /** Crush a fox charm: back to the forest shrine. */
+  private async useCharm(s: Session): Promise<void> {
+    const p = s.player!;
+    const charm = (await this.commerce.myItems(s)).find((i) => i.template.id === 'fox_charm');
+    if (!charm) return s.out("You don't have a fox charm. The shrine keeper sells them.");
+    if (this.combat.inCombat(p.id)) return s.out(c.error("You can't, not with someone at your throat. Flee first."));
+    if (p.roomId === 'shrine') return s.out("You're at the shrine already.");
+    const ok = await tx((cl) => deleteItem(cl, charm.id, { type: 'player', id: p.id }));
+    if (!ok) return;
+    this.stopTravel(s);
+    s.out(c.system('You crush the little wooden fox in your fist. You hear, very close, a fox bark once, and the world turns red at the edges like a row of gates going by, and you are standing before the shrine.'));
+    this.toRoom(p.roomId, `${c.player(p.name)} crushes something small and is gone, and a fox barks somewhere.`, s);
+    this.visit(p.id, 'shrine');
+    await this.placePlayer(s, 'shrine', `${c.player(p.name)} is suddenly standing before the shrine.`);
+  }
+
+  /**
+   * Two characters in a room trade a line or two while a player listens. Light, no memory, and
+   * nothing at all if the AI is not there: canned lines would only repeat.
+   */
+  async npcBanter(a: Npc, b: Npc, topic: string, listener: Session): Promise<void> {
+    if (listener.aiPending || !listener.player) return;
+    const roomId = a.roomId;
+    const line = async (who: Npc, to: Npc, said: string, kind: 'say' | 'event') => {
+      const card = who.card as any;
+      return this.brain.turn({
+        npcId: who.id,
+        npc: { name: who.name, job: card.job, personality: card.personality, speech: card.speech, wants: card.wants, knows: card.knows, quirks: card.quirks, scripted: card.scripted, light: true },
+        player: { id: listener.player!.id, name: to.name },
+        memory: { notes: [], summary: '' },
+        room: { title: this.world.room(roomId).title, others: [listener.player!.name], note: this.cart.note() },
+        recent: [],
+        playerLine: said,
+        kind,
+        allowedActions: ['none'],
+      });
+    };
+    listener.aiPending = true;
+    try {
+      const first = await line(a, b, `is beside you. Turn and say one short line to ${b.name} about ${topic}`, 'event');
+      if (first.source === 'scripted' || !first.say || a.roomId !== roomId) return;
+      const nameA = capitalize((a.card.speaker as string | undefined) ?? a.name);
+      const nameB = capitalize((b.card.speaker as string | undefined) ?? b.name);
+      this.toRoom(roomId, `${c.npc(nameA)} says to ${c.npc(b.name)}, ${c.speech(`"${first.say}"`)}`);
+      const second = await line(b, a, first.say, 'say');
+      if (second.source === 'scripted' || !second.say || b.roomId !== roomId) return;
+      this.toRoom(roomId, `${c.npc(nameB)} says to ${c.npc(a.name)}, ${c.speech(`"${second.say}"`)}`);
+    } finally {
+      listener.aiPending = false;
+    }
   }
 
   /** Crush a pilgrim's token: back to the nave at once, unless someone has you by the throat. */
@@ -1050,9 +1306,13 @@ export class Game {
 
 
 
-  private async look(s: Session, target: string): Promise<void> {
+  async look(s: Session, target: string): Promise<void> {
     const t = cleanTarget(target);
     if (!t) return await this.showRoom(s);
+    if (await this.wilds.blind(s)) {
+      if (await this.commerce.lookItem(s, target)) return;
+      return s.out('It is too dark to see that.');
+    }
     const roomId = s.player!.roomId;
     if (t === 'me' || t === 'self' || t === 'myself' || t === s.player!.name.toLowerCase()) {
       s.out('You look like someone who just walked out of the fog. Damp, mostly.');
@@ -1190,6 +1450,7 @@ export class Game {
     if (!text) return s.out('Say what?');
     if (this.blockIfFlagged(s, text)) return;
     const p = s.player!;
+    text = this.town.speech(s, text);
     s.out(`You say, ${c.speech(`"${text}"`)}`);
     this.toRoom(p.roomId, `${c.player(p.name)} says, ${c.speech(`"${text}"`)}`, s);
 
@@ -1297,6 +1558,7 @@ export class Game {
     if (!text) text = 'Hello.';
     if (this.blockIfFlagged(s, text)) return;
     const p = s.player!;
+    text = this.town.speech(s, text);
     s.out(`You say to ${c.npc(npc.name)}, ${c.speech(`"${text}"`)}`);
     this.toRoom(p.roomId, `${c.player(p.name)} says to ${c.npc(npc.name)}, ${c.speech(`"${text}"`)}`, s);
     void this.respondOrHaggle(s, npc, text);
@@ -1422,7 +1684,7 @@ export class Game {
         },
         player: { id: p.id, name: p.name },
         memory,
-        room: { title: this.world.room(roomId).title, others, note: this.cart.note() },
+        room: { title: this.world.room(roomId).title, others, note: [this.cart.note(), this.town.noteFor(npc, p.id)].filter(Boolean).join(' ') || undefined },
         recent: this.recent.get(key) ?? [],
         playerLine,
         kind,
@@ -1479,7 +1741,10 @@ export class Game {
       .map((o) => o.player!)
       .sort((a, b) => a.name.localeCompare(b.name));
     s.out(c.title(`In Gallowmere now (${list.length}):`));
-    for (const o of list) s.out(`  ${c.player(o.name.padEnd(16))} ${c.dim(this.world.room(o.roomId).title)}`);
+    for (const o of list) {
+      const title = this.town.title(o.id);
+      s.out(`  ${c.player(o.name.padEnd(16))} ${c.dim(this.world.room(o.roomId).title)}${title ? c.dim(`, ${title}`) : ''}`);
+    }
   }
 
   private async alias(s: Session, rest: string): Promise<void> {
@@ -1517,7 +1782,13 @@ export class Game {
 
   private help(s: Session, topic: string): void {
     const t = topic.toLowerCase();
-    const alias: Record<string, string> = { attack: 'fight', kill: 'fight', flee: 'fight', combat: 'fight', die: 'death', dead: 'death', corpse: 'corpses', loot: 'corpses', bounty: 'corpses', plague: 'cart', bell: 'cart' };
+    const alias: Record<string, string> = {
+      attack: 'fight', kill: 'fight', flee: 'fight', combat: 'fight', die: 'death', dead: 'death', corpse: 'corpses', loot: 'corpses', bounty: 'corpses', plague: 'cart', bell: 'cart',
+      forest: 'road', north: 'road', brigands: 'road', vesna: 'road', fog: 'road', fish: 'fishing', rod: 'fishing', bait: 'fishing', worms: 'fishing',
+      make: 'crafting', craft: 'crafting', recipes: 'crafting', snare: 'crafting', torch: 'crafting', dark: 'crafting', light: 'crafting',
+      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
+      fortune: 'shrine', pray: 'shrine', ritual: 'shrine',
+    };
     const key = DIR_SHORT[t] ? 'move' : t === 'l' ? 'look' : alias[t] ?? t;
     if (key && HELP[key]) return s.out(HELP[key]);
     s.out(c.title('Commands'));
@@ -1541,7 +1812,7 @@ export class Game {
     s.out(`Coin: ${coin} in your purse, ${bank} in the counting house.`);
     const st = await this.combat.load(p);
     const max = maxHealthFor(st.level);
-    const next = st.level < 10 ? `, ${xpForLevel(st.level + 1) - st.xp} more to level ${st.level + 1}` : '';
+    const next = st.level < MAX_LEVEL ? `, ${xpForLevel(st.level + 1) - st.xp} more to level ${st.level + 1}` : '';
     s.out(`Level ${st.level}. Health ${st.health}/${max}. Experience ${st.xp}${next}.`);
     const chill = st.chillUntil - Date.now();
     if (chill > 0) s.out(c.dim(`A grave chill is on you: weaker aim for ${Math.ceil(chill / 60_000)} more minute(s).`));

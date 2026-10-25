@@ -141,16 +141,16 @@ describe('world data for milestone 2', () => {
   const npcs = JSON.parse(readFileSync(new URL('../src/world/npcs.json', import.meta.url), 'utf8'));
   const itemIds = new Set(items.map((i: any) => i.id));
 
-  it('has 45 rooms, all connected both ways', () => {
-    expect(rooms).toHaveLength(45);
+  it('has 108 rooms, all connected both ways', () => {
+    expect(rooms).toHaveLength(108);
     const by = Object.fromEntries(rooms.map((r: any) => [r.id, r]));
     const opp: Record<string, string> = { north: 'south', south: 'north', east: 'west', west: 'east', up: 'down', down: 'up' };
     for (const r of rooms) for (const [d, t] of Object.entries<string>(r.exits)) expect(by[t].exits[opp[d]], `${r.id} ${d}`).toBe(r.id);
   });
 
   it('can reach every room from the gate', () => {
-    // The back room and Hook's den sit behind hidden exits on purpose.
-    const hidden = ['back_room', 'hook_den'];
+    // These sit behind hidden exits on purpose, some only open sometimes.
+    const hidden = ['back_room', 'hook_den', 'mere_island', 'fox_grove', 'behind_falls', 'camp_stockade', 'camp_tents', 'camp_lookout', 'captains_tent'];
     for (const r of rooms) if (!hidden.includes(r.id)) expect(app.world.path('north_gate', r.id), r.id).not.toBeNull();
   });
 
@@ -441,14 +441,15 @@ describe('Gallowmere economy end to end', () => {
     await p.close();
   });
 
-  it('the moor road is closed for now, and item verbs work', async () => {
+  it('the moor road runs north, the fog turns you back, and item verbs work', async () => {
     const p = await create('Sam', 'moor_road');
-    await p.do('n', /Not yet/);
+    await p.do('n', /Heather Rise/);
+    await p.do('u', /walk into the fog[\s\S]*exactly where you started/);
     await query(`INSERT INTO items (template_id, owner_type, owner_id) SELECT 'brass_locket', 'player', id::text FROM players WHERE name='Sam'`);
     await p.do('look locket', /cracked chain[\s\S]*You could: open/);
     await p.do('open locket', /scratched out with a pin/);
     await p.do('drink locket', /can't drink/);
-    await p.do('listen to the fog', /Nothing but the town|listen/);
+    await p.do('listen to the heather', /Nothing but the town|listen/);
     await p.close();
   });
   it('works out what you mean from the room: the sign, typos, it, and asking when unclear', async () => {
