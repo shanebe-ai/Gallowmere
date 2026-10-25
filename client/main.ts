@@ -198,12 +198,34 @@ socket.on('out', (text: string) => {
   keepScreen(text);
 });
 
-socket.on('mode', (mode: { echo: boolean; prompt: string }) => {
+socket.on('mode', (mode: { echo: boolean; prompt: string; choices?: Array<{ label: string; send: string }> }) => {
   echo = mode.echo;
   input.type = mode.echo ? 'text' : 'password';
   promptEl.textContent = mode.prompt;
   input.value = '';
+  // A question with set answers gets a button for each; the next question clears them.
+  if (mode.choices?.length) renderChoices(mode.choices);
+  else if (choicesShown) {
+    choicesShown = false;
+    exitsEl.replaceChildren();
+    fitTerm();
+  }
 });
+
+let choicesShown = false;
+function renderChoices(choices: Array<{ label: string; send: string }>) {
+  choicesShown = true;
+  exitsEl.replaceChildren(
+    ...choices.map((ch) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = ch.label;
+      b.addEventListener('click', () => submit(ch.send));
+      return b;
+    }),
+  );
+  fitTerm();
+}
 
 socket.on('session', (token: string | null) => {
   store(TOKEN_KEY, token);

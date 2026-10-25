@@ -536,13 +536,33 @@ export class Game {
       s.out(c.system(`Welcome back, ${s.pendingName}. Your password?`));
     } else {
       s.state = 'confirmNew';
-      s.conn.setMode({ echo: true, prompt: '(y/n): ' });
-      s.out(c.system(`No one in Gallowmere goes by ${s.pendingName}. Make a new character with that name? (y/n)`));
+      this.askNew(s);
     }
   }
 
+  /** Spelled out, with buttons on phones: a stuck newcomer is a lost newcomer. */
+  private askNew(s: Session, again = false): void {
+    s.conn.setMode({
+      echo: true,
+      prompt: 'y or n: ',
+      choices: [
+        { label: 'Yes (y)', send: 'y' },
+        { label: 'No (n)', send: 'n' },
+      ],
+    });
+    if (again) {
+      s.out(c.error(`Please choose yes (y) or no (n). Type y and press Enter to make ${s.pendingName}, or type n to pick a different name.`));
+      return;
+    }
+    s.out(c.system(`No one in Gallowmere goes by ${s.pendingName} yet.`));
+    s.out(c.system(`Make a new character called ${s.pendingName}? Please choose yes (y) or no (n): type y or n and press Enter.`));
+  }
+
   private async onConfirmNew(s: Session, line: string): Promise<void> {
-    if (/^y/i.test(line)) {
+    const answer = line.trim().toLowerCase();
+    // Only a clear yes or no moves on; anything else asks again.
+    if (!['y', 'yes', 'n', 'no'].includes(answer)) return this.askNew(s, true);
+    if (answer.startsWith('y')) {
       const now = Date.now();
       const made = (this.creations.get(s.conn.ip) ?? []).filter((t) => now - t < 60 * 60_000);
       if (made.length >= config.newCharsPerHour) {

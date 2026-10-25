@@ -162,6 +162,18 @@ describe('Gallowmere end to end', () => {
     await p.close();
   });
 
+  it('a new name needs a plain y or n before anything else happens', async () => {
+    const p = new Player();
+    await p.waitFor(/By what name/);
+    await p.do('Quinn', /Make a new character/);
+    await p.do('hunter22', /Please choose yes \(y\) or no \(n\)/);
+    await p.do('maybe', /Please choose yes \(y\) or no \(n\)/);
+    await p.do('no', /By what name/);
+    await p.do('Quinn', /Make a new character/);
+    await p.do('yes', /Choose a password/);
+    p.socket.disconnect();
+  });
+
   it('saves aliases per character', async () => {
     const p = await login('Shane');
     await p.do('alias hi say Hello there', /Alias set/);

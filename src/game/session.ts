@@ -4,7 +4,8 @@ import { wrap } from './text.js';
 export interface Connection {
   ip: string;
   send(text: string): void;
-  setMode(mode: { echo: boolean; prompt: string }): void;
+  /** choices: tappable answers for phones, like Yes (y) and No (n). */
+  setMode(mode: { echo: boolean; prompt: string; choices?: Array<{ label: string; send: string }> }): void;
   setStatus(status: { name: string; room: string; online: number; exits: string[]; coin: number; health?: number; maxHealth?: number }): void;
   setToken(token: string | null): void;
   close(): void;
