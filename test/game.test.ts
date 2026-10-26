@@ -175,6 +175,11 @@ describe('Gallowmere end to end', () => {
     await a.do('wave morda', /You wave at Morda the barkeep\.[\s\S]*Morda waves back with a dishrag/);
     await a.do('dance wildly', /You dance wildly\./);
     await b.waitFor(/Emi dances wildly\./);
+    await a.do('hug nobodyhere', /You don't see nobodyhere here\./);
+    await a.do('wave at nobodyhere', /You don't see nobodyhere here\./);
+    await a.do('wave nobodyhere', /You don't see nobodyhere here\./);
+    await a.do('hug ozzy', /You hug Ozzy\./);
+    await b.waitFor(/Emi hugs you\./);
     await a.do('emotes', /Emotes[\s\S]*wave/);
     await a.do('/nod', /You nod\./);
     await a.close();

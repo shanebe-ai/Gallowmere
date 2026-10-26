@@ -1574,7 +1574,11 @@ export class Game {
     const npc = this.world.findNpc(p.roomId, t);
     const other = npc ? undefined : this.findPlayerHere(s, t);
     if (!npc && !other) {
-      // Not someone here: take it as how you do it. "dance wildly".
+      // "hug bob", "wave at bob" or a lone word like "wave bobby" means a person: say they aren't here.
+      const word = rest.trim();
+      const aimed = social.to === '' || /^(at|to|for|with|before)\s+/i.test(word) || (/^\S+$/.test(word) && !/ly$/i.test(word));
+      if (aimed) return s.out(`You don't see ${t} here.`);
+      // Otherwise take it as how you do it. "dance wildly".
       const how = sanitize(rest, 80);
       if (this.blockIfFlagged(s, how)) return;
       s.out(`You ${social.you} ${how}.`);
