@@ -15,7 +15,7 @@ import { balances, Catalog, deleteItem, groupNames, restockShops, sweepRooms, tx
 import { addNote, getMemory } from '../npc/memory.js';
 import { isFlagged } from './filter.js';
 import { Session, type Connection } from './session.js';
-import { c, capitalize, listJoin, sanitize, stripAnsi } from './text.js';
+import { c, capitalize, listJoin, nameKey, sanitize, stripAnsi } from './text.js';
 import { DIR_SHORT, OPPOSITE, World, cleanTarget, distance, looseMatch, type Candidate, type Direction, type Feature, type Npc } from './world.js';
 import { findItem } from './commerce.js';
 import { listJoin as orList } from './text.js';
@@ -519,17 +519,20 @@ export class Game {
   }
 
   private async onName(s: Session, line: string): Promise<void> {
-    const name = line.trim();
-    if (!/^[A-Za-z]{3,16}$/.test(name)) {
+    const name = line.trim().normalize('NFC');
+    if (!/^[\p{Script=Latin}]{3,16}$/u.test(name)) {
       s.out(c.error('Names are 3 to 16 letters, nothing else.'));
       return this.promptName(s);
     }
-    if (RESERVED.has(name.toLowerCase())) {
+    if (RESERVED.has(nameKey(name))) {
       s.out(c.error('That name is taken by someone who was here first.'));
       return this.promptName(s);
     }
     s.pendingName = capitalize(name.toLowerCase());
-    const { rows } = await query('SELECT id FROM players WHERE lower(name)=lower($1)', [name]);
+    const { rows } = await query(
+      'SELECT id FROM players WHERE name_key=$1 OR (name_key IS NULL AND lower(name)=lower($2))',
+      [nameKey(name), name],
+    );
     if (rows.length) {
       s.state = 'password';
       s.wrongPasswords = 0;
@@ -602,8 +605,8 @@ export class Game {
     let r;
     try {
       const { rows } = await query(
-        'INSERT INTO players (name, password_hash, room_id) VALUES ($1,$2,$3) RETURNING id, name, room_id, created_at',
-        [s.pendingName, hash, this.world.startRoom],
+        'INSERT INTO players (name, password_hash, room_id, name_key) VALUES ($1,$2,$3,$4) RETURNING id, name, room_id, created_at',
+        [s.pendingName, hash, this.world.startRoom, nameKey(s.pendingName)],
       );
       r = rows[0];
       const made = this.creations.get(s.conn.ip) ?? [];
@@ -640,7 +643,10 @@ export class Game {
       s.out(c.error('That character is locked for a few minutes after too many wrong passwords.'));
       return this.promptName(s);
     }
-    const { rows } = await query('SELECT id, name, password_hash, room_id, created_at FROM players WHERE lower(name)=lower($1)', [s.pendingName]);
+    const { rows } = await query(
+      'SELECT id, name, password_hash, room_id, created_at FROM players WHERE name_key=$1 OR (name_key IS NULL AND lower(name)=lower($2))',
+      [nameKey(s.pendingName), s.pendingName],
+    );
     const r = rows[0];
     if (!r || !(await bcrypt.compare(pw, r.password_hash))) {
       failures.push(Date.now());
@@ -1343,7 +1349,7 @@ export class Game {
       return s.out('It is too dark to see that.');
     }
     const roomId = s.player!.roomId;
-    if (t === 'me' || t === 'self' || t === 'myself' || t === s.player!.name.toLowerCase()) {
+    if (t === 'me' || t === 'self' || t === 'myself' || nameKey(t) === nameKey(s.player!.name)) {
       s.out('You look like someone who just walked out of the fog. Damp, mostly.');
       return this.combat.diagnose(s);
     }
@@ -1397,7 +1403,7 @@ export class Game {
       s.lastTarget = exact;
       return rest;
     }
-    if (['me', 'self', 'myself'].includes(t) || t === p.name.toLowerCase()) return rest;
+    if (['me', 'self', 'myself'].includes(t) || nameKey(t) === nameKey(p.name)) return rest;
     const cands: Candidate<string>[] = [
       ...this.world.npcsIn(p.roomId).map((n) => ({ name: n.card.listName ?? n.name, keywords: [n.name, ...n.card.keywords], ref: n.card.listName ?? n.name })),
       ...this.world.room(p.roomId).features.map((f) => ({ name: f.name, keywords: f.keywords, ref: f.name })),
@@ -1417,7 +1423,7 @@ export class Game {
   private findPlayerHere(s: Session, cleaned: string): Session | undefined {
     if (!cleaned) return undefined;
     const first = cleaned.split(' ')[0];
-    return this.playersIn(s.player!.roomId, s).find((o) => o.player!.name.toLowerCase().startsWith(first));
+    return this.playersIn(s.player!.roomId, s).find((o) => nameKey(o.player!.name).startsWith(nameKey(first)));
   }
 
   /** The verbs a thing has its own lines for, shown after looking at it. */

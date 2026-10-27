@@ -162,6 +162,35 @@ describe('Gallowmere end to end', () => {
     await p.close();
   });
 
+  it('lets a name carry accents, and treats the plain spelling as the same character', async () => {
+    const p = new Player();
+    await p.waitFor(/By what name/);
+    await p.do('No3lle', /3 to 16 letters/);
+    await p.do('Él', /3 to 16 letters/);
+    await p.do('Dacé', /taken by someone/);
+    p.socket.disconnect();
+
+    const a = await create('Noëlle');
+    const b = await create('Piotr');
+    await b.do('look at noelle', /Noëlle is a stranger to these streets/);
+    await b.close();
+    await a.close();
+
+    // The plain spelling at the gate is her, not a new character.
+    const again = new Player();
+    await again.waitFor(/By what name/);
+    await again.do('Noelle', /Welcome back/);
+    await again.do('secret1', /Exits:/);
+    await again.close();
+
+    // Capitals with the accent are her too.
+    const caps = new Player();
+    await caps.waitFor(/By what name/);
+    await caps.do('NOËLLE', /Welcome back/);
+    await caps.do('secret1', /Exits:/);
+    await caps.close();
+  });
+
   it('emotes: alone, at a player, at a character who reacts, and in your own words', async () => {
     morda = () => reply('', { type: 'none' }, 'waves back with a dishrag');
     await (await create('Emi')).close();
@@ -591,5 +620,45 @@ describe('Gallowmere end to end', () => {
     await new Promise((r) => sock.once('close', r));
     await web.waitFor(/Shane fades into the fog/);
     await web.close();
+  });
+
+  it('lets an older telnet client create an accented name sent as Latin-1 bytes', async () => {
+    const port = (app.telnet!.address() as AddressInfo).port;
+    const sock = net.createConnection(port, '127.0.0.1');
+    let text = '';
+    sock.on('data', (d: Buffer) => {
+      const clean: number[] = [];
+      for (let i = 0; i < d.length; i++) {
+        if (d[i] === 255) {
+          if (d[i + 1] === 250) { while (i < d.length && !(d[i] === 255 && d[i + 1] === 240)) i++; i++; }
+          else i += d[i + 1] >= 251 ? 2 : 1;
+          continue;
+        }
+        clean.push(d[i]);
+      }
+      text += stripAnsi(Buffer.from(clean).toString('utf8'));
+    });
+    const waitText = async (re: RegExp) => {
+      const start = Date.now();
+      while (Date.now() - start < 4000) {
+        const m = text.match(re);
+        if (m) { text = text.slice((m.index ?? 0) + m[0].length); return; }
+        await new Promise((r) => setTimeout(r, 20));
+      }
+      throw new Error(`telnet timed out waiting for ${re}. Got:\n${text}`);
+    };
+    await new Promise((r) => sock.once('connect', r));
+    await waitText(/By what name/);
+    // An older client sends é as the single byte 0xE9, not as UTF-8.
+    sock.write(Buffer.from([0x4e, 0x6f, 0xe9, 0x6c, 0x69, 0x65, 0x0d, 0x0a])); // Noélie
+    await waitText(/Make a new character called Noélie/);
+    sock.write('y\r\n');
+    await waitText(/Choose a password/);
+    sock.write('secret1\r\n');
+    await waitText(/Once more/);
+    sock.write('secret1\r\n');
+    await waitText(/Exits:/);
+    sock.write('quit\r\n');
+    await new Promise((r) => sock.once('close', r));
   });
 });

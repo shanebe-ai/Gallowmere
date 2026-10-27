@@ -69,6 +69,11 @@ export function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+/** The key a character name is filed under: lower case with the accents stripped, so Noelle and Noëlle are the same name. */
+export function nameKey(name: string): string {
+  return name.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+}
+
 export function listJoin(items: string[]): string {
   if (items.length <= 1) return items.join('');
   if (items.length === 2) return `${items[0]} and ${items[1]}`;

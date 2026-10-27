@@ -216,3 +216,11 @@ CREATE TABLE IF NOT EXISTS rumours (
   at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS rumours_at ON rumours (at);
+
+-- Milestone 4: accented letters in character names. Every name is also filed
+-- under a key, lower case with the accents stripped, so Noelle and Noëlle are
+-- the same name. Names made before this column existed are all plain letters,
+-- so lower(name) is already the right key for them.
+ALTER TABLE players ADD COLUMN IF NOT EXISTS name_key TEXT;
+UPDATE players SET name_key = lower(name) WHERE name_key IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS players_name_key ON players (name_key);

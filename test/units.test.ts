@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { sanitize, stripAnsi, wrap, c } from '../src/game/text.js';
+import { nameKey, sanitize, stripAnsi, wrap, c } from '../src/game/text.js';
+import { decodeLine } from '../src/net/telnet.js';
 import { isFlagged } from '../src/game/filter.js';
 import { RateBucket } from '../src/ai/service.js';
 import { foldNote, MAX_NOTES } from '../src/npc/memory.js';
@@ -67,6 +68,24 @@ describe('text', () => {
   it('strips escape codes and control characters and caps length', () => {
     expect(sanitize('hi\x1b[31m red\x1b[0m\x07 there', 300)).toBe('hi red there');
     expect(sanitize('x'.repeat(500), 300)).toHaveLength(300);
+  });
+
+  it('files names under a key with the accents stripped', () => {
+    expect(nameKey('Noëlle')).toBe('noelle');
+    expect(nameKey('Noelle')).toBe('noelle');
+    expect(nameKey('NOËLLE')).toBe('noelle');
+    expect(nameKey('Émile')).toBe('emile');
+    expect(nameKey('François')).toBe('francois');
+    expect(nameKey('Shane')).toBe('shane');
+  });
+});
+
+describe('telnet line decoding', () => {
+  it('reads UTF-8 as UTF-8 and falls back to Latin-1 for older clients', () => {
+    expect(decodeLine(Buffer.from('Noëlle', 'utf8'))).toBe('Noëlle');
+    // An older client sends ë as the single byte 0xEB, which is not valid UTF-8 on its own.
+    expect(decodeLine(Buffer.from([0x4e, 0x6f, 0xeb, 0x6c, 0x6c, 0x65]))).toBe('Noëlle');
+    expect(decodeLine(Buffer.from('plain words', 'utf8'))).toBe('plain words');
   });
 });
 

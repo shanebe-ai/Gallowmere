@@ -19,6 +19,23 @@ export const NAWS = 31;
 const MAX_LINE = 1000;
 const IDLE_MS = 60 * 60_000;
 
+const UTF8_STRICT = new TextDecoder('utf-8', { fatal: true });
+const LATIN1 = new TextDecoder('windows-1252');
+
+/**
+ * Turns a line of raw bytes into text. Modern clients send UTF-8; older ones
+ * send Latin-1, where an accented letter is a single byte that is not valid
+ * UTF-8 on its own. Try strict UTF-8 first and fall back, so names and words
+ * with accents arrive whole from either kind of client.
+ */
+export function decodeLine(bytes: Buffer): string {
+  try {
+    return UTF8_STRICT.decode(bytes);
+  } catch {
+    return LATIN1.decode(bytes);
+  }
+}
+
 /**
  * Strips telnet commands out of incoming bytes and turns the rest into lines.
  * Handles NAWS (window size) so text wraps to the client's width.
@@ -112,7 +129,7 @@ export class TelnetParser {
   }
 
   private flush(): void {
-    const line = Buffer.from(this.buf).toString('utf8');
+    const line = decodeLine(Buffer.from(this.buf));
     this.buf = [];
     this.overflowed = false;
     this.onLine(line);
