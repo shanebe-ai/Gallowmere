@@ -6,6 +6,7 @@ import { NpcBrain, TRADE_ACTIONS, type ActionType, type NpcTurnOutput, type Repl
 import { Commerce } from './commerce.js';
 import { Combat, MAX_LEVEL, maxHealthFor, xpForLevel } from './combat.js';
 import { Town } from './town.js';
+import { Law } from './law.js';
 import { Wilds } from './wilds.js';
 import { SOCIALS, socialEvent, socialLines } from './socials.js';
 import { PlagueCart, type CartOptions } from './cart.js';
@@ -212,6 +213,7 @@ const HELP: Record<string, string> = {
   fishing: 'fish: cast where there is water worth fishing (the docks, the ford, the mere, the plunge pool, the sewer overflow). You need a rod from Maud and bait: dig for worms (dig) in soft wet ground, bread, or make bait. Sell fish to Bess at the fish market or Maud, or give them to Morda to cook.',
   crafting: 'recipes: what you can make.  make <thing>: bandage, torch, bait, campfire stew (at a fire), snare.  take stick in the forest.  set snare and check snare on rabbit runs in the Edgewood.  light torch, lamp or candle: dark places need a light.',
   gatherers: "The Gatherers' Hall, east off Butcher's Alley: join gatherers (1 coin), then deliver bodies to Warden Crane for pay by the body, more for fresh ones and for higher ranks. board: who wants which bodies this hour.",
+  wanted: 'wanted: your heat with the watch, what the town remembers about you, and any bounty on your head. Striking folk or worse inside the walls is a crime when it is seen, and a killing leaves a body that talks. Heat cools with time, so lying low works. board is a different thing: the wanted board in the Gatherers\' Hall, work for coin.',
   drink: 'Ale and gin at the Drowned Rat add up: merry (a little healing), tipsy (burps), drunk (slurred speech, wrong turns, worse aim, and Morda cuts you off), legless (out cold in the road, where thieves and the cart find you). Water, food and sleep sober you. health shows how drunk you are.',
   inn: "The Sleeping Lantern, south through the Rat's yard: rent bed (2 coin) or rent room (6 coin, with a chest), then sleep. A paid bed heals you to full and sobers you up. store <item> and retrieve <item> in your room. Type anything to wake.",
   who: 'who: everyone in Gallowmere right now.',
@@ -245,6 +247,7 @@ export class Game {
   combat: Combat;
   cart: PlagueCart;
   town: Town;
+  law: Law;
   wilds: Wilds;
   private townTimer: NodeJS.Timeout | null = null;
   private stockDay = '';
@@ -270,6 +273,7 @@ export class Game {
     this.combat = new Combat(this, opts.combat ?? {});
     this.cart = new PlagueCart(this, this.combat, opts.cart ?? {});
     this.town = new Town(this);
+    this.law = new Law(this);
     this.wilds = new Wilds(this, opts.wilds ?? {});
   }
 
@@ -944,8 +948,9 @@ export class Game {
       case 'deliver':
         return this.town.deliver(s);
       case 'board':
-      case 'wanted':
         return this.town.board(s);
+      case 'wanted':
+        return this.law.wanted(s);
       case 'rent':
         return this.town.rent(s, rest);
       case 'sleep':
@@ -1759,7 +1764,7 @@ export class Game {
         },
         player: { id: p.id, name: p.name },
         memory,
-        room: { title: this.world.room(roomId).title, others, note: [this.cart.note(), this.town.noteFor(npc, p.id)].filter(Boolean).join(' ') || undefined },
+        room: { title: this.world.room(roomId).title, others, note: [this.cart.note(), this.town.noteFor(npc, p.id), await this.law.noteFor(npc, p)].filter(Boolean).join(' ') || undefined },
         recent: this.recent.get(key) ?? [],
         playerLine,
         kind,
@@ -1862,7 +1867,7 @@ export class Game {
       attack: 'fight', kill: 'fight', flee: 'fight', combat: 'fight', die: 'death', dead: 'death', corpse: 'corpses', loot: 'corpses', bounty: 'corpses', plague: 'cart', bell: 'cart',
       forest: 'road', north: 'road', brigands: 'road', vesna: 'road', fog: 'road', fish: 'fishing', rod: 'fishing', bait: 'fishing', worms: 'fishing',
       make: 'crafting', craft: 'crafting', recipes: 'crafting', snare: 'crafting', torch: 'crafting', dark: 'crafting', light: 'crafting',
-      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
+      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', heat: 'wanted', law: 'wanted', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
       fortune: 'shrine', pray: 'shrine', ritual: 'shrine',
     };
     const key = DIR_SHORT[t] ? 'move' : t === 'l' ? 'look' : alias[t] ?? t;

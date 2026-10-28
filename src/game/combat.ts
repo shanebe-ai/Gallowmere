@@ -7,6 +7,7 @@ import { HOME_POP, MOBS, STREET_MIX, generate, randBetween, type MobKind } from 
 import type { Session } from './session.js';
 import { c, capitalize } from './text.js';
 import { DIRECTIONS, OPPOSITE, cleanTarget, looseMatch, type Direction, type Npc } from './world.js';
+import { isPersonKind } from './law.js';
 import type { Game } from './game.js';
 
 export const TEMPLE = 'temple_of_ash';
@@ -457,6 +458,9 @@ export class Combat {
     if (this.game.world.npcsIn(roomId).some((n) => n.id === 'morda')) return this.thrownOut(s, key);
     const victim = await this.fighterFor(key);
     if (!victim) return s.out("There's nobody like that here.");
+    // Striking back at someone already fighting you is defence, not crime.
+    const victimTarget = npc ? this.mobs.get(npc.id)?.target : this.players.get(other!.player!.id)?.target;
+    const selfDefence = victimTarget === `p:${p.id}`;
     st.target = key;
     st.lastFight = Date.now();
     s.out(c.error(`You attack ${victim.name}!`));
@@ -483,6 +487,11 @@ export class Combat {
       ost.lastFight = Date.now();
     }
     await this.round(`p:${p.id}`);
+    // The law writes down a first blow struck inside the walls, never a defence.
+    if (!selfDefence) {
+      if (other) await this.game.law.recordCrime(p.id, 'attack', roomId, victim.name, other.player!.id);
+      else if (npc && isPersonKind(this.mobs.get(npc.id)!.kind)) await this.game.law.recordCrime(p.id, 'attack', roomId, victim.name);
+    }
   }
 
   private async thrownOut(s: Session, victimKey: string): Promise<void> {
@@ -715,6 +724,7 @@ export class Combat {
     }
     const corpseId = spec.corpse === 'none' ? 0 : await this.makeCorpse(spec.corpse, null, name, roomId, m.coin, m.items, 0, m.kind);
     await query('INSERT INTO kills (killer_id, victim_kind, victim_name, room_id) VALUES ($1,$2,$3,$4)', [killer?.id ?? null, m.kind, name, roomId]);
+    if (killer && isPersonKind(m.kind)) await this.game.law.recordCrime(killer.id, 'kill', roomId, name);
     if (killer) await this.gainXp(killer, m.level);
     if (m.home) this.respawnAt.set(`${m.home}:${m.kind}#${m.id}`, Date.now() + (m.kind === 'rat_king' ? RAT_KING_RESPAWN_MS : spec.respawnMs ?? MOB_RESPAWN_MS));
     if (killer && (m.kind === 'captain' || m.kind === 'rat_king' || m.kind === 'bear')) {
@@ -779,6 +789,7 @@ export class Combat {
       id,
       roomId,
     ]);
+    if (killer && killer.id !== id) await this.game.law.recordCrime(killer.id, 'murder', roomId, st.name, id);
     if (killer) await this.gainXp(killer, st.level);
     st.health = Math.ceil(maxHealthFor(st.level) / 2);
     st.chillUntil = Date.now() + CHILL_MS;

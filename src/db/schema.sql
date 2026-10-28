@@ -224,3 +224,20 @@ CREATE INDEX IF NOT EXISTS rumours_at ON rumours (at);
 ALTER TABLE players ADD COLUMN IF NOT EXISTS name_key TEXT;
 UPDATE players SET name_key = lower(name) WHERE name_key IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS players_name_key ON players (name_key);
+
+-- Step 2 (heat and witnesses): one row per crime the town knows about,
+-- with who saw it and how much heat it carried when it was fresh. Heat
+-- cools with time from the row's own timestamp, so nothing needs
+-- rewriting as it fades.
+CREATE TABLE IF NOT EXISTS crimes (
+  id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  kind      TEXT NOT NULL,
+  room_id   TEXT NOT NULL,
+  victim    TEXT NOT NULL,
+  witnesses JSONB NOT NULL DEFAULT '[]',
+  seen      BOOLEAN NOT NULL DEFAULT false,
+  heat      INTEGER NOT NULL,
+  at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS crimes_player_idx ON crimes (player_id, at DESC);

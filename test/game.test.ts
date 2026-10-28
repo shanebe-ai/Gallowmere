@@ -662,3 +662,53 @@ describe('Gallowmere end to end', () => {
     await new Promise((r) => sock.once('close', r));
   });
 });
+
+describe('the law: heat and witnesses (milestone 4 step 2)', () => {
+  async function agedPair(a: string, b: string, room?: string) {
+    const pa = await create(a);
+    const pb = await create(b);
+    await pa.close();
+    await pb.close();
+    await query("UPDATE players SET created_at = now() - interval '3 hours' WHERE name IN ($1, $2)", [a, b]);
+    const la = await login(a, room);
+    const lb = await login(b, room);
+    return { la, lb };
+  }
+
+  it('a first blow inside the walls is written down, seen by the gate guard', async () => {
+    const { la, lb } = await agedPair('Ash', 'Bram');
+    await la.do('attack bram', /You attack Bram!/);
+    await la.do('wanted', /Your heat: 10\. The watch has heard your name, nothing more\./);
+    await la.waitFor(/Struck Bram at The North Gate, seen by [^.]*Dace/);
+    await la.close();
+    await lb.close();
+  });
+
+  it('the same blow out on the moor is no crime at all', async () => {
+    const { la, lb } = await agedPair('Cato', 'Drew', 'moor_road');
+    await la.do('attack drew', /You attack Drew!/);
+    const seen = await la.do('wanted', /Your heat: 0\. The watch has no quarrel with you\./);
+    expect(seen).not.toMatch(/Struck/);
+    await la.close();
+    await lb.close();
+  });
+
+  it('heat cools by half every two hours, and a body tells the tale', async () => {
+    const p = await create('Elba');
+    await p.close();
+    const { rows } = await query('SELECT id FROM players WHERE name = $1', ['Elba']);
+    await query(
+      "INSERT INTO crimes (player_id, kind, room_id, victim, witnesses, seen, heat, at) VALUES ($1, 'murder', 'market_east', 'Bram', '[]', false, 40, now() - interval '2 hours')",
+      [rows[0].id],
+    );
+    const again = await login('Elba');
+    await again.do('wanted', /Your heat: 20\. The watch is watching you\./);
+    await again.waitFor(/Murdered Bram at Market East, nobody saw it done, but the body told the tale\./);
+    const dace = app.world.npcsIn('north_gate').find((n) => n.id === 'dace')!;
+    const note = await app.game.law.noteFor(dace, { id: rows[0].id, name: 'Elba' });
+    expect(note).toContain('wanted by the watch (heat 20)');
+    const { rows: clean } = await query('SELECT id FROM players WHERE name = $1', ['Bram']);
+    expect(await app.game.law.noteFor(dace, { id: clean[0].id, name: 'Bram' })).toBeUndefined();
+    await again.close();
+  });
+});

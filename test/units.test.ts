@@ -278,3 +278,18 @@ describe('matching by context', () => {
     expect(looseMatch('moon', room)).toBeNull();
   });
 });
+
+describe('heat cooling (milestone 4 step 2)', () => {
+  it('halves every two hours from fresh', async () => {
+    const { decayed, heatWords } = await import('../src/game/law.js');
+    const t0 = 1_700_000_000_000;
+    expect(decayed(40, t0, t0)).toBe(40);
+    expect(decayed(40, t0, t0 + 2 * 60 * 60_000)).toBe(20);
+    expect(decayed(40, t0, t0 + 4 * 60 * 60_000)).toBe(10);
+    expect(decayed(10, t0, t0 - 1000)).toBe(10);
+    expect(heatWords(0)).toMatch(/no quarrel/);
+    expect(heatWords(10)).toMatch(/heard your name/);
+    expect(heatWords(25)).toMatch(/is watching you/);
+    expect(heatWords(90)).toMatch(/whole watch/);
+  });
+});
