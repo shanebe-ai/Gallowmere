@@ -3,7 +3,8 @@
 // how hot it runs; the AI only ever hears the rumour of it in talk.
 
 import { query } from '../db/pool.js';
-import { c } from './text.js';
+import { moveCoin, NotEnough, tx, getFlag, setFlag } from './economy.js';
+import { c, capitalize } from './text.js';
 import type { Game } from './game.js';
 import type { Session } from './session.js';
 import type { Npc } from './world.js';
@@ -67,7 +68,40 @@ const VERBS: Record<CrimeKind, string> = {
   guardkill: 'Killed',
 };
 
+/** Heat at which the watch comes for you: "the watch wants you badly". */
+export const ARREST_HEAT = 40;
+export const WATCH_HOUSE = 'watch_house';
+export const CELLS = 'lockup';
+/** What a jailed player may still do: talk, look about, and pay their way out. */
+const IN_CELL_OK = new Set(['l', 'look', 'examine', 'x', 'say', 'emote', 'emotes', 'i', 'inv', 'inventory', 'who', 'help', 'score', 'sc',
+  'health', 'hp', 'wanted', 'heat', 'law', 'pay', 'fine', 'sentence', 'quit', 'exit', 'logout', 'alias', 'journal']);
+
+/** Minutes in the cells and the fine to leave early, both set by heat at the arrest. */
+export function sentenceFor(heat: number): { minutes: number; fine: number } {
+  const minutes = Math.max(2, Math.min(15, Math.round(2 + heat / 8)));
+  const fine = Math.max(3, Math.round(3 + heat / 5));
+  return { minutes, fine };
+}
+
+function minutesLeft(until: number, now = Date.now()): string {
+  const m = Math.max(1, Math.ceil((until - now) / 60_000));
+  return m === 1 ? 'a minute' : `${m} minutes`;
+}
+
+interface Patrol {
+  playerId: number;
+  npc: Npc;
+  /** When it walked into the wanted player's room: the arrest comes on the next tick, a last chance to run. */
+  caughtUpAt: number;
+}
+
 export class Law {
+  /** Who is in the cells: release time and the fine to leave early. */
+  jailed = new Map<number, { until: number; fine: number }>();
+  /** One watch patrol per wanted player, walking towards them. */
+  patrols = new Map<number, Patrol>();
+  private timer: ReturnType<typeof setInterval> | null = null;
+
   constructor(private game: Game) {}
 
   insideWalls(roomId: string): boolean {
@@ -120,7 +154,7 @@ export class Law {
   }
 
   async heatOf(playerId: number, now = Date.now()): Promise<number> {
-    const { rows } = await query('SELECT heat, at FROM crimes WHERE player_id = $1', [playerId]);
+    const { rows } = await query('SELECT heat, at FROM crimes WHERE player_id = $1 AND NOT cleared', [playerId]);
     let total = 0;
     for (const r of rows) total += decayed(Number(r.heat), new Date(r.at as string).getTime(), now);
     return total;
@@ -151,6 +185,9 @@ export class Law {
     const heat = await this.heatOf(p.id);
     s.out(c.title('You and the watch'));
     s.out(`Your heat: ${Math.round(heat)}. ${heatWords(heat)}`);
+    const jail = this.jailed.get(p.id);
+    if (jail) s.out(c.error(`You are in the cells for ${minutesLeft(jail.until)} more, or until you pay your ${jail.fine} coin fine.`));
+    else if (heat >= ARREST_HEAT) s.out(c.error('The watch is out looking for you. Lie low outside the walls, or give yourself up: surrender.'));
     s.out('No bounty on your head.');
     const rows = await this.recentCrimes(p.id);
     if (rows.length) {
@@ -170,5 +207,229 @@ export class Law {
       }
     }
     s.out(c.dim('Old business fades with time. Lying low is a kind of apology.'));
+  }
+
+  // ---------------------------------------------------------------- the watch (step 3)
+
+  start(ms = 6000): void {
+    this.timer = setInterval(() => void this.tick().catch((e) => console.error('watch tick failed:', e)), ms);
+    this.timer.unref();
+  }
+
+  stop(): void {
+    if (this.timer) clearInterval(this.timer);
+    this.timer = null;
+  }
+
+  isJailed(playerId: number): boolean {
+    return this.jailed.has(playerId);
+  }
+
+  /** In the cells, most commands meet a locked cage door. */
+  blocks(s: Session, verb: string): boolean {
+    const jail = this.jailed.get(s.player!.id);
+    if (!jail || IN_CELL_OK.has(verb)) return false;
+    s.out(c.error(`The cage door is locked. ${capitalize(minutesLeft(jail.until))} to go, or pay fine to buy your way out (${jail.fine} coin).`));
+    return true;
+  }
+
+  /** On login, before the room is shown: a sentence still running puts you back in the cells;
+   *  one that ran out while you were away lets you out at the watch house. */
+  async loadJail(s: Session): Promise<void> {
+    const p = s.player!;
+    const flag = await getFlag(p.id, 'jail');
+    if (!flag?.value) return;
+    const [until, fine] = flag.value.split(':').map(Number);
+    let room = p.roomId;
+    if (until <= Date.now()) {
+      await this.clearRecord(p.id);
+      if (room === CELLS) room = WATCH_HOUSE;
+    } else {
+      this.jailed.set(p.id, { until, fine });
+      room = CELLS;
+    }
+    if (room !== p.roomId) {
+      p.roomId = room;
+      await query('UPDATE players SET room_id=$2 WHERE id=$1', [p.id, room]);
+    }
+  }
+
+  /** One beat of the watch: patrols set out, walk, catch up and arrest; sentences run out. */
+  async tick(now = Date.now()): Promise<void> {
+    for (const [id, jail] of this.jailed) if (jail.until <= now) await this.release(id, 'served');
+    for (const s of this.game.sessions) {
+      const p = s.player;
+      if (!p || s.state !== 'playing' || this.jailed.has(p.id) || this.patrols.has(p.id)) continue;
+      if (!this.insideWalls(p.roomId)) continue;
+      const heat = await this.heatOf(p.id, now);
+      if (heat < ARREST_HEAT) continue;
+      this.sendPatrol(s);
+    }
+    for (const patrol of [...this.patrols.values()]) await this.walkPatrol(patrol, now);
+  }
+
+  private sendPatrol(s: Session): void {
+    const p = s.player!;
+    const npc: Npc = {
+      id: `patrol_${p.id}`,
+      roomId: WATCH_HOUSE,
+      name: 'a watch patrol',
+      kind: 'light',
+      card: {
+        keywords: ['patrol', 'watch', 'watchmen', 'watchman'],
+        listName: 'a watch patrol',
+        short: 'Two watchmen with cudgels and a sergeant with a lantern, looking for someone.',
+        look: `Two tired watchmen in muddy tabards and a sergeant with a lantern and a writ. The name on the writ is ${p.name}.`,
+        scripted: ['We are looking for someone. Move along.'],
+        mute: true,
+      },
+    };
+    this.game.world.npcs.set(npc.id, npc);
+    this.patrols.set(p.id, { playerId: p.id, npc, caughtUpAt: 0 });
+    s.out(c.error('Somewhere behind you a watch whistle shrills, then another. The watch is coming for you.'));
+    this.game.toRoom(WATCH_HOUSE, c.dim(`A sergeant snatches a writ off the desk and two watchmen follow him out.`));
+  }
+
+  private endPatrol(patrol: Patrol, why?: string): void {
+    if (why) this.game.toRoom(patrol.npc.roomId, c.dim(why));
+    this.game.world.npcs.delete(patrol.npc.id);
+    this.patrols.delete(patrol.playerId);
+  }
+
+  private async walkPatrol(patrol: Patrol, now: number): Promise<void> {
+    const s = this.game.sessionOf(patrol.playerId);
+    const p = s?.player;
+    if (!s || !p || s.state !== 'playing') return this.endPatrol(patrol, 'The watch patrol mutters about a wasted night and heads back to the watch house.');
+    if (this.jailed.has(p.id)) return this.endPatrol(patrol);
+    if (!this.insideWalls(p.roomId)) return this.endPatrol(patrol, 'The watch patrol stops at the edge of town. Beyond the walls is not their business. They turn back.');
+    const heat = await this.heatOf(p.id, now);
+    if (heat < ARREST_HEAT) return this.endPatrol(patrol, 'The sergeant reads the writ again, shrugs, and the patrol turns for home.');
+    if (patrol.npc.roomId === p.roomId) {
+      if (patrol.caughtUpAt) return this.arrest(s, heat, 'caught');
+      patrol.caughtUpAt = now;
+      s.out(c.error(`The watch patrol blocks your way. "${p.name}? You're coming with us." Run, or surrender.`));
+      return;
+    }
+    patrol.caughtUpAt = 0;
+    const path = this.game.world.path(patrol.npc.roomId, p.roomId);
+    if (!path?.length) return this.endPatrol(patrol);
+    const room = this.game.world.room(patrol.npc.roomId);
+    const exit = room.exits.find((e) => e.direction === path[0]);
+    if (!exit) return this.endPatrol(patrol);
+    this.game.toRoom(room.id, c.dim(`The watch patrol tramps off ${exit.direction}, lantern swinging.`));
+    patrol.npc.roomId = exit.to;
+    this.game.toRoom(exit.to, c.error('A watch patrol comes in, lantern raised, looking at every face.'));
+    if (exit.to === p.roomId) {
+      patrol.caughtUpAt = now;
+      s.out(c.error(`The patrol's lantern finds your face. "${p.name}! Stand where you are, in the name of the watch." Run, or surrender.`));
+    }
+  }
+
+  /** surrender: give yourself up to a patrol or at the watch house. A shorter stay for saving them the walk. */
+  async surrender(s: Session): Promise<void> {
+    const p = s.player!;
+    if (this.jailed.has(p.id)) return s.out("You're already in the cells.");
+    const heat = await this.heatOf(p.id);
+    const patrol = this.patrols.get(p.id);
+    const here = (patrol && patrol.npc.roomId === p.roomId) || p.roomId === WATCH_HOUSE;
+    if (heat < 15) return s.out('Nobody wants you for anything. The watch would only laugh.');
+    if (!here) return s.out('There is nobody here to surrender to. The watch house is by the north gate.');
+    return this.arrest(s, heat * 0.75, 'surrendered');
+  }
+
+  async arrest(s: Session, heat: number, how: 'caught' | 'surrendered'): Promise<void> {
+    const p = s.player!;
+    const { minutes, fine } = sentenceFor(heat);
+    const until = Date.now() + minutes * 60_000;
+    this.game.stopTravel(s);
+    this.game.combat.endFightsWith(`p:${p.id}`);
+    const patrol = this.patrols.get(p.id);
+    if (patrol) this.endPatrol(patrol);
+    this.jailed.set(p.id, { until, fine });
+    await setFlag(p.id, 'jail', `${until}:${fine}`);
+    if (how === 'caught') {
+      s.out(c.error('Hands grab your arms. A cudgel taps your knee, not hard, just to make the point. The watch marches you to the lockup.'));
+      this.game.toRoom(p.roomId, c.dim(`The watch seizes ${p.name} and marches them off towards the gate.`), s);
+    } else {
+      s.out(c.system('You hold out your wrists. The sergeant looks almost grateful, and walks you down to the lockup himself.'));
+      this.game.toRoom(p.roomId, c.dim(`${p.name} gives themselves up to the watch.`), s);
+    }
+    await this.place(s, CELLS);
+    s.out(c.system(`The cage door clangs shut. ${capitalize(minutesLeft(until))} in the cells, or pay fine (${fine} coin). A friend could bail you out from the watch house.`));
+  }
+
+  /** Lets a prisoner out: time served, a fine paid, or bail. Their record is wiped clean either way. */
+  async release(playerId: number, how: 'served' | 'fine' | 'bail', by?: string): Promise<void> {
+    this.jailed.delete(playerId);
+    await this.clearRecord(playerId);
+    const s = this.game.sessionOf(playerId);
+    if (!s?.player) return;
+    const words = {
+      served: 'A watchman rattles the key in the lock. "Time served. Out, and don\'t come back."',
+      fine: 'The sergeant counts your coin twice, then unlocks the cage. "Paid in full. Off you go."',
+      bail: `The sergeant unlocks the cage. "${by ?? 'Someone'} has paid your bail. Thank them, not me."`,
+    }[how];
+    s.out(c.system(words));
+    await this.place(s, WATCH_HOUSE);
+  }
+
+  private async clearRecord(playerId: number): Promise<void> {
+    await query('UPDATE crimes SET cleared = true WHERE player_id = $1', [playerId]);
+    await setFlag(playerId, 'jail', '');
+  }
+
+  /** Moves a player, with the room told, and shows them where they are. */
+  private async place(s: Session, roomId: string): Promise<void> {
+    const p = s.player!;
+    if (p.roomId !== roomId) this.game.toRoom(p.roomId, c.dim(`${p.name} is led away.`), s);
+    p.roomId = roomId;
+    await query('UPDATE players SET room_id=$2 WHERE id=$1', [p.id, roomId]);
+    this.game.toRoom(roomId, c.dim(roomId === CELLS ? `The watch shoves ${p.name} into a cage.` : `${p.name} comes up the stairs from the lockup, blinking.`), s);
+    await this.game.look(s, '');
+    this.game.updateStatus(s);
+  }
+
+  /** pay fine: buy your way out of the cells. */
+  async payFine(s: Session): Promise<void> {
+    const p = s.player!;
+    const jail = this.jailed.get(p.id);
+    if (!jail) return s.out('You owe the watch nothing.');
+    try {
+      await tx((cl) => moveCoin(cl, p.id, -jail.fine, 0, 'fine paid to the watch'));
+    } catch (e) {
+      if (!(e instanceof NotEnough)) throw e;
+      return s.out(`The fine is ${jail.fine} coin and you haven't got it. Wait it out, or hope someone pays your bail.`);
+    }
+    await this.release(p.id, 'fine');
+  }
+
+  /** bail <name>: pay someone's fine from the watch house or the lockup. */
+  async bail(s: Session, rest: string): Promise<void> {
+    const p = s.player!;
+    const want = rest.trim().toLowerCase();
+    if (!want) return s.out('Bail whom? bail <name>, in the watch house or the lockup.');
+    if (p.roomId !== WATCH_HOUSE && p.roomId !== CELLS) return s.out('Bail is paid to the duty sergeant, in the watch house by the north gate.');
+    const target = [...this.jailed.keys()].map((id) => this.game.sessionOf(id)).find((o) => o?.player && o.player.name.toLowerCase().startsWith(want));
+    if (!target?.player) return s.out("There's nobody in the cells by that name. Not right now, anyway.");
+    if (target.player.id === p.id) return s.out("You can't bail yourself. That's what pay fine is for.");
+    const jail = this.jailed.get(target.player.id)!;
+    try {
+      await tx(async (cl) => {
+        await moveCoin(cl, p.id, -jail.fine, 0, `bail paid for ${target.player!.name}`);
+      });
+    } catch (e) {
+      if (!(e instanceof NotEnough)) throw e;
+      return s.out(`Bail for ${target.player.name} is ${jail.fine} coin. You haven't got that much.`);
+    }
+    s.out(c.system(`You count ${jail.fine} coin onto the sergeant's desk. He writes it in his ledger with a sigh.`));
+    this.game.updateStatus(s);
+    await this.release(target.player.id, 'bail', p.name);
+  }
+
+  /** sentence: how long is left. */
+  sentence(s: Session): void {
+    const jail = this.jailed.get(s.player!.id);
+    if (!jail) return s.out("You're free. Keep it that way.");
+    s.out(`${capitalize(minutesLeft(jail.until))} left in the cells, or pay fine (${jail.fine} coin).`);
   }
 }

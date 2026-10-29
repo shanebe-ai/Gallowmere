@@ -452,6 +452,7 @@ export class Combat {
       const ost = await this.load(other.player!);
       if (this.isNew(st)) return s.out('You are too new to these streets to pick fights with other people. Give it a couple of hours.');
       if (this.isNew(ost)) return s.out(`${other.player!.name} is too new to these streets. Leave them be.`);
+      if (this.game.law.isJailed(other.player!.id)) return s.out(`${other.player!.name} is behind bars. You can't reach them through the cage.`);
     }
     if (st.target === key) return s.out("You're already fighting them!");
     // Morda wants no blood on her floor.

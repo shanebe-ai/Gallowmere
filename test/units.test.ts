@@ -293,3 +293,13 @@ describe('heat cooling (milestone 4 step 2)', () => {
     expect(heatWords(90)).toMatch(/whole watch/);
   });
 });
+
+describe('sentences (milestone 4 step 3)', () => {
+  it('scale with heat, within bounds', async () => {
+    const { sentenceFor } = await import('../src/game/law.js');
+    expect(sentenceFor(0)).toEqual({ minutes: 2, fine: 3 });
+    expect(sentenceFor(40)).toEqual({ minutes: 7, fine: 11 });
+    expect(sentenceFor(1000).minutes).toBe(15);
+  });
+});
+

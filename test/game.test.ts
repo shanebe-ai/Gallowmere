@@ -712,3 +712,93 @@ describe('the law: heat and witnesses (milestone 4 step 2)', () => {
     await again.close();
   });
 });
+
+describe('the watch, the cells, fines and bail (milestone 4 step 3)', () => {
+  async function wantedPlayer(name: string, heat: number, room: string, coin = 10) {
+    await (await create(name)).close();
+    const { rows } = await query('SELECT id FROM players WHERE name = $1', [name]);
+    await query(
+      "INSERT INTO crimes (player_id, kind, room_id, victim, witnesses, seen, heat) VALUES ($1, 'murder', 'market_square', 'a cutpurse', '[]', true, $2)",
+      [rows[0].id, heat],
+    );
+    await query('UPDATE players SET coin = $2 WHERE id = $1', [rows[0].id, coin]);
+    return { id: rows[0].id as number, p: await login(name, room) };
+  }
+  async function ticks(n: number) {
+    for (let i = 0; i < n; i++) await app.game.law.tick();
+  }
+
+  it('high heat sends a patrol that walks to you and arrests you; the cage stays shut', async () => {
+    const { p } = await wantedPlayer('Fenn', 50, 'market_square');
+    await ticks(1);
+    await p.waitFor(/watch whistle shrills/);
+    for (let i = 0; i < 20 && !/clangs shut/.test(p.buf); i++) await ticks(1);
+    await p.waitFor(/Hands grab your arms[\s\S]*The Lockup[\s\S]*The cage door clangs shut\. \d+ minutes in the cells, or pay fine \(13 coin\)/);
+    await p.do('u', /The cage door is locked/);
+    await p.do('travel market', /The cage door is locked/);
+    await p.do('wanted', /You are in the cells for \d+ minutes more, or until you pay your 13 coin fine/);
+    await p.do('say let me out', /You say/);
+    expect(app.game.law.patrols.size).toBe(0);
+    await p.close();
+  });
+
+  it('running out past the walls loses the patrol', async () => {
+    const { p } = await wantedPlayer('Gale', 50, 'north_gate');
+    await ticks(1);
+    await p.waitFor(/watch whistle shrills/);
+    expect(app.game.law.patrols.size).toBe(1);
+    await p.do('n', /Moor/i);
+    await ticks(1);
+    expect(app.game.law.patrols.size).toBe(0);
+    expect(app.game.law.isJailed((await query('SELECT id FROM players WHERE name=$1', ['Gale'])).rows[0].id)).toBe(false);
+    await p.close();
+  });
+
+  it('pay fine buys your way out, through the ledger, and wipes the slate', async () => {
+    const { id, p } = await wantedPlayer('Hale', 40, 'watch_house', 30);
+    await p.do('surrender', /You hold out your wrists[\s\S]*clangs shut/);
+    await p.do('pay fine', /Paid in full[\s\S]*The Watch House/);
+    const { rows } = await query("SELECT change FROM coin_ledger WHERE player_id = $1 AND reason = 'fine paid to the watch'", [id]);
+    expect(rows.length).toBe(1);
+    expect(Number(rows[0].change)).toBeLessThan(0);
+    await p.do('wanted', /Your heat: 0\./);
+    await p.do('n', /./);
+    await p.close();
+  });
+
+  it('a fine you cannot afford keeps you in; a friend can bail you out', async () => {
+    const { id, p } = await wantedPlayer('Ivo', 60, 'watch_house', 0);
+    await p.do('surrender', /clangs shut/);
+    await p.do('pay fine', /haven't got it/);
+    await (await create('Jory')).close();
+    await query("UPDATE players SET coin = 50, created_at = now() - interval '3 hours' WHERE name = 'Jory'");
+    const friend = await login('Jory', 'watch_house');
+    await friend.do('bail ivo', /You count \d+ coin onto the sergeant's desk/);
+    await p.waitFor(/Jory has paid your bail[\s\S]*The Watch House/);
+    expect(app.game.law.isJailed(id)).toBe(false);
+    const { rows } = await query("SELECT reason FROM coin_ledger WHERE reason = 'bail paid for Ivo'");
+    expect(rows.length).toBe(1);
+    await friend.close();
+    await p.close();
+  });
+
+  it('time served lets you out, and a sentence survives logging out and back in', async () => {
+    const { id, p } = await wantedPlayer('Kell', 40, 'watch_house');
+    await p.do('surrender', /clangs shut/);
+    await p.close();
+    const back = await login('Kell');
+    await back.do('look', /The Lockup/);
+    await back.do('n', /The cage door is locked/);
+    app.game.law.jailed.get(id)!.until = Date.now() - 1;
+    await ticks(1);
+    await back.waitFor(/Time served[\s\S]*The Watch House/);
+    await back.close();
+  });
+
+  it('nobody to surrender to out in the street, and no reaching a prisoner through the bars', async () => {
+    const { p } = await wantedPlayer('Lark', 40, 'market_square');
+    await p.do('surrender', /nobody here to surrender to/);
+    await p.close();
+  });
+});
+

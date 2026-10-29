@@ -213,7 +213,8 @@ const HELP: Record<string, string> = {
   fishing: 'fish: cast where there is water worth fishing (the docks, the ford, the mere, the plunge pool, the sewer overflow). You need a rod from Maud and bait: dig for worms (dig) in soft wet ground, bread, or make bait. Sell fish to Bess at the fish market or Maud, or give them to Morda to cook.',
   crafting: 'recipes: what you can make.  make <thing>: bandage, torch, bait, campfire stew (at a fire), snare.  take stick in the forest.  set snare and check snare on rabbit runs in the Edgewood.  light torch, lamp or candle: dark places need a light.',
   gatherers: "The Gatherers' Hall, east off Butcher's Alley: join gatherers (1 coin), then deliver bodies to Warden Crane for pay by the body, more for fresh ones and for higher ranks. board: who wants which bodies this hour.",
-  wanted: 'wanted: your heat with the watch, what the town remembers about you, and any bounty on your head. Striking folk or worse inside the walls is a crime when it is seen, and a killing leaves a body that talks. Heat cools with time, so lying low works. board is a different thing: the wanted board in the Gatherers\' Hall, work for coin.',
+  jail: 'surrender, pay fine, bail <name>, sentence: when the watch wants you, surrender to a patrol or at the watch house and serve less time. In the cells, pay fine to buy your way out, or wait it out; sentence shows how long is left. Anyone can bail <name> a prisoner from the watch house or the lockup.',
+  wanted: 'wanted: your heat with the watch, what the town remembers about you, and any bounty on your head. Striking folk or worse inside the walls is a crime when it is seen, and a killing leaves a body that talks. Heat cools with time, so lying low works. Let your heat run high inside the walls and the watch comes for you: run for the gate, or surrender. board is a different thing: the wanted board in the Gatherers\' Hall, work for coin.',
   drink: 'Ale and gin at the Drowned Rat add up: merry (a little healing), tipsy (burps), drunk (slurred speech, wrong turns, worse aim, and Morda cuts you off), legless (out cold in the road, where thieves and the cart find you). Water, food and sleep sober you. health shows how drunk you are.',
   inn: "The Sleeping Lantern, south through the Rat's yard: rent bed (2 coin) or rent room (6 coin, with a chest), then sleep. A paid bed heals you to full and sobers you up. store <item> and retrieve <item> in your room. Type anything to wake.",
   who: 'who: everyone in Gallowmere right now.',
@@ -306,6 +307,7 @@ export class Game {
     this.combat.populate();
     this.combat.start();
     this.cart.start();
+    this.law.start();
     this.townTimer = setInterval(() => void this.lifeBeat().catch((e) => console.error('town beat failed:', e)), this.opts.townMs ?? 20_000);
     this.townTimer.unref();
   }
@@ -345,6 +347,7 @@ export class Game {
     if (this.townTimer) clearInterval(this.townTimer);
     this.combat.stop();
     this.cart.stop();
+    this.law.stop();
   }
 
   // ---------------------------------------------------------------- connections
@@ -706,6 +709,7 @@ export class Game {
     this.visit(player.id, player.roomId);
     for (const id of KNOWN_FROM_START) this.visit(player.id, id);
     await this.town.gathererCount(player.id);
+    await this.law.loadJail(s);
 
     const token = randomBytes(24).toString('hex');
     this.tokens.set(token, { playerId: player.id, expires: Date.now() + TOKEN_TTL_MS });
@@ -816,6 +820,8 @@ export class Game {
     const verb = verbRaw.toLowerCase();
     let rest = restParts.join(' ').trim();
 
+    // In the cells, a locked cage door answers most things.
+    if (this.law.blocks(s, DIR_SHORT[verb] ? 'move' : verb)) return;
     if (DIR_SHORT[verb]) return void (await this.move(s, DIR_SHORT[verb]));
 
     switch (verb) {
@@ -937,7 +943,16 @@ export class Game {
         if (/fortune|slip|paper|curse/i.test(rest)) return this.wilds.tieFortune(s);
         return s.out('Tie what?');
       case 'pay':
+        if (this.law.isJailed(s.player!.id) || /^(the )?(fine|bail)\b/i.test(rest)) return this.law.payFine(s);
         return this.wilds.pay(s);
+      case 'fine':
+        return this.law.payFine(s);
+      case 'surrender':
+        return this.law.surrender(s);
+      case 'bail':
+        return this.law.bail(s, rest);
+      case 'sentence':
+        return this.law.sentence(s);
       case 'ferry':
       case 'row':
       case 'boat':
@@ -1867,7 +1882,7 @@ export class Game {
       attack: 'fight', kill: 'fight', flee: 'fight', combat: 'fight', die: 'death', dead: 'death', corpse: 'corpses', loot: 'corpses', bounty: 'corpses', plague: 'cart', bell: 'cart',
       forest: 'road', north: 'road', brigands: 'road', vesna: 'road', fog: 'road', fish: 'fishing', rod: 'fishing', bait: 'fishing', worms: 'fishing',
       make: 'crafting', craft: 'crafting', recipes: 'crafting', snare: 'crafting', torch: 'crafting', dark: 'crafting', light: 'crafting',
-      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', heat: 'wanted', law: 'wanted', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
+      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', heat: 'wanted', law: 'wanted', surrender: 'jail', bail: 'jail', fine: 'jail', sentence: 'jail', cells: 'jail', lockup: 'jail', arrest: 'jail', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
       fortune: 'shrine', pray: 'shrine', ritual: 'shrine',
     };
     const key = DIR_SHORT[t] ? 'move' : t === 'l' ? 'look' : alias[t] ?? t;
