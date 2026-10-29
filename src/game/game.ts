@@ -213,6 +213,7 @@ const HELP: Record<string, string> = {
   fishing: 'fish: cast where there is water worth fishing (the docks, the ford, the mere, the plunge pool, the sewer overflow). You need a rod from Maud and bait: dig for worms (dig) in soft wet ground, bread, or make bait. Sell fish to Bess at the fish market or Maud, or give them to Morda to cook.',
   crafting: 'recipes: what you can make.  make <thing>: bandage, torch, bait, campfire stew (at a fire), snare.  take stick in the forest.  set snare and check snare on rabbit runs in the Edgewood.  light torch, lamp or candle: dark places need a light.',
   gatherers: "The Gatherers' Hall, east off Butcher's Alley: join gatherers (1 coin), then deliver bodies to Warden Crane for pay by the body, more for fresh ones and for higher ranks. board: who wants which bodies this hour.",
+  notices: 'notices (or read notices, in the market square): the noticeboard. Who the watch wants and the bounty on them, what the town is saying, and notes players pin. pin <words> to put up a note of your own for a day, unpin to take it down. Bring down a wanted player and the watch pays you the bounty.',
   jail: 'surrender, pay fine, bail <name>, sentence: when the watch wants you, surrender to a patrol or at the watch house and serve less time. In the cells, pay fine to buy your way out, or wait it out; sentence shows how long is left. Anyone can bail <name> a prisoner from the watch house or the lockup.',
   wanted: 'wanted: your heat with the watch, what the town remembers about you, and any bounty on your head. Striking folk or worse inside the walls is a crime when it is seen, and a killing leaves a body that talks. Heat cools with time, so lying low works. Let your heat run high inside the walls and the watch comes for you: run for the gate, or surrender. board is a different thing: the wanted board in the Gatherers\' Hall, work for coin.',
   drink: 'Ale and gin at the Drowned Rat add up: merry (a little healing), tipsy (burps), drunk (slurred speech, wrong turns, worse aim, and Morda cuts you off), legless (out cold in the road, where thieves and the cart find you). Water, food and sleep sober you. health shows how drunk you are.',
@@ -823,6 +824,10 @@ export class Game {
     // In the cells, a locked cage door answers most things.
     if (this.law.blocks(s, DIR_SHORT[verb] ? 'move' : verb)) return;
     if (DIR_SHORT[verb]) return void (await this.move(s, DIR_SHORT[verb]));
+    // The noticeboard reads out live: the watch's posters, rumours and pinned notes.
+    if (s.player!.roomId === 'market_square' && /^(read|look|l|x|examine)\s+(at\s+)?(the\s+)?(notice ?board|notices|posters?|board)$/i.test(line)) {
+      return this.law.noticeboard(s);
+    }
 
     switch (verb) {
       case 'l':
@@ -947,6 +952,13 @@ export class Game {
         return this.wilds.pay(s);
       case 'fine':
         return this.law.payFine(s);
+      case 'notices':
+      case 'noticeboard':
+        return this.law.noticeboard(s);
+      case 'pin':
+        return this.law.pin(s, rest);
+      case 'unpin':
+        return this.law.unpin(s);
       case 'surrender':
         return this.law.surrender(s);
       case 'bail':
@@ -1882,7 +1894,7 @@ export class Game {
       attack: 'fight', kill: 'fight', flee: 'fight', combat: 'fight', die: 'death', dead: 'death', corpse: 'corpses', loot: 'corpses', bounty: 'corpses', plague: 'cart', bell: 'cart',
       forest: 'road', north: 'road', brigands: 'road', vesna: 'road', fog: 'road', fish: 'fishing', rod: 'fishing', bait: 'fishing', worms: 'fishing',
       make: 'crafting', craft: 'crafting', recipes: 'crafting', snare: 'crafting', torch: 'crafting', dark: 'crafting', light: 'crafting',
-      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', heat: 'wanted', law: 'wanted', surrender: 'jail', bail: 'jail', fine: 'jail', sentence: 'jail', cells: 'jail', lockup: 'jail', arrest: 'jail', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
+      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', heat: 'wanted', law: 'wanted', surrender: 'jail', bail: 'jail', fine: 'jail', sentence: 'jail', cells: 'jail', lockup: 'jail', arrest: 'jail', noticeboard: 'notices', pin: 'notices', unpin: 'notices', posters: 'notices', bounties: 'notices', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
       fortune: 'shrine', pray: 'shrine', ritual: 'shrine',
     };
     const key = DIR_SHORT[t] ? 'move' : t === 'l' ? 'look' : alias[t] ?? t;

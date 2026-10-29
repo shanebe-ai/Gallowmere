@@ -490,7 +490,7 @@ export class Combat {
     await this.round(`p:${p.id}`);
     // The law writes down a first blow struck inside the walls, never a defence.
     if (!selfDefence) {
-      if (other) await this.game.law.recordCrime(p.id, 'attack', roomId, victim.name, other.player!.id);
+      if (other && !(await this.game.law.isWanted(other.player!.id))) await this.game.law.recordCrime(p.id, 'attack', roomId, victim.name, other.player!.id);
       else if (npc && isPersonKind(this.mobs.get(npc.id)!.kind)) await this.game.law.recordCrime(p.id, 'attack', roomId, victim.name);
     }
   }
@@ -790,7 +790,11 @@ export class Combat {
       id,
       roomId,
     ]);
-    if (killer && killer.id !== id) await this.game.law.recordCrime(killer.id, 'murder', roomId, st.name, id);
+    // Bringing down someone the watch wants is a bounty, not a murder.
+    if (killer && killer.id !== id) {
+      if (await this.game.law.isWanted(id)) await this.game.law.claimBounty(killer.id, id);
+      else await this.game.law.recordCrime(killer.id, 'murder', roomId, st.name, id);
+    }
     if (killer) await this.gainXp(killer, st.level);
     st.health = Math.ceil(maxHealthFor(st.level) / 2);
     st.chillUntil = Date.now() + CHILL_MS;

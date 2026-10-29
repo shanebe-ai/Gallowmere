@@ -245,3 +245,10 @@ CREATE INDEX IF NOT EXISTS crimes_player_idx ON crimes (player_id, at DESC);
 -- Step 3 (the watch and the cells): time served, a fine or bail wipes the
 -- slate. Cleared crimes stay in the book for wanted, but carry no heat.
 ALTER TABLE crimes ADD COLUMN IF NOT EXISTS cleared BOOLEAN NOT NULL DEFAULT false;
+
+-- Step 4 (the noticeboard): one pinned note per player, gone after a day.
+CREATE TABLE IF NOT EXISTS notices (
+  player_id INTEGER PRIMARY KEY REFERENCES players(id) ON DELETE CASCADE,
+  text      TEXT NOT NULL,
+  at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);

@@ -802,3 +802,52 @@ describe('the watch, the cells, fines and bail (milestone 4 step 3)', () => {
   });
 });
 
+describe('the noticeboard and bounties (milestone 4 step 4)', () => {
+  it('shows who the watch wants, what the town says, and pinned notes; pins are filtered and replaceable', async () => {
+    await (await create('Mott')).close();
+    const { rows } = await query('SELECT id FROM players WHERE name = $1', ['Mott']);
+    await query("INSERT INTO crimes (player_id, kind, room_id, victim, witnesses, seen, heat) VALUES ($1, 'murder', 'market_square', 'Bram', '[]', true, 60)", [rows[0].id]);
+    await (await create('Nell')).close();
+    const p = await login('Nell', 'market_square');
+    await p.do('read notices', /WANTED by the watch[\s\S]*Mott\. Bounty 15 coin[\s\S]*Pinned notes[\s\S]*None\./);
+    await p.do('pin Lost: one grey cat. Answers to Biscuit.', /You pin your note/);
+    await p.do('pin Found the cat, never mind.', /You pin your note/);
+    const board = await p.do('notices', /Pinned notes[\s\S]*"Found the cat, never mind\." \(Nell\)/);
+    expect(board).not.toMatch(/Biscuit/);
+    await p.do('pin ' + Buffer.from('cmFwZQ==', 'base64').toString(), /tears it down/);
+    await p.do('unpin', /You take your note down/);
+    await p.do('n', /./);
+    await p.do('pin hello', /Notes go on the noticeboard in the market square/);
+    await p.close();
+  });
+
+  it('pinned notes expire after a day', async () => {
+    const p = await login('Nell', 'market_square');
+    await p.do('pin Still here?', /You pin/);
+    await query("UPDATE notices SET at = now() - interval '25 hours'");
+    const board = await p.do('read notices', /Pinned notes[\s\S]*Paying work/);
+    expect(board).not.toMatch(/Still here/);
+    await p.close();
+  });
+
+  it('bringing down a wanted player pays the bounty and is no crime; their name comes off the board', async () => {
+    await (await create('Orrin')).close();
+    await (await create('Pell')).close();
+    await query("UPDATE players SET created_at = now() - interval '3 hours', coin = 0 WHERE name IN ('Orrin', 'Pell')");
+    const { rows } = await query("SELECT id, name FROM players WHERE name IN ('Orrin', 'Pell')");
+    const id = (n: string) => rows.find((r) => r.name === n)!.id as number;
+    await query("INSERT INTO crimes (player_id, kind, room_id, victim, witnesses, seen, heat) VALUES ($1, 'murder', 'market_square', 'Bram', '[]', true, 80)", [id('Pell')]);
+    const hunter = await login('Orrin', 'moor_road');
+    const quarry = await login('Pell', 'moor_road');
+    await hunter.do('attack pell', /You attack Pell!/);
+    await app.game.combat.killPlayer(id('Pell'), app.game.combat.state(id('Orrin'))!);
+    await hunter.waitFor(/20 coin, the bounty on Pell/);
+    expect(await app.game.law.heatOf(id('Orrin'))).toBe(0);
+    expect(await app.game.law.heatOf(id('Pell'))).toBe(0);
+    const { rows: led } = await query("SELECT change FROM coin_ledger WHERE reason = 'bounty for Pell, paid by the watch'");
+    expect(Number(led[0].change)).toBe(20);
+    await hunter.close();
+    await quarry.close();
+  });
+});
+

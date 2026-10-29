@@ -261,7 +261,7 @@
     "id": "market_square",
     "district": "market",
     "title": "Market Square",
-    "description": "The heart of Gallowmere, such as it is. A dry fountain holds a statue of some forgotten founder, his nose long since knocked off. Hawkers shout over each other, pickpockets work the crowd, and the town crier's platform stands empty for now. Stairs lead down to the market cellars, and roads lead in every direction.",
+    "description": "The heart of Gallowmere, such as it is. A dry fountain holds a statue of some forgotten founder, his nose long since knocked off. Hawkers shout over each other, pickpockets work the crowd, the town crier's platform stands empty for now, and a noticeboard by the fountain is thick with paper. Stairs lead down to the market cellars, and roads lead in every direction.",
     "exits": {
       "north": "gate_road",
       "south": "wet_lane",
@@ -294,6 +294,22 @@
         "actions": {
           "climb": "You climb onto the crier's platform. A few faces turn up, hoping for news. You have none. They turn away.",
           "read": "BACK SOON, says the note. Someone has scratched a date under it. Three years ago."
+        }
+      },
+      {
+        "name": "the noticeboard",
+        "keywords": [
+          "noticeboard",
+          "notices",
+          "notice",
+          "posters",
+          "poster",
+          "board"
+        ],
+        "look": "A slab of oak by the fountain, bristling with nails and paper. Wanted posters, gossip and notes from anyone with a pin.",
+        "actions": {
+          "read": "Too much to take in at a glance. Try: read notices.",
+          "touch": "Damp paper and a hundred rusty nails. Someone has carved INNOCENT into the wood, then crossed it out."
         }
       }
     ],

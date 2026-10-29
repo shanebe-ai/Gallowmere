@@ -4,7 +4,8 @@
 
 import { query } from '../db/pool.js';
 import { moveCoin, NotEnough, tx, getFlag, setFlag } from './economy.js';
-import { c, capitalize } from './text.js';
+import { c, capitalize, sanitize } from './text.js';
+import { isFlagged } from './filter.js';
 import type { Game } from './game.js';
 import type { Session } from './session.js';
 import type { Npc } from './world.js';
@@ -75,6 +76,15 @@ export const CELLS = 'lockup';
 /** What a jailed player may still do: talk, look about, and pay their way out. */
 const IN_CELL_OK = new Set(['l', 'look', 'examine', 'x', 'say', 'emote', 'emotes', 'i', 'inv', 'inventory', 'who', 'help', 'score', 'sc',
   'health', 'hp', 'wanted', 'heat', 'law', 'pay', 'fine', 'sentence', 'quit', 'exit', 'logout', 'alias', 'journal']);
+
+/** Coin the watch pays for bringing down a wanted player, by their heat. */
+export const BOUNTY_CAP = 25;
+export const BOUNTY_DAILY_PURSE = 100;
+export function bountyFor(heat: number): number {
+  return heat >= ARREST_HEAT ? Math.min(BOUNTY_CAP, Math.round(heat / 4)) : 0;
+}
+export const NOTICEBOARD_ROOM = 'market_square';
+export const NOTE_MAX = 120;
 
 /** Minutes in the cells and the fine to leave early, both set by heat at the arrest. */
 export function sentenceFor(heat: number): { minutes: number; fine: number } {
@@ -188,7 +198,8 @@ export class Law {
     const jail = this.jailed.get(p.id);
     if (jail) s.out(c.error(`You are in the cells for ${minutesLeft(jail.until)} more, or until you pay your ${jail.fine} coin fine.`));
     else if (heat >= ARREST_HEAT) s.out(c.error('The watch is out looking for you. Lie low outside the walls, or give yourself up: surrender.'));
-    s.out('No bounty on your head.');
+    const bounty = bountyFor(heat);
+    s.out(bounty ? c.error(`There is a ${bounty} coin bounty on your head, posted on the noticeboard in the market.`) : 'No bounty on your head.');
     const rows = await this.recentCrimes(p.id);
     if (rows.length) {
       s.out('What the town remembers:');
@@ -431,5 +442,100 @@ export class Law {
     const jail = this.jailed.get(s.player!.id);
     if (!jail) return s.out("You're free. Keep it that way.");
     s.out(`${capitalize(minutesLeft(jail.until))} left in the cells, or pay fine (${jail.fine} coin).`);
+  }
+
+  // ---------------------------------------------------------------- the noticeboard and bounties (step 4)
+
+  async isWanted(playerId: number): Promise<boolean> {
+    return (await this.heatOf(playerId)) >= ARREST_HEAT;
+  }
+
+  /** Everyone the watch wants right now, hottest first, with their bounty. */
+  async wantedList(now = Date.now()): Promise<Array<{ id: number; name: string; heat: number; bounty: number }>> {
+    const { rows } = await query(
+      `SELECT c.player_id, p.name, c.heat, c.at FROM crimes c JOIN players p ON p.id = c.player_id WHERE NOT c.cleared`,
+    );
+    const heat = new Map<number, { name: string; heat: number }>();
+    for (const r of rows) {
+      const e = heat.get(r.player_id) ?? { name: r.name as string, heat: 0 };
+      e.heat += decayed(Number(r.heat), new Date(r.at as string).getTime(), now);
+      heat.set(r.player_id, e);
+    }
+    return [...heat.entries()]
+      .filter(([, e]) => e.heat >= ARREST_HEAT)
+      .map(([id, e]) => ({ id, name: e.name, heat: e.heat, bounty: bountyFor(e.heat) }))
+      .sort((a, b) => b.heat - a.heat);
+  }
+
+  /**
+   * A wanted player brought down by another: the watch pays the bounty, from a purse that
+   * only holds so much a day, and the name comes off the board. Returns the coin paid, or 0.
+   */
+  async claimBounty(hunterId: number, quarryId: number): Promise<number> {
+    if (hunterId === quarryId) return 0;
+    const heat = await this.heatOf(quarryId);
+    const bounty = bountyFor(heat);
+    if (!bounty) return 0;
+    const { rows } = await query(
+      `SELECT COALESCE(SUM(change), 0) AS paid FROM coin_ledger WHERE reason LIKE 'bounty for %' AND created_at > date_trunc('day', now())`,
+    );
+    const left = BOUNTY_DAILY_PURSE - Number(rows[0].paid);
+    const pay = Math.min(bounty, Math.max(0, left));
+    const { rows: names } = await query('SELECT name FROM players WHERE id = $1', [quarryId]);
+    const name = (names[0]?.name as string) ?? 'someone';
+    if (pay > 0) await tx((cl) => moveCoin(cl, hunterId, pay, 0, `bounty for ${name}, paid by the watch`));
+    await this.clearRecord(quarryId);
+    const hunter = this.game.sessionOf(hunterId);
+    hunter?.out(
+      pay > 0
+        ? c.system(`The watch will want to hear of this. A runner finds you soon after: ${pay} coin, the bounty on ${name}.`)
+        : c.system(`The watch is glad of it, but the bounty purse is empty for today. ${name}'s name comes off the board all the same.`),
+    );
+    this.game.sessionOf(quarryId)?.out(c.dim('Your name comes off the noticeboard. Justice, of a sort, has been done.'));
+    await this.game.town.rumour(hunterId, `${hunter?.player?.name ?? 'Someone'} brought down ${name}, who was wanted by the watch`);
+    if (hunter) this.game.updateStatus(hunter);
+    return pay;
+  }
+
+  /** read notices: what's posted in the market. */
+  async noticeboard(s: Session): Promise<void> {
+    if (s.player!.roomId !== NOTICEBOARD_ROOM) return s.out('The noticeboard is in the market square.');
+    s.out(c.title('The noticeboard'));
+    const wanted = await this.wantedList();
+    s.out(c.label('WANTED by the watch'));
+    if (!wanted.length) s.out('  Nobody, for once. The paper is blank and curling.');
+    for (const w of wanted.slice(0, 6)) s.out(`  ${w.name}. Bounty ${w.bounty} coin, paid by the watch to whoever brings them down.`);
+    const heard = this.game.town.rumours();
+    if (heard.length) {
+      s.out(c.label('Scrawled underneath'));
+      for (const r of heard) s.out(`  ${r.text}.`);
+    }
+    const { rows } = await query(
+      `SELECT p.name, n.text FROM notices n JOIN players p ON p.id = n.player_id WHERE n.at > now() - interval '1 day' ORDER BY n.at DESC LIMIT 8`,
+    );
+    s.out(c.label('Pinned notes'));
+    if (!rows.length) s.out('  None. pin <a note> to put one up.');
+    for (const r of rows) s.out(`  "${r.text}" (${r.name})`);
+    s.out(c.dim('Paying work is on the board in the Gatherers\' Hall. pin <words> to pin a note of your own, unpin to take it down.'));
+  }
+
+  /** pin <words>: one note each, filtered, for a day. */
+  async pin(s: Session, rest: string): Promise<void> {
+    const p = s.player!;
+    if (p.roomId !== NOTICEBOARD_ROOM) return s.out('Notes go on the noticeboard in the market square.');
+    const text = sanitize(rest, NOTE_MAX).trim();
+    if (!text) return s.out(`pin <words>: a note of up to ${NOTE_MAX} letters, up for a day. One at a time.`);
+    if (isFlagged(text)) return s.out('A passing watchman reads it over your shoulder and tears it down before the pin is in.');
+    await query(
+      `INSERT INTO notices (player_id, text, at) VALUES ($1, $2, now()) ON CONFLICT (player_id) DO UPDATE SET text = $2, at = now()`,
+      [p.id, text],
+    );
+    s.out(c.system('You pin your note to the board, over somebody else\'s.'));
+    this.game.toRoom(p.roomId, c.dim(`${p.name} pins a note to the noticeboard.`), s);
+  }
+
+  async unpin(s: Session): Promise<void> {
+    const { rowCount } = await query('DELETE FROM notices WHERE player_id = $1', [s.player!.id]);
+    s.out(rowCount ? 'You take your note down.' : 'You have no note on the board.');
   }
 }

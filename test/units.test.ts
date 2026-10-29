@@ -303,3 +303,12 @@ describe('sentences (milestone 4 step 3)', () => {
   });
 });
 
+describe('bounties (milestone 4 step 4)', () => {
+  it('only for the wanted, capped', async () => {
+    const { bountyFor } = await import('../src/game/law.js');
+    expect(bountyFor(39)).toBe(0);
+    expect(bountyFor(40)).toBe(10);
+    expect(bountyFor(500)).toBe(25);
+  });
+});
+
