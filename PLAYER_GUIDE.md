@@ -165,7 +165,7 @@ Selling works the same way: `sell lamp` takes their offer, `sell lamp for 5` sta
 
 The fog has drawn back from the moor road at last.
 
-**The road.** Ten rooms of rutted dirt north from the Moor Road: Heather Rise, the Gibbet Milestone, Drovers' Ford, the Toll Stump, Brigand's Bend, the Burnt Waystation, Mile Oak, the Long Climb, and at the end the shut gate of Vesna. Knock if you like. Someone always answers. Nobody opens it.
+**The road.** Ten rooms of rutted dirt north from the Moor Road: Heather Rise, the Gibbet Milestone, Drovers' Ford, the Toll Stump, Brigand's Bend, the Burnt Waystation, Mile Oak, the Long Climb, and at the end the shut gate of Vesna. Knock if you like. Someone always answers, and they want things before they open up: a letter from Father Osmund, a name the watch has nothing against, a sealed parcel from Hook, and the answer to a riddle. Beyond the gate lies the outer ward of Vesna: a swept yard, Shuttered Street, an old well, a chapel with one lamp, the Lantern Market and an inn called the Stopped Clock. There is a second gate inside. It does not open. Yet.
 
 **The forest.** Woods all round the road, in places with their own names and their own business. The Edgewood is thin and friendly, mostly. West of the ford a black lake lies still as tar, with a jetty, a ferryman and an island. Up the stream, a waterfall. West of the Long Climb, the crags, the goats, and a cave that smells of bear. East of the Toll Stump the trees go black and close: the Blackwood, wolves, boar, and somewhere deep in it, the brigands' camp. And south east, past the bracken, a ring of old stones and a mound nobody digs into. Walk into the fog at the edges and you'll come back where you went in, colder.
 
@@ -201,7 +201,7 @@ The fog has drawn back from the moor road at last.
 
 **The rats.** Big ones. Bigger than rats should be. They don't run from you. They fight back. Think about that.
 
-**Out past the wall.** Cole the charcoal burner, grey with soot, who buys hides and sells torches. The old ferryman on the mere, who says very little and most of it about a fish. The shrine keeper, who will show you how without a word of reproach. And whoever it is behind the gate of Vesna.
+**Out past the wall.** Cole the charcoal burner, grey with soot, who buys hides and sells torches. The old ferryman on the mere, who says very little and most of it about a fish. The shrine keeper, who will show you how without a word of reproach. And whoever it is behind the gate of Vesna. Inside the ward, Sister Wenna keeps the gatehouse ledger and Old Jessamy paints a name on every lantern she sells.
 
 **Around town.** The duty sergeant at the watch house, who pays bounties and hates paperwork. Bess the fishwife and Hook's runner Nib at the fish market. Amos the gravedigger, far too cheerful, in the ossuary. Tobin the lamplighter, who walks every street and sees who goes where after dark. Wendel, who has propped up the end of Morda's bar for twenty years. Warden Crane of the Gatherers. Old Peg at the Sleeping Lantern.
 
@@ -238,6 +238,10 @@ You'll want to know about fighting. Everyone does.
 **The Sleeping Lantern.** `rent bed` (2 coin) or `rent room` (6 coin, private, with a chest), then `sleep`. You wake whole and clear headed. `store` and `retrieve` keep things safe in your room's chest while you're out on the road. Sleep in the street instead and you take your chances.
 
 **Bounties and tails.** The watch house pays for every cutpurse you put down (`bounty`), and for brigands too. Maud pays a copper for every rat tail. The rats are under the grate.
+
+**The watch.** Hurt people inside the walls where someone can see and the watch writes it down. `wanted` shows your heat, which cools by half every two hours. Let it run high inside the walls and a patrol comes for you, one street at a time: run for the gate, or `surrender` and serve less. In the lockup the cage door answers most things. `sentence` shows the time left, `pay fine` buys you out, and anyone can `bail` you from the watch house. Serving your time, paying or being bailed wipes the slate.
+
+**The noticeboard.** In the market square: `read notices`. Who the watch wants and the bounty on their head, what the town is saying, and notes other players pin for a day (`pin` and `unpin`). Bring down a wanted player and the watch pays the bounty, and no crime is written down.
 
 **The sewers.** Rats by the grate, bigger ones in the tunnels. The iron door at the end opens for a key, or for someone strong enough to force it. Hook sells keys. Rat catchers sometimes carry one. What's behind it is the worst fight in Gallowmere, and it comes back every day.
 
@@ -287,6 +291,9 @@ Gallowmere isn't a nice town, but it has rules.
 | Make things | `recipes`, `make torch`, `light torch` |
 | Gatherers | `join gatherers`, `deliver`, `board` |
 | The inn | `rent bed`, `rent room`, `sleep`, `store bread`, `retrieve bread` |
+| The watch | `wanted`, `surrender`, `sentence`, `pay fine`, `bail noelle` |
+| The noticeboard | `read notices`, `pin selling rope, cheap`, `unpin` |
+| The gate of Vesna | `knock`, `ask osmund for a letter`, `ask hook about vesna`, `answer <words>` |
 | Who's in town | `who` |
 | Your details | `score` |
 | Shortcuts | `alias tm talk morda`, then `tm hello` |

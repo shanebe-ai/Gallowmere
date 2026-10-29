@@ -1344,5 +1344,45 @@
     "actions": {
       "touch": "Cold, always, as if it were still lying in the dark."
     }
+  },
+  {
+    "id": "letter_of_passage",
+    "name": "a letter of passage",
+    "keywords": [
+      "letter",
+      "passage",
+      "seal"
+    ],
+    "kind": "job",
+    "weight": 0,
+    "price": 0,
+    "look": "A folded sheet in Father Osmund's careful, shaking hand, sealed in grey wax with the Temple of Ash. It swears the bearer is clean of the plague and of the watch's book."
+  },
+  {
+    "id": "sealed_parcel",
+    "name": "a sealed parcel",
+    "keywords": [
+      "parcel",
+      "package",
+      "oilcloth"
+    ],
+    "kind": "job",
+    "weight": 1,
+    "price": 0,
+    "look": "A small parcel in oilcloth, sealed with black wax and Hook's thumbprint. Something inside shifts when you tilt it. Hook said not to open it."
+  },
+  {
+    "id": "torn_parcel",
+    "name": "a torn parcel",
+    "keywords": [
+      "parcel",
+      "torn",
+      "map",
+      "rose"
+    ],
+    "kind": "junk",
+    "weight": 1,
+    "price": 0,
+    "look": "Oilcloth and broken black wax, a map of the sewers in a stranger's hand, and a dried rose. Nobody will take it now."
   }
 ]

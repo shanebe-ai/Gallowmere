@@ -195,6 +195,8 @@ export class Wilds {
       s.out(c.dim('The ledge might be safer on a day when the falls run quieter.'));
       return 'handled';
     }
+    const barred = await this.game.vesna.canPass(s, room, exit);
+    if (barred) return barred;
     const priv = await this.game.town.canEnterPrivate(s, exit.to);
     if (priv) return priv;
     if (room.id === 'toll_stump' && (this.ghost.get(p.id) ?? 0) > Date.now()) this.leftGhost(s);

@@ -141,8 +141,8 @@ describe('world data for milestone 2', () => {
   const npcs = JSON.parse(readFileSync(new URL('../src/world/npcs.json', import.meta.url), 'utf8'));
   const itemIds = new Set(items.map((i: any) => i.id));
 
-  it('has 108 rooms, all connected both ways', () => {
-    expect(rooms).toHaveLength(108);
+  it('has 116 rooms, all connected both ways', () => {
+    expect(rooms).toHaveLength(116);
     const by = Object.fromEntries(rooms.map((r: any) => [r.id, r]));
     const opp: Record<string, string> = { north: 'south', south: 'north', east: 'west', west: 'east', up: 'down', down: 'up' };
     for (const r of rooms) for (const [d, t] of Object.entries<string>(r.exits)) expect(by[t].exits[opp[d]], `${r.id} ${d}`).toBe(r.id);
@@ -154,8 +154,8 @@ describe('world data for milestone 2', () => {
     for (const r of rooms) if (!hidden.includes(r.id)) expect(app.world.path('north_gate', r.id), r.id).not.toBeNull();
   });
 
-  it('has six AI townsfolk', () => {
-    expect(npcs.filter((n: any) => n.kind === 'ai').map((n: any) => n.id).sort()).toEqual(['dace', 'hamo', 'hook', 'maud', 'morda', 'osmund']);
+  it('has seven AI townsfolk', () => {
+    expect(npcs.filter((n: any) => n.kind === 'ai').map((n: any) => n.id).sort()).toEqual(['dace', 'hamo', 'hook', 'maud', 'morda', 'osmund', 'wenna']);
   });
 
   it('stocks shops only with real items, kept by NPCs standing in the shop room', () => {

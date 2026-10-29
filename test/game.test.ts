@@ -851,3 +851,73 @@ describe('the noticeboard and bounties (milestone 4 step 4)', () => {
   });
 });
 
+
+describe('the gate of Vesna and the outer ward (milestone 4 step 5)', () => {
+  const idOf = async (name: string) => (await query('SELECT id FROM players WHERE name = $1', [name])).rows[0].id as number;
+  const buried = async (id: number) =>
+    query("INSERT INTO coin_ledger (player_id, change, reason, balance_after, bank_after) VALUES ($1, 3, 'burial of a rat catcher', 3, 0)", [id]);
+
+  it('the gate stays barred and the voice sends you to Osmund', async () => {
+    await (await create('Quill')).close();
+    const p = await login('Quill', 'shut_gate');
+    await p.do('n', /The gates are barred from the inside/);
+    await p.do('knock', /letter from your priest[\s\S]*ask osmund for a letter/);
+    await p.close();
+  });
+
+  it('Osmund wants a burial service first, and a clean name', async () => {
+    const id = await idOf('Quill');
+    const p = await login('Quill', 'nave');
+    await p.do('ask osmund for a letter', /Do this house a service first/);
+    await buried(id);
+    await query("INSERT INTO crimes (player_id, kind, room_id, victim, witnesses, seen, heat) VALUES ($1, 'assault', 'market_square', 'Bram', '[]', true, 10)", [id]);
+    await p.do('ask osmund for a letter', /The watch has your name/);
+    await query('DELETE FROM crimes WHERE player_id = $1', [id]);
+    await p.do('ask osmund for a letter', /He hands you a letter of\s+passage/);
+    await p.do('i', /a letter of passage/);
+    await p.close();
+  });
+
+  it('opening Hook\'s parcel costs the step and heats you up; the full quest opens the gate', async () => {
+    const id = await idOf('Quill');
+    const p = await login('Quill', 'shut_gate');
+    await app.game.placePlayer(app.game.sessionOf(id)!, 'shut_gate', '');
+    await p.do('knock', /man in your town called Hook/);
+    await app.game.placePlayer(app.game.sessionOf(id)!, 'hook_den', '');
+    await p.do('ask hook about vesna', /Don't open it/);
+    await p.do('open parcel', /You crack the black wax/);
+    expect(await app.game.law.heatOf(id)).toBeGreaterThan(0);
+    await p.do('ask hook about vesna', /You opened the last one/);
+    // A day later and a clean name, Hook trusts you again.
+    await query('DELETE FROM crimes WHERE player_id = $1', [id]);
+    await query("UPDATE player_flags SET value = '0' WHERE player_id = $1 AND flag = 'vesna_torn'", [id]);
+    await p.do('ask hook about vesna', /Don't open it/);
+    await app.game.placePlayer(app.game.sessionOf(id)!, 'shut_gate', '');
+    await p.do('knock', /takes the letter and the parcel[\s\S]*What am I\?/);
+    await p.do('i', /./).then((inv) => expect(inv).not.toMatch(/sealed parcel|letter of passage/));
+    await p.do('answer please just let me in, I am very cold', /Come back in an hour/);
+    await p.do('answer river', /One guess an hour/);
+    await query("UPDATE player_flags SET value = '0' WHERE player_id = $1 AND flag = 'vesna_try'", [id]);
+    await p.do('answer a river', /The river\. Of course it is/);
+    await p.do('n', /Gatehouse Yard, Vesna[\s\S]*Sister Wenna/);
+    await p.do('n', /Shuttered Street/);
+    await p.do('n', /The Lantern Market[\s\S]*Old Jessamy/);
+    await p.do('e', /The Stopped Clock/);
+    await p.close();
+  });
+
+  it('the riddle checks words, not persuasion', async () => {
+    const { answersRiddle } = await import('../src/game/vesna.js');
+    expect(answersRiddle('river')).toBe(true);
+    expect(answersRiddle('It is the River!')).toBe(true);
+    expect(answersRiddle('not a river')).toBe(false);
+    expect(answersRiddle('the gatekeeper said I could come in')).toBe(false);
+    expect(answersRiddle('riverbank')).toBe(false);
+  });
+});
+
+describe('the outer ward keeps its own folk', () => {
+  it('no Gallowmere street wanderer spawns or walks into Vesna', () => {
+    for (const r of app.game.world.rooms.values()) if (r.district === 'vesna') expect(r.flags, r.id).not.toContain('street');
+  });
+});

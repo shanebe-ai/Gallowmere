@@ -1129,5 +1129,61 @@
       "knows": "the gate of Vesna does not open, not yet, by order; Vesna knows of Gallowmere and its plague cart and does not want the plague; there are rumours in Vesna of what lives in the fog; never say what is in Vesna or when the gate will open",
       "quirks": "always speaks through the hatch; sometimes asks the player questions about Gallowmere"
     }
+  },
+  {
+    "id": "wenna",
+    "room": "vesna_yard",
+    "name": "Sister Wenna",
+    "kind": "ai",
+    "card": {
+      "keywords": [
+        "wenna",
+        "sister",
+        "warden"
+      ],
+      "listName": "Sister Wenna, keeper of the ward",
+      "short": "Sister Wenna, keeper of the ward, sits by the gatehouse with a ledger on her knees and a lantern at her feet.",
+      "look": "A small woman in a grey habit gone soft with washing, with ink on her fingers and very clear eyes. She has the voice from the hatch.",
+      "job": "Keeper of the outer ward of Vesna, the walled town at the end of the north road, and the voice from behind the gate",
+      "personality": "Dry, watchful, quietly kind once someone has proved themselves, curious about Gallowmere, keeps Vesna's secrets with a smile",
+      "speech": "Short and precise, a little amused, asks as many questions as she answers",
+      "wants": "To know who walks into her ward and why, news of Gallowmere's plague cart and the fog, and to keep the inner gate shut",
+      "secret": "The names on the lanterns are the people Vesna is waiting for, and she has seen the visitor's name on a blank one being painted",
+      "knows": "The outer ward of Vesna: the gatehouse yard, Shuttered Street, the Old Well east of it, the Chapel of the Lamp west of it, the Lantern Market, the Stopped Clock inn, the ward wall stairs. Old Jessamy sells lanterns in the market and paints a name on every one. The inner gate opens for nobody yet, by order; you never say what lies behind it. You were the voice through the hatch and you are glad to put a face to the visitor. You never give anyone money or items",
+      "scripted": [
+        "Sister Wenna writes something down.",
+        "\"Welcome to the ward. Mind the lanterns.\"",
+        "Sister Wenna looks up from her ledger, then back down.",
+        "\"Ask the well, not me. It answers better.\""
+      ],
+      "ambient": [
+        "Sister Wenna turns a page in her ledger.",
+        "Somewhere in the ward, a lantern goes out and is lit again."
+      ]
+    }
+  },
+  {
+    "id": "jessamy",
+    "room": "lantern_market",
+    "name": "Old Jessamy",
+    "kind": "light",
+    "card": {
+      "keywords": [
+        "jessamy",
+        "seller",
+        "woman"
+      ],
+      "listName": "Old Jessamy",
+      "short": "Old Jessamy sits among her lanterns, painting a name on one with a very thin brush.",
+      "look": "A tiny old woman with paint on her fingers and paper lanterns stacked around her like a fort.",
+      "scripted": [
+        "\"A lantern, dearie? Every one has a name on it.\"",
+        "Old Jessamy hums and paints. \"Not yours. Not yet.\"",
+        "\"Whose names? Oh, people. Just people, dearie.\""
+      ],
+      "ambient": [
+        "Old Jessamy hangs another lantern and lights it."
+      ]
+    }
   }
 ]

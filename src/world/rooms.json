@@ -2191,7 +2191,8 @@
     "title": "The Shut Gate",
     "description": "The road ends at high timber gates bound with black iron, set in a palisade that runs away into the trees on both sides. The gates are barred from the inside. Beyond them you can hear voices, a forge, a cart, the ordinary noise of a town that is not letting you in. A painted board hangs above the gate. The road runs back south.",
     "exits": {
-      "south": "long_climb"
+      "south": "long_climb",
+      "north": "vesna_yard"
     },
     "features": [
       {
@@ -4614,6 +4615,273 @@
       "sanctuary",
       "inn",
       "private"
+    ]
+  },
+  {
+    "id": "vesna_yard",
+    "district": "vesna",
+    "title": "Gatehouse Yard, Vesna",
+    "description": "A cobbled yard just inside the gate of Vesna, swept clean, which is the first strange thing. A gatehouse leans over it with its hatch open on this side. Lanterns hang from iron hooks though it is not dark. The gate is south, and a quiet street runs north into the ward.",
+    "flags": [
+      "outside"
+    ],
+    "exits": {
+      "south": "shut_gate",
+      "north": "shuttered_street"
+    },
+    "features": [
+      {
+        "name": "the gatehouse",
+        "keywords": [
+          "gatehouse",
+          "hatch"
+        ],
+        "look": "A narrow stone gatehouse. From this side the hatch is just a window with a stool behind it and a cold cup of tea.",
+        "actions": {
+          "touch": "Dry stone. Everything in Vesna is dry.",
+          "knock": "Sister Wenna looks up from the yard. \"I'm out here now. You can stop knocking.\""
+        }
+      },
+      {
+        "name": "the lanterns",
+        "keywords": [
+          "lanterns",
+          "lantern",
+          "hooks"
+        ],
+        "look": "Iron lanterns, every one lit, in the middle of the day. Nobody has bothered to explain.",
+        "actions": {
+          "touch": "Warm, and humming very faintly.",
+          "take": "The hooks are too high, and someone in the gatehouse coughs meaningfully."
+        }
+      }
+    ]
+  },
+  {
+    "id": "shuttered_street",
+    "district": "vesna",
+    "title": "Shuttered Street",
+    "description": "Tall narrow houses press in on both sides, every shutter closed and every door painted the same faded blue. Someone is home in all of them; you can hear spoons, and a cradle rocking. Nobody looks out. An old well stands east, a little chapel west, and the street opens north into a market of lights. The gatehouse yard is south.",
+    "flags": [
+      "outside"
+    ],
+    "exits": {
+      "south": "vesna_yard",
+      "north": "lantern_market",
+      "east": "vesna_well",
+      "west": "vesna_chapel"
+    },
+    "features": [
+      {
+        "name": "the shutters",
+        "keywords": [
+          "shutters",
+          "shutter",
+          "doors",
+          "houses",
+          "door"
+        ],
+        "look": "Blue doors, blue shutters, all closed. A chalk mark on each door: a circle with a line through it.",
+        "actions": {
+          "knock": "You knock. The spoons stop. When you step away, they start again.",
+          "listen": "Spoons, a cradle, someone humming the same three notes over and over."
+        }
+      }
+    ]
+  },
+  {
+    "id": "vesna_well",
+    "district": "vesna",
+    "title": "The Old Well",
+    "description": "A round well with a slate roof and a bucket on a chain, in a small square of its own. A sign hangs from the roof beam. The water smells of iron and something sweeter. The street is west.",
+    "flags": [
+      "outside"
+    ],
+    "exits": {
+      "west": "shuttered_street"
+    },
+    "features": [
+      {
+        "name": "the well",
+        "keywords": [
+          "well",
+          "bucket",
+          "chain",
+          "water"
+        ],
+        "look": "Deep. Very deep. The bucket comes up full and the water in it is perfectly still, even when you shake it.",
+        "actions": {
+          "drink": "Cold, iron, sweet. For a moment you remember something you never knew.",
+          "touch": "The stone lip is worn smooth by a thousand elbows."
+        }
+      },
+      {
+        "name": "the sign",
+        "keywords": [
+          "sign",
+          "beam"
+        ],
+        "look": "A small painted sign.",
+        "actions": {
+          "read": "DRAW ONE BUCKET. ASK ONE QUESTION. DO NOT LISTEN FOR AN ANSWER.",
+          "touch": "Fresh paint. Someone repaints it often."
+        }
+      }
+    ]
+  },
+  {
+    "id": "vesna_chapel",
+    "district": "vesna",
+    "title": "Chapel of the Lamp",
+    "description": "A whitewashed chapel no bigger than a cottage, with one lamp burning on a bare altar and benches for a dozen. No icons, no candles, no priest. The lamp is the whole of the faith, it seems. The street is east.",
+    "flags": [
+      "indoors"
+    ],
+    "exits": {
+      "east": "shuttered_street"
+    },
+    "features": [
+      {
+        "name": "the lamp",
+        "keywords": [
+          "lamp",
+          "altar",
+          "flame"
+        ],
+        "look": "A plain brass lamp with a steady yellow flame that does not flicker when you breathe on it.",
+        "actions": {
+          "touch": "It isn't hot. It should be hot.",
+          "pray": "You bow your head. The lamp burns on, as if it had been waiting for you to finish."
+        }
+      }
+    ]
+  },
+  {
+    "id": "lantern_market",
+    "district": "vesna",
+    "title": "The Lantern Market",
+    "description": "A small square strung corner to corner with paper lanterns in every colour, lit and swaying. Stalls sell lanterns, oil, wicks, and nothing else at all. An inn with a stopped clock over its door stands east, stairs climb the ward wall west, and north a second, smaller gate is shut tight. The street runs south.",
+    "flags": [
+      "outside"
+    ],
+    "exits": {
+      "south": "shuttered_street",
+      "north": "inner_gate",
+      "east": "ward_inn",
+      "west": "wall_stair"
+    },
+    "features": [
+      {
+        "name": "the lanterns",
+        "keywords": [
+          "lanterns",
+          "lantern",
+          "paper",
+          "stalls",
+          "stall"
+        ],
+        "look": "Hundreds of paper lanterns. Each one has a name written on it in small neat letters. You don't know any of the names. Yet.",
+        "actions": {
+          "touch": "Warm paper. One of them is still blank.",
+          "read": "Names in a small neat hand. Aldous. Brannagh. Corwen. A blank one, waiting.",
+          "take": "Old Jessamy taps your wrist with her brush. \"Not that one, dearie. It isn't yours.\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "ward_inn",
+    "district": "vesna",
+    "title": "The Stopped Clock",
+    "description": "A low, warm taproom under a clock that has said a quarter to midnight for as long as anyone here remembers. Three drinkers sit very still at a long table. There are no prices on the board, only a chalked line: AFTERWARDS. The market is west.",
+    "flags": [
+      "indoors"
+    ],
+    "exits": {
+      "west": "lantern_market"
+    },
+    "features": [
+      {
+        "name": "the clock",
+        "keywords": [
+          "clock",
+          "hands"
+        ],
+        "look": "A quarter to midnight. The second hand twitches forward and back, forward and back.",
+        "actions": {
+          "touch": "The glass is cold. Your own heartbeat seems to slow while your hand is on it.",
+          "listen": "No tick. Just, now and then, a sound like someone holding their breath."
+        }
+      },
+      {
+        "name": "the board",
+        "keywords": [
+          "board",
+          "chalk",
+          "slate"
+        ],
+        "look": "A slate where prices should be.",
+        "actions": {
+          "read": "AFTERWARDS.",
+          "touch": "Chalk dust, and under it, older words rubbed out."
+        }
+      }
+    ]
+  },
+  {
+    "id": "wall_stair",
+    "district": "vesna",
+    "title": "The Ward Wall",
+    "description": "Narrow stairs climb the inside of the ward wall to a walk with a view back down the north road, towards the fog and, far off, the smoke of Gallowmere. From up here the forest looks smaller, and the fog looks like it is waiting. The market is east.",
+    "flags": [
+      "outside"
+    ],
+    "exits": {
+      "east": "lantern_market"
+    },
+    "features": [
+      {
+        "name": "the view",
+        "keywords": [
+          "view",
+          "road",
+          "fog",
+          "smoke",
+          "forest"
+        ],
+        "look": "The north road, the forest, the fog. And Gallowmere's smoke, a grey thumbprint on the sky. It looks a long way from here.",
+        "actions": {
+          "listen": "Wind, and very far off, the cracked bell of the Temple of Ash.",
+          "climb": "You lean on the parapet. The fog below does not move at all."
+        }
+      }
+    ]
+  },
+  {
+    "id": "inner_gate",
+    "district": "vesna",
+    "title": "The Inner Gate",
+    "description": "A second gate, smaller and older than the first, painted black and set with a brass knocker in the shape of a hand. Whatever Vesna keeps at its heart is behind it. The lanterns stop here. The market is south.",
+    "flags": [
+      "outside"
+    ],
+    "exits": {
+      "south": "lantern_market"
+    },
+    "features": [
+      {
+        "name": "the inner gate",
+        "keywords": [
+          "gate",
+          "knocker",
+          "hand"
+        ],
+        "look": "Black wood, a brass hand for a knocker, its fingers worn bright.",
+        "actions": {
+          "knock": "You lift the brass hand and let it fall. The sound goes a very long way inside. Nobody comes. Not yet.",
+          "push": "It does not move. It does not even seem to notice."
+        }
+      }
     ]
   }
 ]

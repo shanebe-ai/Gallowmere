@@ -7,6 +7,7 @@ import { Commerce } from './commerce.js';
 import { Combat, MAX_LEVEL, maxHealthFor, xpForLevel } from './combat.js';
 import { Town } from './town.js';
 import { Law } from './law.js';
+import { Vesna } from './vesna.js';
 import { Wilds } from './wilds.js';
 import { SOCIALS, socialEvent, socialLines } from './socials.js';
 import { PlagueCart, type CartOptions } from './cart.js';
@@ -214,6 +215,7 @@ const HELP: Record<string, string> = {
   crafting: 'recipes: what you can make.  make <thing>: bandage, torch, bait, campfire stew (at a fire), snare.  take stick in the forest.  set snare and check snare on rabbit runs in the Edgewood.  light torch, lamp or candle: dark places need a light.',
   gatherers: "The Gatherers' Hall, east off Butcher's Alley: join gatherers (1 coin), then deliver bodies to Warden Crane for pay by the body, more for fresh ones and for higher ranks. board: who wants which bodies this hour.",
   notices: 'notices (or read notices, in the market square): the noticeboard. Who the watch wants and the bounty on them, what the town is saying, and notes players pin. pin <words> to put up a note of your own for a day, unpin to take it down. Bring down a wanted player and the watch pays you the bounty.',
+  vesna: 'knock, at the shut gate at the end of the north road: the voice behind the hatch wants a letter of passage from Father Osmund, a clean name with the watch, and a sealed parcel from Hook. Then it asks a riddle: answer <words>, one guess an hour. Get it right and the gate opens for you for good.',
   jail: 'surrender, pay fine, bail <name>, sentence: when the watch wants you, surrender to a patrol or at the watch house and serve less time. In the cells, pay fine to buy your way out, or wait it out; sentence shows how long is left. Anyone can bail <name> a prisoner from the watch house or the lockup.',
   wanted: 'wanted: your heat with the watch, what the town remembers about you, and any bounty on your head. Striking folk or worse inside the walls is a crime when it is seen, and a killing leaves a body that talks. Heat cools with time, so lying low works. Let your heat run high inside the walls and the watch comes for you: run for the gate, or surrender. board is a different thing: the wanted board in the Gatherers\' Hall, work for coin.',
   drink: 'Ale and gin at the Drowned Rat add up: merry (a little healing), tipsy (burps), drunk (slurred speech, wrong turns, worse aim, and Morda cuts you off), legless (out cold in the road, where thieves and the cart find you). Water, food and sleep sober you. health shows how drunk you are.',
@@ -250,6 +252,7 @@ export class Game {
   cart: PlagueCart;
   town: Town;
   law: Law;
+  vesna: Vesna;
   wilds: Wilds;
   private townTimer: NodeJS.Timeout | null = null;
   private stockDay = '';
@@ -276,6 +279,7 @@ export class Game {
     this.cart = new PlagueCart(this, this.combat, opts.cart ?? {});
     this.town = new Town(this);
     this.law = new Law(this);
+    this.vesna = new Vesna(this);
     this.wilds = new Wilds(this, opts.wilds ?? {});
   }
 
@@ -828,6 +832,13 @@ export class Game {
     if (s.player!.roomId === 'market_square' && /^(read|look|l|x|examine)\s+(at\s+)?(the\s+)?(notice ?board|notices|posters?|board)$/i.test(line)) {
       return this.law.noticeboard(s);
     }
+    // The gate of Vesna: the quest's checks are all code.
+    const here = s.player!.roomId;
+    if (here === 'shut_gate' && ['knock', 'rap', 'bang', 'hammer'].includes(verb)) return this.vesna.knock(s);
+    if (verb === 'answer') return this.vesna.answer(s, rest);
+    if (verb === 'ask' && here === 'nave' && /^(father\s+)?osmund\b.*\b(letter|passage|vesna)\b/i.test(rest)) return this.vesna.askLetter(s);
+    if (verb === 'ask' && here === 'hook_den' && /^hook\b.*\b(vesna|parcel|package|gate)\b/i.test(rest)) return this.vesna.askParcel(s);
+    if (/^(open|unwrap|unseal|break)$/.test(verb) && /\b(parcel|package|seal|wax)\b/i.test(rest) && (await this.vesna.openParcel(s))) return;
 
     switch (verb) {
       case 'l':
@@ -1894,7 +1905,7 @@ export class Game {
       attack: 'fight', kill: 'fight', flee: 'fight', combat: 'fight', die: 'death', dead: 'death', corpse: 'corpses', loot: 'corpses', bounty: 'corpses', plague: 'cart', bell: 'cart',
       forest: 'road', north: 'road', brigands: 'road', vesna: 'road', fog: 'road', fish: 'fishing', rod: 'fishing', bait: 'fishing', worms: 'fishing',
       make: 'crafting', craft: 'crafting', recipes: 'crafting', snare: 'crafting', torch: 'crafting', dark: 'crafting', light: 'crafting',
-      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', heat: 'wanted', law: 'wanted', surrender: 'jail', bail: 'jail', fine: 'jail', sentence: 'jail', cells: 'jail', lockup: 'jail', arrest: 'jail', noticeboard: 'notices', pin: 'notices', unpin: 'notices', posters: 'notices', bounties: 'notices', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
+      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', heat: 'wanted', law: 'wanted', surrender: 'jail', bail: 'jail', fine: 'jail', sentence: 'jail', cells: 'jail', lockup: 'jail', arrest: 'jail', noticeboard: 'notices', gate: 'vesna', riddle: 'vesna', answer: 'vesna', parcel: 'vesna', knock: 'vesna', ward: 'vesna', pin: 'notices', unpin: 'notices', posters: 'notices', bounties: 'notices', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
       fortune: 'shrine', pray: 'shrine', ritual: 'shrine',
     };
     const key = DIR_SHORT[t] ? 'move' : t === 'l' ? 'look' : alias[t] ?? t;

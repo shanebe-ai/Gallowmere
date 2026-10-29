@@ -157,7 +157,7 @@ describe('the north road and the forest, as data', () => {
 
   it('the road is ten rooms from the Moor Road to the shut gate of Vesna', () => {
     expect(app.world.path('moor_road', 'shut_gate')).toEqual(Array(9).fill('north'));
-    expect(app.world.room('shut_gate').exits.map((e) => e.to)).toEqual(['long_climb']);
+    expect(app.world.room('shut_gate').exits.map((e) => e.to).sort()).toEqual(['long_climb', 'vesna_yard']);
   });
 
   it('every forest edge is fog, and the town is not', async () => {
@@ -195,13 +195,13 @@ describe('the north road and the forest, as data', () => {
 });
 
 describe('Milestone 3.5 end to end', () => {
-  it('walks the road to the shut gate and knocks; nobody opens it', async () => {
+  it('walks the road to the shut gate and knocks; the voice wants a letter before it opens', async () => {
     npcFn = (u) => (/knocks on the gate of Vesna/.test(u) ? reply('Not yet. Go home, Gallowmere.') : reply('Mm.'));
     const p = await create('Wanda', 'north_gate', { old: true });
     for (let i = 0; i < 10; i++) await p.do('n', /Exits:/);
     await p.do('look', /The Shut Gate[\s\S]*a voice behind the gate/);
-    await p.do('knock gate', /hammer on the gate[\s\S]*Not yet\. Go home/);
-    await p.do('n', /fog/);
+    await p.do('knock gate', /hammer on the gate[\s\S]*letter from your priest/);
+    await p.do('n', /The gates are barred/);
     await p.do('read board', /VESNA/);
     await p.close();
   });
