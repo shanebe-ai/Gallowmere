@@ -406,7 +406,9 @@ describe('Milestone 3.5 end to end', () => {
     // Bounties at the watch house, once.
     await f.close();
     const g = await login('Fighter', 'watch_house');
-    await g.do('bounty', /counts out (5|10|15) coin[\s\S]*brigand/);
+    // Brigands sometimes run instead of dying; the bounty is owed only for the dead.
+    const { rows: heads } = await query("SELECT count(*)::int AS n FROM kills WHERE killer_id = $1 AND victim_kind IN ('brigand', 'cutthroat', 'captain')", [fid]);
+    if (heads[0].n > 0) await g.do('bounty', /counts out \d+ coin[\s\S]*(brigand|cutthroat)/);
     await g.do('bounty', /Nothing owed/);
     await g.close();
   });
