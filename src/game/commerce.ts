@@ -123,6 +123,20 @@ export class Commerce {
 
   // ------------------------------------------------------------------ helpers
 
+  /** The shop and keeper in a room, if any. */
+  shopIn(roomId: string): { shop: ShopSeed; npc: Npc } | null {
+    for (const npc of this.game.world.npcsIn(roomId)) {
+      const shop = this.catalog.shops.get(npc.id);
+      if (shop) return { shop, npc };
+    }
+    return null;
+  }
+
+  /** How much the player is carrying. */
+  async loadOf(s: Session): Promise<number> {
+    return this.weightOf(await this.myItems(s), s.player!.id);
+  }
+
   private shopHere(s: Session): { shop: ShopSeed; npc: Npc } | null {
     for (const npc of this.game.world.npcsIn(s.player!.roomId)) {
       const shop = this.catalog.shops.get(npc.id);

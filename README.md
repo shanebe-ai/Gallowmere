@@ -71,9 +71,9 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 
 **The law and Vesna (Milestone 4)**
 * Names can carry accented letters: Noëlle and Noelle are the same name, and telnet clients sending Latin 1 work
-* Crimes inside the walls leave heat when someone sees them: a guard, a townsperson or another player in the room or the next. Heat halves every two hours; `wanted` shows your standing, and the townsfolk hear about it
-* Let heat run high inside the walls and a watch patrol walks to you and drags you to the lockup. Serve your time, `pay fine`, or have another player `bail` you; `surrender` gets you less time, and `sentence` shows what is left
-* The noticeboard in the market square (`read notices`): who the watch wants and the bounty on them, the town's rumours, and notes players `pin` for a day. Bringing down a wanted player pays the bounty from the watch's daily purse, and is no crime
+* Crimes inside the walls (hitting, killing, stealing from a shop counter with `steal`) leave heat when someone sees them: a guard, a townsperson or another player in the room or the next. Heat halves every two hours; `wanted` shows your standing, and the townsfolk hear about it
+* Let heat run high inside the walls and a watch sergeant and two watchmen walk to you and drags you to the lockup. Serve your time, `pay fine`, or have another player `bail` you; `surrender` gets you less time, and `sentence` shows what is left, and `shout` carries to the next rooms even from the cells
+* The noticeboard in the market square (`read notices`): who the watch wants and the bounty on them, the town's rumours, notes players `pin` for a day, a special from each shop's real stock, and an old notice about the road to Vesna. Bringing down a wanted player pays the bounty from the watch's daily purse, and is no crime
 * The gate of Vesna opens for those who earn it: a letter from Father Osmund (only for someone who has buried the dead), a clean name with the watch, Hook's parcel delivered sealed, and the answer to a riddle the voice will not be talked out of. Beyond it lies the outer ward: a gatehouse yard, Shuttered Street, the Old Well, the Chapel of the Lamp, the Lantern Market, the Stopped Clock and the ward wall, with a second gate that stays shut for now
 
 **Playing**
@@ -193,13 +193,19 @@ First time setup on a new server:
 5. Add `DEPLOY_HOST`, `DEPLOY_USER` and `DEPLOY_KEY` to the repo's Actions secrets.
 6. Push to `main`, then run `pm2 save` once so it survives a reboot.
 
+## Admin MCP server
+
+A read only MCP server over stdio lets an assistant check on the game without touching it: `game_health` (the `/health` answer, players online, AI voices and their last call), `player_counts` (characters, new and recent, who the watch wants), `recent_errors` (the tail of the pm2 error log) and `economy_summary` (coin in purses and banks, the day's biggest ledger movements). It never writes. On the server:
+
+    node dist/admin/mcp.js
+
 ## Roadmap
 
 1. **Walk the town.** 15 rooms, one AI barkeep with memory, browser and telnet. *Done.*
 2. **A living market.** 41 rooms, six AI townsfolk, items and inventory, haggling inside code set price ranges, a bank, odd jobs, scavenging, bribes. *Done.*
 3. **Blood and the cart.** Street folk, sewer beasts, combat, death and rebirth, the plague cart, and ways to earn by the sword and the shovel. *Done.*
 3.5. **Beyond the wall.** The north road, the forest, the shrine, beasts and brigands, fishing and crafting, the Gatherers' Hall, drink and an inn, rumours, and a few surprises. *Done.*
-4. **Gossip and law.** A rumour board the townsfolk read and spread, guards who remember crimes, bounties. Then an admin only MCP server, so the world can be run from Claude.
+4. **The law and Vesna.** Accented names, heat and witnesses, the watch and the cells, a noticeboard with bounties and specials, stealing, the gate of Vesna and its outer ward, and a read only admin MCP server. *Done.*
 5. **See where it goes.** Guilds, more NPCs, a second area, real players.
 
 Combat and economy mechanics are inspired by classic LPMuds such as Moral Decay. No rooms, text, names or maps are borrowed.

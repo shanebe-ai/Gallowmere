@@ -104,7 +104,9 @@ export async function createApp(
     next();
   });
   app.get('/health', (_req, res) => {
-    res.json({ ok: true, online: game.onlineNames().length, ai: ai.hasProvider() });
+    // Which AI voices are on and how their last call went: names, models and timings only, never keys or error text.
+    const providers = ai.status().map((p) => ({ name: p.name, model: p.model, configured: p.configured, lastOk: p.last?.ok, lastAt: p.last?.at, latencyMs: p.last?.latencyMs }));
+    res.json({ ok: true, online: game.onlineNames().length, ai: ai.hasProvider(), providers });
   });
   app.use(express.static(path.join(here, '..', 'public'), { index: 'index.html', maxAge: '1h' }));
 

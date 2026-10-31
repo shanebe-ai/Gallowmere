@@ -921,3 +921,71 @@ describe('the outer ward keeps its own folk', () => {
     for (const r of app.game.world.rooms.values()) if (r.district === 'vesna') expect(r.flags, r.id).not.toContain('street');
   });
 });
+
+describe('light fingers, shouting, and a fuller noticeboard (milestone 4 leftovers)', () => {
+  const idOf = async (name: string) => (await query('SELECT id FROM players WHERE name = $1', [name])).rows[0].id as number;
+
+  it('stealing at a counter: caught means heat and a sour keeper, a clean lift moves the item; Hook cannot be robbed', async () => {
+    await (await create('Rook')).close();
+    const id = await idOf('Rook');
+    const p = await login('Rook', 'maud_shop');
+    const s = app.game.sessionOf(id)!;
+    await app.game.law.steal(s, 'candle', 0.99);
+    await p.waitFor(/catches your wrist[\s\S]*Thief/);
+    expect(await app.game.law.heatOf(id)).toBeGreaterThan(14);
+    const { rows: st } = await query("SELECT standing FROM npc_memory WHERE npc_id = 'maud' AND player_id = $1", [id]);
+    expect(st[0].standing).toBe(-2);
+    await query('DELETE FROM crimes WHERE player_id = $1', [id]);
+    await app.game.law.steal(s, 'candle', 0);
+    await p.waitFor(/You palm a/);
+    await p.do('i', /candle/i);
+    // Maud looked away, so she is not a witness; anyone else nearby still is.
+    const { rows: book } = await query('SELECT witnesses FROM crimes WHERE player_id = $1', [id]);
+    expect(JSON.stringify(book[0].witnesses)).not.toContain('"maud"');
+    await app.game.placePlayer(s, 'hook_den', '');
+    await p.do('steal cheese', /Hook's knife/);
+    await p.close();
+  });
+
+  it('steal still means take away from a shop counter', async () => {
+    const p = await login('Rook', 'market_square');
+    const { rows: before } = await query('SELECT count(*)::int AS n FROM crimes WHERE player_id = $1', [await idOf('Rook')]);
+    await p.do('steal noticeboard', /./);
+    const { rows: after } = await query('SELECT count(*)::int AS n FROM crimes WHERE player_id = $1', [await idOf('Rook')]);
+    expect(after[0].n).toBe(before[0].n);
+    await p.close();
+  });
+
+  it('a shout carries to the next room, and works from the cells', async () => {
+    await (await create('Wynn')).close();
+    const a = await login('Rook', 'market_square');
+    const next = app.game.world.room('market_square').exits[0].to;
+    const b = await login('Wynn', next);
+    await a.do('shout Fresh fish!', /You shout, "Fresh fish!"/);
+    await b.waitFor(/Someone nearby shouts, "Fresh fish!"/);
+    await a.close();
+    await b.close();
+  });
+
+  it('the noticeboard shows shop specials from real stock and the old notice about Vesna', async () => {
+    const p = await login('Rook', 'market_square');
+    await p.do('read notices', /In the shops today[\s\S]*coin\.[\s\S]*HONEST TRAVELLERS SOUGHT for the road to Vesna/);
+    await p.close();
+  });
+
+  it('the admin MCP server lists its tools and answers read only questions', async () => {
+    const { handle } = await import('../src/admin/mcp.js');
+    const init = await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
+    expect((init!.result as { serverInfo: { name: string } }).serverInfo.name).toBe('gallowmere-admin');
+    const list = await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
+    expect((list!.result as { tools: { name: string }[] }).tools.map((t) => t.name)).toEqual(['game_health', 'player_counts', 'recent_errors', 'economy_summary']);
+    const counts = await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'player_counts', arguments: {} } });
+    const body = JSON.parse((counts!.result as { content: { text: string }[] }).content[0].text);
+    expect(body.total).toBeGreaterThan(0);
+    const eco = await handle({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'economy_summary', arguments: {} } });
+    expect(JSON.parse((eco!.result as { content: { text: string }[] }).content[0].text).purses).toBeGreaterThanOrEqual(0);
+    expect(await handle({ jsonrpc: '2.0', method: 'notifications/initialized' })).toBeNull();
+    const bad = await handle({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'give_coin', arguments: {} } });
+    expect((bad!.result as { isError: boolean }).isError).toBe(true);
+  });
+});

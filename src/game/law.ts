@@ -3,7 +3,7 @@
 // how hot it runs; the AI only ever hears the rumour of it in talk.
 
 import { query } from '../db/pool.js';
-import { moveCoin, NotEnough, tx, getFlag, setFlag } from './economy.js';
+import { moveCoin, NotEnough, tx, getFlag, setFlag, itemsOf, moveItem, nudgeStanding, sellRange, PACK_LIMIT } from './economy.js';
 import { c, capitalize, sanitize } from './text.js';
 import { isFlagged } from './filter.js';
 import type { Game } from './game.js';
@@ -75,7 +75,7 @@ export const WATCH_HOUSE = 'watch_house';
 export const CELLS = 'lockup';
 /** What a jailed player may still do: talk, look about, and pay their way out. */
 const IN_CELL_OK = new Set(['l', 'look', 'examine', 'x', 'say', 'emote', 'emotes', 'i', 'inv', 'inventory', 'who', 'help', 'score', 'sc',
-  'health', 'hp', 'wanted', 'heat', 'law', 'pay', 'fine', 'sentence', 'quit', 'exit', 'logout', 'alias', 'journal']);
+  'health', 'hp', 'wanted', 'heat', 'law', 'pay', 'fine', 'sentence', 'shout', 'yell', 'quit', 'exit', 'logout', 'alias', 'journal']);
 
 /** Coin the watch pays for bringing down a wanted player, by their heat. */
 export const BOUNTY_CAP = 25;
@@ -147,10 +147,10 @@ export class Law {
    *  book must not break the fight that caused it. An unwitnessed blow
    *  still runs a little heat on rumour; a body is always found in the
    *  end, so a killing runs its full heat seen or not. */
-  async recordCrime(playerId: number, kind: CrimeKind, roomId: string, victim: string, victimPlayerId?: number): Promise<void> {
+  async recordCrime(playerId: number, kind: CrimeKind, roomId: string, victim: string, victimPlayerId?: number, unseenBy: string[] = []): Promise<void> {
     try {
       if (!this.insideWalls(roomId)) return;
-      const witnesses = this.witnesses(roomId, playerId, victimPlayerId);
+      const witnesses = this.witnesses(roomId, playerId, victimPlayerId).filter((w) => !(w.kind !== 'player' && unseenBy.includes(w.id)));
       const seen = witnesses.length > 0;
       let heat = HEAT[kind];
       if (!seen && (kind === 'attack' || kind === 'theft')) heat = RUMOUR_HEAT;
@@ -187,6 +187,52 @@ export class Law {
       return `${player.name} is wanted by the watch (heat ${Math.round(heat)}). You know their face and their recent business in town.`;
     }
     return `Word around town is that ${player.name} is in trouble with the watch. Folk are talking about it.`;
+  }
+
+  /** steal <item>: lift something off a shop counter. Code rolls it: a
+   *  keeper who notices catches you and the watch hears of it; one who
+   *  doesn't still leaves anyone else in sight as a witness. */
+  async steal(s: Session, rest: string, roll = Math.random()): Promise<void> {
+    const p = s.player!;
+    const here = this.game.commerce.shopIn(p.roomId);
+    if (!here) return s.out('There is nothing here worth lifting. Try a shop.');
+    const { npc } = here;
+    if (!rest.trim()) return s.out('Steal what? Type list to see what is on the counter.');
+    if (npc.id === 'hook') {
+      s.out(c.error("Hook's knife is between your hand and the shelf before you have finished the thought. \"Buy it, or keep your fingers.\""));
+      return;
+    }
+    const stock = await itemsOf(this.game.commerce.catalog, { type: 'shop', id: npc.id });
+    const target = rest.trim().toLowerCase();
+    const item = stock.find((i) => i.template.name.toLowerCase().includes(target) || i.template.keywords.some((k) => k === target));
+    if (!item) return s.out(`${npc.name} has nothing like that on the counter.`);
+    if ((await this.game.commerce.loadOf(s)) + item.template.weight > PACK_LIMIT) return s.out('Your pack is too full to hide anything in.');
+    // A keeper misses it a little under half the time; the cheaper and smaller the thing, the better your odds.
+    const odds = Math.max(0.15, 0.45 - item.template.price / 100 - item.template.weight * 0.03);
+    if (roll >= odds) {
+      await this.recordCrime(p.id, 'theft', p.roomId, npc.name);
+      await nudgeStanding(npc.id, p.id, -2).catch(() => 0);
+      s.out(c.error(`${npc.name} catches your wrist as ${item.template.name} leaves the counter. "Thief!" Word will reach the watch.`));
+      this.game.toRoom(p.roomId, `${npc.name} catches ${c.player(p.name)} trying to lift ${item.template.name}. "Thief!"`, s);
+      return;
+    }
+    const moved = await tx((cl) => moveItem(cl, item.id, { type: 'shop', id: npc.id }, { type: 'player', id: p.id }));
+    if (!moved) return s.out('Someone else got to it first.');
+    await this.recordCrime(p.id, 'theft', p.roomId, npc.name, undefined, [npc.id]);
+    s.out(`You palm ${item.template.name} while ${npc.name} looks the other way.`);
+    if (this.witnesses(p.roomId, p.id).some((w) => w.id !== npc.id)) s.out(c.dim('Somebody else may have seen that.'));
+  }
+
+  /** shout <words>: heard in this room and every room next to it. Even from the cells. */
+  shout(s: Session, rest: string): void {
+    const p = s.player!;
+    const text = sanitize(rest, 160).trim();
+    if (!text) return s.out('Shout what?');
+    if (isFlagged(text)) return s.out('The words catch in your throat.');
+    s.out(`You shout, "${text}"`);
+    this.game.toRoom(p.roomId, `${c.player(p.name)} shouts, "${text}"`, s);
+    const room = this.game.world.rooms.get(p.roomId);
+    for (const e of room?.exits ?? []) this.game.toRoom(e.to, `Someone nearby shouts, "${text}" It sounds like ${c.player(p.name)}.`);
   }
 
   /** wanted: your own heat, what the town remembers, and any bounty. */
@@ -284,11 +330,11 @@ export class Law {
     const npc: Npc = {
       id: `patrol_${p.id}`,
       roomId: WATCH_HOUSE,
-      name: 'a watch patrol',
+      name: 'a watch sergeant and two watchmen',
       kind: 'light',
       card: {
-        keywords: ['patrol', 'watch', 'watchmen', 'watchman'],
-        listName: 'a watch patrol',
+        keywords: ['patrol', 'watch', 'watchmen', 'watchman', 'sergeant'],
+        listName: 'a watch sergeant and two watchmen',
         short: 'Two watchmen with cudgels and a sergeant with a lantern, looking for someone.',
         look: `Two tired watchmen in muddy tabards and a sergeant with a lantern and a writ. The name on the writ is ${p.name}.`,
         scripted: ['We are looking for someone. Move along.'],
@@ -516,7 +562,35 @@ export class Law {
     s.out(c.label('Pinned notes'));
     if (!rows.length) s.out('  None. pin <a note> to put one up.');
     for (const r of rows) s.out(`  "${r.text}" (${r.name})`);
+    const specials = await this.specials();
+    if (specials.length) {
+      s.out(c.label("In the shops today"));
+      for (const line of specials) s.out(`  ${line}`);
+    }
+    s.out(c.label('An old notice, nailed down hard'));
+    s.out('  "HONEST TRAVELLERS SOUGHT for the road to Vesna. The gate opens to those of good name. Father Osmund at the Temple of Ash will say more."');
     s.out(c.dim('Paying work is on the board in the Gatherers\' Hall. pin <words> to pin a note of your own, unpin to take it down.'));
+  }
+
+  /** One thing each shop has on its shelf today, picked by the date, at its
+   *  real asking price. Shopkeepers chalk these up; the code reads the stock. */
+  async specials(): Promise<string[]> {
+    const day = Math.floor(Date.now() / 86_400_000);
+    const out: string[] = [];
+    const catalog = this.game.commerce.catalog;
+    for (const [npcId, shop] of catalog.shops) {
+      const npc = this.game.world.npcs.get(npcId);
+      if (!npc || npcId === 'hook' || !this.insideWalls(npc.roomId)) continue;
+      const stock = await itemsOf(catalog, { type: 'shop', id: npcId });
+      const kinds = [...new Set(stock.map((i) => i.template.id))].sort();
+      if (!kinds.length) continue;
+      let h = day;
+      for (const ch of npcId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+      const t = catalog.template(kinds[h % kinds.length]);
+      const { ceiling } = sellRange(t.price, shop.sellBand, 0);
+      out.push(`${npc.card.listName ?? npc.name}: ${t.name}, ${ceiling} coin.`);
+    }
+    return out.slice(0, 5);
   }
 
   /** pin <words>: one note each, filtered, for a day. */

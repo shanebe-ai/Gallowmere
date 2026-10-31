@@ -216,6 +216,8 @@ const HELP: Record<string, string> = {
   gatherers: "The Gatherers' Hall, east off Butcher's Alley: join gatherers (1 coin), then deliver bodies to Warden Crane for pay by the body, more for fresh ones and for higher ranks. board: who wants which bodies this hour.",
   notices: 'notices (or read notices, in the market square): the noticeboard. Who the watch wants and the bounty on them, what the town is saying, and notes players pin. pin <words> to put up a note of your own for a day, unpin to take it down. Bring down a wanted player and the watch pays you the bounty.',
   vesna: 'knock, at the shut gate at the end of the north road: the voice behind the hatch wants a letter of passage from Father Osmund, a clean name with the watch, and a sealed parcel from Hook. Then it asks a riddle: answer <words>, one guess an hour. Get it right and the gate opens for you for good.',
+  steal: 'steal <item>, in a shop: lift something off the counter. A keeper who notices catches you and calls you a thief, and the watch hears of it. One who does not may still have customers watching. Nobody steals from Hook.',
+  shout: 'shout <words>: heard in this room and every room next to it. Works from the cells too.',
   jail: 'surrender, pay fine, bail <name>, sentence: when the watch wants you, surrender to a patrol or at the watch house and serve less time. In the cells, pay fine to buy your way out, or wait it out; sentence shows how long is left. Anyone can bail <name> a prisoner from the watch house or the lockup.',
   wanted: 'wanted: your heat with the watch, what the town remembers about you, and any bounty on your head. Striking folk or worse inside the walls is a crime when it is seen, and a killing leaves a body that talks. Heat cools with time, so lying low works. Let your heat run high inside the walls and the watch comes for you: run for the gate, or surrender. board is a different thing: the wanted board in the Gatherers\' Hall, work for coin.',
   drink: 'Ale and gin at the Drowned Rat add up: merry (a little healing), tipsy (burps), drunk (slurred speech, wrong turns, worse aim, and Morda cuts you off), legless (out cold in the road, where thieves and the cart find you). Water, food and sleep sober you. health shows how drunk you are.',
@@ -832,6 +834,8 @@ export class Game {
     if (s.player!.roomId === 'market_square' && /^(read|look|l|x|examine)\s+(at\s+)?(the\s+)?(notice ?board|notices|posters?|board)$/i.test(line)) {
       return this.law.noticeboard(s);
     }
+    // Stealing is only a crime at a shop counter; elsewhere steal means take, as it always has.
+    if (['steal', 'pocket', 'swipe'].includes(verb) && rest && this.commerce.shopIn(s.player!.roomId)) return this.law.steal(s, rest);
     // The gate of Vesna: the quest's checks are all code.
     const here = s.player!.roomId;
     if (here === 'shut_gate' && ['knock', 'rap', 'bang', 'hammer'].includes(verb)) return this.vesna.knock(s);
@@ -966,6 +970,9 @@ export class Game {
       case 'notices':
       case 'noticeboard':
         return this.law.noticeboard(s);
+      case 'shout':
+      case 'yell':
+        return this.law.shout(s, rest);
       case 'pin':
         return this.law.pin(s, rest);
       case 'unpin':
