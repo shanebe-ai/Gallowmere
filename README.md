@@ -20,16 +20,16 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 ## What's in it now
 
 **The world**
-* 108 rooms: the town (gate, market, temple, tavern, docks, sewers), the north road to the shut gate of Vesna, and a forest all round it ringed by fog
+* 116 rooms: the town (gate, market, temple, tavern, docks, sewers), the north road to the gate of Vesna and its outer ward, and a forest all round it ringed by fog
 * Every room lists its People, Players and the things You see, and everything listed can be used
 * Plain word verbs on things and people: look, take, touch, open, pull, push, knock, read, search, smell, listen, sit, climb, play, drink, kick, and more
 * A hidden fence behind a door the locals hint at, an iron door under the sewers that finally opens, and a few secrets for players who talk to people
 
-**Six AI townsfolk**
-* Morda the barkeep, Dace the gate guard, Hamo the blacksmith, Maud the grocer, Father Osmund and Hook the fence, played through ai& (Gemma 4 31B), with Groq and Gemini behind it
+**Seven AI townsfolk**
+* Morda the barkeep, Dace the gate guard, Hamo the blacksmith, Maud the grocer, Father Osmund, Hook the fence and Sister Wenna, keeper of Vesna's outer ward, played through ai& (Gemma 4 31B), with Groq and Gemini behind it
 * Per player memory in PostgreSQL: short notes, folded into a summary as they pile up, plus a standing score from minus 5 to plus 5 that only code moves
 * They remember you across logins, carry a conversation without being named every line, react in character when you mess with their things, and can turn you away
-* Light AI characters who talk freely but keep no memory: Tilly the pawnbroker, Ingelram the bank clerk, the butcher, the beggar, a duty sergeant, Bess the fishwife and Hook's runner, Amos the gravedigger, Tobin the lamplighter on his rounds, Wendel at the bar, Warden Crane, Old Peg, a charcoal burner, a ferryman, a shrine keeper, a voice behind the gate of Vesna, and every street person and beast
+* Light AI characters who talk freely but keep no memory: Tilly the pawnbroker, Ingelram the bank clerk, the butcher, the beggar, a duty sergeant, Bess the fishwife and Hook's runner, Amos the gravedigger, Tobin the lamplighter on his rounds, Wendel at the bar, Warden Crane, Old Peg, a charcoal burner, a ferryman, a shrine keeper, a voice behind the gate of Vesna, Old Jessamy the lantern seller, and every street person and beast
 * Shared rooms where characters talk to each other while you listen, and rumours of what players have done that the town repeats for a day
 
 **The economy**
@@ -59,7 +59,7 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 * Sewer beasts that come back, and a rat king that comes back once a day
 
 **Beyond the wall (Milestone 3.5)**
-* The north road: ten rooms of dirt road from the Moor Road to the shut gate of Vesna, which answers a knock and never opens
+* The north road: ten rooms of dirt road from the Moor Road to the shut gate of Vesna
 * About 50 forest rooms in eight regions: the Edgewood, the Mere and its island, the Falls, the Crags, the Blackwood, a hidden brigand camp, a Shinto style shrine, and the Old Stones. Walk into the fog and you come back where you started
 * Foxes, deer, goats, wolves, wild boar, a bear in a dark cave, brigands who ask a toll at Brigand's Bend, and a brigand captain with the only blade of its kind. Levels now run to 15, with a mail shirt and a war axe at Hamo's
 * The shrine: a ritual done in order (purify, offer, ring the bell, bow, bow, clap, clap, pray, bow) heals you once a day; fortunes for a coin, and curses tied to the tree
@@ -68,6 +68,13 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 * Drink that adds up: merry, tipsy (burps), drunk (slurred speech, wrong turns, Morda cuts you off) and legless (out cold, robbed, taken by the cart)
 * The Sleeping Lantern: rent a bed or a private room with a chest, and sleep yourself whole and sober
 * Six surprises, kept out of this README on purpose
+
+**The law and Vesna (Milestone 4)**
+* Names can carry accented letters: Noëlle and Noelle are the same name, and telnet clients sending Latin 1 work
+* Crimes inside the walls leave heat when someone sees them: a guard, a townsperson or another player in the room or the next. Heat halves every two hours; `wanted` shows your standing, and the townsfolk hear about it
+* Let heat run high inside the walls and a watch patrol walks to you and drags you to the lockup. Serve your time, `pay fine`, or have another player `bail` you; `surrender` gets you less time, and `sentence` shows what is left
+* The noticeboard in the market square (`read notices`): who the watch wants and the bounty on them, the town's rumours, and notes players `pin` for a day. Bringing down a wanted player pays the bounty from the watch's daily purse, and is no crime
+* The gate of Vesna opens for those who earn it: a letter from Father Osmund (only for someone who has buried the dead), a clean name with the watch, Hook's parcel delivered sealed, and the answer to a riddle the voice will not be talked out of. Beyond it lies the outer ward: a gatehouse yard, Shuttered Street, the Old Well, the Chapel of the Lamp, the Lantern Market, the Stopped Clock and the ward wall, with a second gate that stays shut for now
 
 **Playing**
 * A `hint` command with directions to wherever you need to go next
