@@ -106,7 +106,7 @@ export async function createApp(
   app.get('/health', (_req, res) => {
     // Which AI voices are on and how their last call went: names, models and timings only, never keys or error text.
     const providers = ai.status().map((p) => ({ name: p.name, model: p.model, configured: p.configured, lastOk: p.last?.ok, lastAt: p.last?.at, latencyMs: p.last?.latencyMs }));
-    res.json({ ok: true, online: game.onlineNames().length, ai: ai.hasProvider(), providers });
+    res.json({ ok: true, online: game.onlineNames().length, ai: ai.hasProvider(), providers, weather: game.weather.label(), event: game.events.current?.kind ?? null });
   });
   app.use(express.static(path.join(here, '..', 'public'), { index: 'index.html', maxAge: '1h' }));
 
@@ -127,6 +127,7 @@ export async function createApp(
       send: (text) => socket.emit('out', text),
       setMode: (mode) => socket.emit('mode', mode),
       setStatus: (status) => socket.emit('status', status),
+      sound: (key) => socket.emit('sound', key),
       setToken: (token) => socket.emit('session', token),
       close: () => setTimeout(() => socket.disconnect(true), 50),
     };

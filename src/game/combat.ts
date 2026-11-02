@@ -624,6 +624,8 @@ export class Combat {
     this.setHealth(targetKey, left);
     const how = left > 0 ? woundWords(left, d.maxHealth) : 'finished';
     aS?.out(`You ${a.hit2} ${d.name}. ${capitalize(d.name)} is ${how}.`);
+    aS?.sound('hit');
+    dS?.sound('hit');
     dS?.out(c.error(`${capitalize(a.name)} ${a.hit3} you for ${dmg}. You are ${left > 0 ? woundWords(left, d.maxHealth) : 'falling'}. (${left}/${d.maxHealth})`));
     this.game.toRoom(a.roomId, `${capitalize(a.name)} ${a.hit3} ${d.name}.`, aS, dS);
     if (dS) this.game.updateStatus(dS);
@@ -762,6 +764,7 @@ export class Combat {
     if (!st) return null;
     const s = this.game.sessionOf(id);
     const roomId = this.game.playerRoom(id) ?? TEMPLE;
+    s?.sound('deathbell');
     this.endFightsWith(`p:${id}`);
     if (st.carrying) await this.dropCarried(st, roomId);
     const protectedNew = this.isNew(st);

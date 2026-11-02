@@ -4861,12 +4861,13 @@
     "id": "inner_gate",
     "district": "vesna",
     "title": "The Inner Gate",
-    "description": "A second gate, smaller and older than the first, painted black and set with a brass knocker in the shape of a hand. Whatever Vesna keeps at its heart is behind it. The lanterns stop here. The market is south.",
+    "description": "A second gate, smaller and older than the first, painted black and set with a brass knocker in the shape of a hand. Whatever Vesna keeps at its heart is behind it. The way north opens for very few. The lanterns stop here. The market is south.",
     "flags": [
       "outside"
     ],
     "exits": {
-      "south": "lantern_market"
+      "south": "lantern_market",
+      "north": "lamp_hall"
     },
     "features": [
       {
@@ -4880,6 +4881,132 @@
         "actions": {
           "knock": "You lift the brass hand and let it fall. The sound goes a very long way inside. Nobody comes. Not yet.",
           "push": "It does not move. It does not even seem to notice."
+        }
+      }
+    ]
+  },
+  {
+    "id": "lamp_hall",
+    "district": "vesna",
+    "title": "The Lamp Hall",
+    "description": "A long hall with no windows, lit by hundreds of lamps on chains, all burning with the same steady yellow flame as the one in the Chapel of the Lamp. The air is warm and smells of oil and old paper. Doors lead east to an archive and west to a garden; a stair climbs into the dark at the far end. The inner gate is south.",
+    "flags": [
+      "indoors"
+    ],
+    "exits": {
+      "south": "inner_gate",
+      "east": "archive_names",
+      "west": "walled_garden",
+      "up": "keepers_stair"
+    },
+    "features": [
+      {
+        "name": "the lamps",
+        "keywords": [
+          "lamps",
+          "lamp",
+          "chains",
+          "flames"
+        ],
+        "look": "Hundreds of lamps, each with a tiny brass tag. Each tag has a name. Some you have seen on lanterns in the market.",
+        "actions": {
+          "read": "Names on brass tags. Aldous. Brannagh. Corwen. And further along, on a newer tag, polished bright: yours.",
+          "touch": "Warm. They have been burning a very long time and the oil never seems to go down."
+        }
+      }
+    ]
+  },
+  {
+    "id": "archive_names",
+    "district": "vesna",
+    "title": "The Archive of Names",
+    "description": "Shelves to the ceiling, every one full of ledgers bound in grey cloth, each spine lettered with a year. A long table in the middle holds open books and a lamp, and the Archivist's chair. The Lamp Hall is west.",
+    "flags": [
+      "indoors"
+    ],
+    "exits": {
+      "west": "lamp_hall"
+    },
+    "features": [
+      {
+        "name": "the ledgers",
+        "keywords": [
+          "ledgers",
+          "ledger",
+          "books",
+          "shelves",
+          "spines"
+        ],
+        "look": "Grey ledgers, one for every year further back than Gallowmere has records. The newest is open on the table.",
+        "actions": {
+          "read": "Columns of names in many hands. Beside some, a date. Beside a few, a single word: ARRIVED. Your name is in the newest ledger, with no word beside it yet.",
+          "take": "The Archivist clears their throat, without looking up. You put it back."
+        }
+      }
+    ]
+  },
+  {
+    "id": "walled_garden",
+    "district": "vesna",
+    "title": "The Walled Garden",
+    "description": "A small square garden behind high walls, open to the sky. Herbs in raised beds, a stone bench, an apple tree older than the town, and a well with a lid chained shut. It is quieter here than anywhere you have ever been. The Lamp Hall is east.",
+    "flags": [
+      "outside"
+    ],
+    "exits": {
+      "east": "lamp_hall"
+    },
+    "features": [
+      {
+        "name": "the apple tree",
+        "keywords": [
+          "tree",
+          "apple",
+          "apples"
+        ],
+        "look": "Gnarled and enormous, heavy with small red apples in every season.",
+        "actions": {
+          "take": "You reach for an apple. The branch lifts it just out of reach. Not yet, then.",
+          "touch": "The bark is warm, like the lamps."
+        }
+      },
+      {
+        "name": "the chained well",
+        "keywords": [
+          "well",
+          "lid",
+          "chain"
+        ],
+        "look": "A well with an iron lid, chained and padlocked. Something deep in it hums one long note.",
+        "actions": {
+          "listen": "One long, low note, steady as breath. It could be water. It is not water.",
+          "open": "The padlock is cold and has no keyhole at all."
+        }
+      }
+    ]
+  },
+  {
+    "id": "keepers_stair",
+    "district": "vesna",
+    "title": "The Keeper's Stair",
+    "description": "A narrow stair winds up into the dark, and stops at a door with no handle, painted the same faded blue as every door on Shuttered Street. Light shows under it. The Lamp Hall is below.",
+    "flags": [
+      "indoors"
+    ],
+    "exits": {
+      "down": "lamp_hall"
+    },
+    "features": [
+      {
+        "name": "the blue door",
+        "keywords": [
+          "door",
+          "blue door"
+        ],
+        "look": "Faded blue, no handle, no keyhole. Light moves under it, as if someone is walking up and down on the other side.",
+        "actions": {
+          "knock": "You knock. The light under the door stops moving. Then it moves away.",
+          "listen": "Footsteps, slow, up and down. And once, very softly, your name."
         }
       }
     ]

@@ -2,6 +2,7 @@ import { Terminal, type ILink } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { io } from 'socket.io-client';
 import '@xterm/xterm/css/xterm.css';
+import { play, ambient, makeToggle } from './sound';
 
 const TOKEN_KEY = 'gm_token';
 const SCREEN_KEY = 'gm_screen';
@@ -237,7 +238,11 @@ socket.on('session', (token: string | null) => {
   }
 });
 
-socket.on('status', (s: { name: string; room: string; online: number; exits: string[]; coin?: number; health?: number; maxHealth?: number; weather?: string }) => {
+socket.on('sound', (key: string) => play(String(key)));
+connEl.before(makeToggle());
+
+socket.on('status', (s: { name: string; room: string; online: number; exits: string[]; coin?: number; health?: number; maxHealth?: number; weather?: string; ambient?: string }) => {
+  ambient(s.ambient ?? '');
   const name = document.createElement('b');
   name.textContent = s.name;
   const parts: Node[] = [name];

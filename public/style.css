@@ -68,6 +68,9 @@ html, body {
 #status-info .hp-mid { color: var(--amber); }
 #status-info .hp-low { color: var(--red); }
 
+#sound { font: inherit; font-size: 16px; padding: 0 6px; margin-right: 6px; background: none; color: var(--green-dim); border: 1px solid currentColor; cursor: pointer; }
+#sound.on { color: var(--amber); }
+
 .conn { font-size: 16px; padding: 0 6px; border: 1px solid currentColor; }
 .conn-ok { color: var(--green-dim); }
 .conn-wait { color: var(--amber); }

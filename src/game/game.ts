@@ -219,6 +219,7 @@ const HELP: Record<string, string> = {
   gatherers: "The Gatherers' Hall, east off Butcher's Alley: join gatherers (1 coin), then deliver bodies to Warden Crane for pay by the body, more for fresh ones and for higher ranks. board: who wants which bodies this hour.",
   notices: 'notices (or read notices, in the market square): the noticeboard. Who the watch wants and the bounty on them, what the town is saying, and notes players pin. pin <words> to put up a note of your own for a day, unpin to take it down. Bring down a wanted player and the watch pays you the bounty.',
   vesna: 'knock, at the shut gate at the end of the north road: the voice behind the hatch wants a letter of passage from Father Osmund, a clean name with the watch, and a sealed parcel from Hook. Then it asks a riddle: answer <words>, one guess an hour. Get it right and the gate opens for you for good.',
+  sound: 'In the browser, the ♪ button at the top turns sound on and off: the bell, the cart, thunder, rain, tavern noise. Off until you turn it on. Telnet has no sound.',
   events: 'Most nights something happens: a fire at the docks (fill bucket at the River Docks, throw water at the fish market), a body washed up on the mere, the plague cart stuck with a broken axle, or a stranger at the Drowned Rat. hint tells you what is going on tonight.',
   weather: 'weather: the hour and what it is like out. A game day runs four real hours. At night the forest is dark without a light, rain can put out a torch, fog hides the way, the ferryman stays home in a storm, and the fish bite best in the rain.',
   steal: 'steal <item>, in a shop: lift something off the counter. A keeper who notices catches you and calls you a thief, and the watch hears of it. One who does not may still have customers watching. Nobody steals from Hook.',
@@ -340,7 +341,11 @@ export class Game {
   weatherBeat(): void {
     const now = this.weather.now();
     const key = `${now.sky}:${now.phase}`;
-    if (key === this.lastSky) return;
+    if (key === this.lastSky) {
+      // Now and then in a storm, thunder.
+      if (now.sky === 'storm' && this.random() < 0.2) this.soundAll('thunder', true);
+      return;
+    }
     const first = !this.lastSky;
     const [oldSky, oldPhase] = this.lastSky.split(':');
     this.lastSky = key;
@@ -357,12 +362,42 @@ export class Game {
       dusk: 'The light goes amber, then grey. Dusk.', night: 'Night comes down. Lamps flicker on along the streets.',
     };
     const line = oldSky !== now.sky ? SKY_TURNS[now.sky] : oldPhase !== now.phase ? LIGHT_TURNS[now.phase] : '';
+    if (now.sky === 'storm' && oldSky !== 'storm') this.soundAll('thunder', true);
     for (const s of this.byPlayer.values()) {
       if (s.state !== 'playing' || !s.player) continue;
       const room = this.world.rooms.get(s.player.roomId);
       if (line && room && Weather.openAir(room)) s.out(c.dim(line));
       this.updateStatus(s);
     }
+  }
+
+  /** The bed of sound for a room: tavern noise, fire, rain, storm or wind. */
+  ambientFor(roomId: string): string {
+    const room = this.world.rooms.get(roomId);
+    if (!room) return '';
+    if (this.events.current?.kind === 'fire' && (roomId === 'fish_market' || roomId === 'river_docks')) return 'fire';
+    if (room.flags.includes('tavern') || room.flags.includes('inn')) return 'hubbub';
+    if (!Weather.openAir(room)) return '';
+    const sky = this.weather.now().sky;
+    if (sky === 'storm') return 'storm';
+    if (sky === 'rain') return 'rain';
+    if (room.district === 'moor' || sky === 'fog' || sky === 'frost') return 'wind';
+    return '';
+  }
+
+  /** Every player hears it. */
+  soundAll(key: string, onlyOutside = false): void {
+    for (const s of this.byPlayer.values()) {
+      if (s.state !== 'playing' || !s.player) continue;
+      const room = this.world.rooms.get(s.player.roomId);
+      if (onlyOutside && !(room && Weather.openAir(room))) continue;
+      s.sound(key);
+    }
+  }
+
+  /** Everyone in a room hears it. */
+  soundRoom(roomId: string, key: string): void {
+    for (const s of this.playersIn(roomId)) s.sound(key);
   }
 
   /** A purchase big enough for the town to talk about. */
@@ -823,6 +858,7 @@ export class Game {
           health: st?.health,
           maxHealth: st ? maxHealthFor(st.level) : undefined,
           weather: this.weather.label(),
+          ambient: this.ambientFor(room.id),
         });
       })
       .catch(() => undefined);
@@ -908,6 +944,9 @@ export class Game {
     // The gate of Vesna: the quest's checks are all code.
     const here = s.player!.roomId;
     if (here === 'shut_gate' && ['knock', 'rap', 'bang', 'hammer'].includes(verb)) return this.vesna.knock(s);
+    if (here === 'inner_gate' && ['knock', 'rap', 'bang', 'hammer'].includes(verb)) return this.vesna.knockInner(s);
+    if (here === 'lantern_market' && /^(give|hand)$/.test(verb) && /\boil\b/i.test(rest)) return this.vesna.giveOil(s);
+    if (here === 'lantern_market' && /^(read|look|l|x|examine)$/.test(verb) && /\blanterns?\b/i.test(rest)) return this.vesna.readLanterns(s);
     if (verb === 'answer') return this.vesna.answer(s, rest);
     if (verb === 'ask' && here === 'nave' && /^(father\s+)?osmund\b.*\b(letter|passage|vesna)\b/i.test(rest)) return this.vesna.askLetter(s);
     if (verb === 'ask' && here === 'hook_den' && /^hook\b.*\b(vesna|parcel|package|gate)\b/i.test(rest)) return this.vesna.askParcel(s);

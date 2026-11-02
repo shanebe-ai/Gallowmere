@@ -22,6 +22,7 @@ class Player {
   token: string | null = null;
   mode = { echo: true, prompt: '' };
   status: any = null;
+  sounds: string[] = [];
 
   constructor(token?: string | null, cols = 200, keepScreen = false) {
     this.socket = ioClient(url, { transports: ['websocket'], reconnection: false, forceNew: true });
@@ -30,6 +31,7 @@ class Player {
     this.socket.on('session', (t: string | null) => (this.token = t));
     this.socket.on('mode', (m) => (this.mode = m));
     this.socket.on('status', (s) => (this.status = s));
+    this.socket.on('sound', (k: string) => this.sounds.push(k));
     this.socket.on('connect', () => this.socket.emit('hello', { token: token ?? null, cols, keepScreen }));
   }
 
@@ -978,7 +980,7 @@ describe('light fingers, shouting, and a fuller noticeboard (milestone 4 leftove
     const init = await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
     expect((init!.result as { serverInfo: { name: string } }).serverInfo.name).toBe('gallowmere-admin');
     const list = await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
-    expect((list!.result as { tools: { name: string }[] }).tools.map((t) => t.name)).toEqual(['game_health', 'player_counts', 'recent_errors', 'economy_summary']);
+    expect((list!.result as { tools: { name: string }[] }).tools.map((t) => t.name)).toEqual(['game_health', 'player_counts', 'recent_errors', 'world_state', 'economy_summary']);
     const counts = await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'player_counts', arguments: {} } });
     const body = JSON.parse((counts!.result as { content: { text: string }[] }).content[0].text);
     expect(body.total).toBeGreaterThan(0);
@@ -1013,6 +1015,51 @@ describe('the town talks about you (milestone 5)', () => {
     await app.game.gossip.greet(app.game.sessionOf(id)!);
     await new Promise((r) => setTimeout(r, 300));
     expect(groq.calls.length).toBe(before);
+    await p.close();
+  });
+});
+
+describe('the inner gate of Vesna and sound (milestone 5)', () => {
+  const idOf = async (name: string) => (await query('SELECT id FROM players WHERE name = $1', [name])).rows[0].id as number;
+
+  it('opens only for someone through the outer gate who brought Jessamy three oils and read their name at dusk', async () => {
+    await (await create('Lumen')).close();
+    const id = await idOf('Lumen');
+    await query("INSERT INTO player_flags (player_id, flag, value) VALUES ($1, 'vesna', 'open')", [id]);
+    const p = await login('Lumen', 'inner_gate');
+    await p.do('n', /does not move/);
+    await p.do('knock', /Nobody comes/);
+    const s = app.game.sessionOf(id)!;
+    await app.game.placePlayer(s, 'lantern_market', '');
+    await p.do('give oil to jessamy', /Gallowmere oil/);
+    const { createItem } = await import('../src/game/economy.js');
+    for (let i = 0; i < 3; i++) await createItem(null, 'lamp_oil', { type: 'player', id });
+    await p.do('give oil to jessamy', /2 more/);
+    await p.do('give oil to jessamy', /1 more/);
+    await p.do('give oil to jessamy', /read them at dusk/);
+    app.game.weather.force('clear', 'day');
+    await p.do('read lanterns', /names show at dusk/);
+    app.game.weather.force('clear', 'dusk');
+    await p.do('read lanterns', /letters come up through the paper[\s\S]*Lumen/);
+    app.game.weather.force('clear', 'day');
+    await app.game.placePlayer(s, 'inner_gate', '');
+    await p.do('knock', /swings in without a sound/);
+    expect(p.sounds).toContain('gate');
+    await p.do('n', /The Lamp Hall/);
+    await p.do('e', /Archive of Names[\s\S]*the Archivist/);
+    await p.close();
+  });
+
+  it('the browser gets sounds and an ambient bed; buying rings a coin', async () => {
+    await (await create('Ears')).close();
+    const p = await login('Ears', 'drowned_rat');
+    await p.do('look', /./);
+    await new Promise((r) => setTimeout(r, 200));
+    expect(p.status.ambient).toBe('hubbub');
+    expect(p.status.weather).toBe('Day, clear');
+    await query('UPDATE players SET coin = 50 WHERE name = $1', ['Ears']);
+    await p.do('buy bread', /You buy/);
+    expect(p.sounds).toContain('coin');
     await p.close();
   });
 });

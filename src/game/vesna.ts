@@ -11,6 +11,10 @@ import type { Exit, Room } from './world.js';
 
 export const GATE = 'shut_gate';
 export const WARD = 'vesna_yard';
+export const INNER = 'inner_gate';
+export const HALL = 'lamp_hall';
+const MARKET = 'lantern_market';
+export const OILS_NEEDED = 3;
 const LETTER = 'letter_of_passage';
 const PARCEL = 'sealed_parcel';
 const TORN = 'torn_parcel';
@@ -50,6 +54,9 @@ export class Vesna {
 
   /** The gate into the ward stays barred until the quest is done. */
   async canPass(s: Session, room: Room, exit: Exit): Promise<string | null> {
+    if (room.id === INNER && exit.to === HALL) {
+      return (await getFlag(s.player!.id, 'inner'))?.value === 'open' ? null : 'The inner gate does not move. It does not even seem to notice you.';
+    }
     if (room.id !== GATE || exit.to !== WARD) return null;
     if ((await this.stage(s.player!.id)) === 'open') return null;
     return 'The gates are barred from the inside. Knock, if you have business.';
@@ -107,6 +114,7 @@ export class Vesna {
     await this.setStage(p.id, 'open');
     this.voice(s, 'The river. Of course it is. Stand back.');
     s.out(c.system('Bars scrape. The gate of Vesna opens a body\'s width, just for you. The way north is open.'));
+    s.sound('gate');
     this.game.toRoom(p.roomId, c.dim(`The gate of Vesna opens a crack for ${p.name}.`), s);
     await this.game.town.rumour(p.id, `${p.name} was let in at the gate of Vesna`);
   }
@@ -162,5 +170,50 @@ export class Vesna {
     );
     s.out(c.error('You crack the black wax. Inside: a folded map of Gallowmere\'s sewers, marked in a hand you don\'t know, and a dried rose. Somewhere, Hook knows. Word gets about; the watch hears you have been handling stolen goods.'));
     return true;
+  }
+
+  // ------------------------------------------------------------ the inner gate (Milestone 5)
+
+  /** give oil to jessamy: lamp oil from Gallowmere for her lanterns, three in all. */
+  async giveOil(s: Session): Promise<void> {
+    const p = s.player!;
+    if (p.roomId !== MARKET) return s.out('Old Jessamy keeps her lanterns in the Lantern Market.');
+    const had = Number((await getFlag(p.id, 'jessamy_oil'))?.value ?? 0);
+    if (had >= OILS_NEEDED) return s.out(c.speech('"Bless you, dearie, I have plenty now. Go and read the lanterns at dusk."'));
+    const oil = await this.holding(s, 'lamp_oil');
+    if (!oil) return s.out(c.speech('Old Jessamy sniffs. "Gallowmere oil, dearie. Ours burns too clean. Maud sells it, I hear."'));
+    await tx((cl) => deleteItem(cl, oil, { type: 'player', id: p.id }));
+    const now = had + 1;
+    await setFlag(p.id, 'jessamy_oil', String(now));
+    if (now < OILS_NEEDED) return s.out(c.speech(`Old Jessamy pours the oil into a blank lantern and smiles. "${OILS_NEEDED - now} more, and I will have enough for yours."`));
+    s.out(c.speech('Old Jessamy fills the last blank lantern and hangs it up among the others. "There. Yours, I think. Come and read them at dusk, when the names show."'));
+  }
+
+  /** read lanterns: at dusk, once the oil is in, one blank lantern shows your own name. */
+  async readLanterns(s: Session): Promise<void> {
+    const p = s.player!;
+    const phase = this.game.weather.now().phase;
+    const oil = Number((await getFlag(p.id, 'jessamy_oil'))?.value ?? 0);
+    if (oil < OILS_NEEDED || phase !== 'dusk') {
+      return s.out('Names in a small neat hand, hundreds of them. Aldous. Brannagh. Corwen. One lantern is still blank.' + (oil >= OILS_NEEDED ? c.dim(' Jessamy said the names show at dusk.') : ''));
+    }
+    await setFlag(p.id, 'lantern_seen', '1');
+    s.out(c.system(`The light goes amber and the lanterns brighten all at once. On the one Jessamy filled for you, letters come up through the paper like a bruise: ${p.name}. Behind you, very far off, something heavy shifts at the inner gate.`));
+  }
+
+  /** knock at the inner gate: it opens only for someone Vesna has been waiting for. */
+  async knockInner(s: Session): Promise<void> {
+    const p = s.player!;
+    s.out('You lift the brass hand and let it fall. The sound goes a very long way inside.');
+    const ready = (await this.stage(p.id)) === 'open'
+      && Number((await getFlag(p.id, 'jessamy_oil'))?.value ?? 0) >= OILS_NEEDED
+      && (await getFlag(p.id, 'lantern_seen'))?.value === '1';
+    if ((await getFlag(p.id, 'inner'))?.value === 'open') return s.out('The black gate stands a hand\'s width open for you. North.');
+    if (!ready) return s.out('Nobody comes. Not yet. The brass hand is warm, as if somebody just let go of it on the other side.');
+    await setFlag(p.id, 'inner', 'open');
+    s.sound('gate');
+    s.out(c.system('The brass fingers curl closed around nothing. The inner gate swings in without a sound, a hand\'s width, enough for one. Lamplight beyond. The way north is open.'));
+    this.game.toRoom(p.roomId, c.dim(`The inner gate opens a hand's width for ${p.name}.`), s);
+    await this.game.town.rumour(p.id, `${p.name} went through the inner gate of Vesna`);
   }
 }

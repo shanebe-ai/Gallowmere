@@ -6,7 +6,9 @@ export interface Connection {
   send(text: string): void;
   /** choices: tappable answers for phones, like Yes (y) and No (n). */
   setMode(mode: { echo: boolean; prompt: string; choices?: Array<{ label: string; send: string }> }): void;
-  setStatus(status: { name: string; room: string; online: number; exits: string[]; coin: number; health?: number; maxHealth?: number; weather?: string }): void;
+  setStatus(status: { name: string; room: string; online: number; exits: string[]; coin: number; health?: number; maxHealth?: number; weather?: string; ambient?: string }): void;
+  /** A short sound by key, for clients that play sound (the browser). */
+  sound?(key: string): void;
   setToken(token: string | null): void;
   close(): void;
 }
@@ -42,6 +44,11 @@ export class Session {
   /** Sends text, word wrapped to the client's width, followed by a newline. */
   out(text: string): void {
     this.conn.send(wrap(text, this.cols) + '\n');
+  }
+
+  /** Plays a sound on clients that can. Telnet stays quiet. */
+  sound(key: string): void {
+    this.conn.sound?.(key);
   }
 
   setCols(cols: number): void {

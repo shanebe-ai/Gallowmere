@@ -641,6 +641,7 @@ export class Commerce {
     }
     await nudgeStanding(npc.id, p.id, 1, true);
     s.out(`You buy ${t.name} for ${price} coin.`);
+    s.sound('coin');
     if (price >= 20) this.game.bigSpend?.(s, `${p.name} paid ${npc.name} ${price} coin for ${t.name}`);
     this.game.toRoom(p.roomId, `${c.player(p.name)} buys ${t.name} from ${npc.name}.`, s);
     this.game.updateStatus(s);

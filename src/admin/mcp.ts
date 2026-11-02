@@ -16,6 +16,7 @@ export const TOOLS = [
   { name: 'game_health', description: 'Is Gallowmere up: the /health answer from the running server (players online, AI voices and their last call).', inputSchema: { type: 'object', properties: {} } },
   { name: 'player_counts', description: 'Players: total characters, new in the last day, seen in the last hour and day, and who is wanted by the watch.', inputSchema: { type: 'object', properties: {} } },
   { name: 'recent_errors', description: 'The last lines of the game\'s error log (pm2), newest last.', inputSchema: { type: 'object', properties: { lines: { type: 'number', description: 'How many lines, up to 200. Default 40.' } } } },
+  { name: 'world_state', description: 'The sky, the hour and tonight\'s event, if one is running.', inputSchema: { type: 'object', properties: {} } },
   { name: 'economy_summary', description: 'Coin in the world: total in purses and banks, and the biggest ledger movements in the last day.', inputSchema: { type: 'object', properties: {} } },
 ];
 
@@ -64,6 +65,11 @@ export async function callTool(name: string, args: Json): Promise<Json> {
     case 'player_counts': return players();
     case 'recent_errors': return errors(Number(args?.lines ?? 40));
     case 'economy_summary': return economy();
+    case 'world_state': {
+      const h = await health();
+      const body = (h.body ?? {}) as Json;
+      return h.reachable ? { weather: body.weather, event: body.event, online: body.online } : h;
+    }
     default: throw new Error(`unknown tool ${name}`);
   }
 }

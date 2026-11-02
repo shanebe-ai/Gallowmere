@@ -201,7 +201,7 @@ The fog has drawn back from the moor road at last.
 
 **The rats.** Big ones. Bigger than rats should be. They don't run from you. They fight back. Think about that.
 
-**Out past the wall.** Cole the charcoal burner, grey with soot, who buys hides and sells torches. The old ferryman on the mere, who says very little and most of it about a fish. The shrine keeper, who will show you how without a word of reproach. And whoever it is behind the gate of Vesna. Inside the ward, Sister Wenna keeps the gatehouse ledger and Old Jessamy paints a name on every lantern she sells.
+**Out past the wall.** Cole the charcoal burner, grey with soot, who buys hides and sells torches. The old ferryman on the mere, who says very little and most of it about a fish. The shrine keeper, who will show you how without a word of reproach. And whoever it is behind the gate of Vesna. Inside the ward, Sister Wenna keeps the gatehouse ledger and Old Jessamy paints a name on every lantern she sells. There is a second gate inside the ward. It opens for very few, and Jessamy knows more about why than she lets on. She likes Gallowmere lamp oil, and the lanterns are worth reading when the light goes.
 
 **Around town.** The duty sergeant at the watch house, who pays bounties and hates paperwork. Bess the fishwife and Hook's runner Nib at the fish market. Amos the gravedigger, far too cheerful, in the ossuary. Tobin the lamplighter, who walks every street and sees who goes where after dark. Wendel, who has propped up the end of Morda's bar for twenty years. Warden Crane of the Gatherers. Old Peg at the Sleeping Lantern.
 
@@ -244,6 +244,8 @@ You'll want to know about fighting. Everyone does.
 **Weather and the hour.** A day in Gallowmere runs about four real hours, dawn to night, and the sky changes every three quarters of an hour. Type `weather` to look up. It is not just scenery: at night the forest is black without a light, rain will put out a torch or a candle (a lamp keeps burning), the ferryman will not row in a storm, and the fish bite best in the rain. The townsfolk notice it too.
 
 **Nights.** Most nights something happens, and the town shouts about it. Get there. There is usually coin in it, a story, or something you will not find anywhere else. If you missed the shouting, `hint` will tell you what is going on.
+
+**Sound.** In the browser, tap the ♪ button at the top to turn sound on: the temple bell, the cart, thunder, rain on the street and noise in the tavern. It stays off until you ask, and remembers your choice.
 
 **Light fingers.** In a shop, `steal rope` tries to lift it off the counter. Cheap small things are easier. Get caught and the keeper calls you a thief, likes you less, and the watch hears of it. Get away with it and anyone else watching may still talk. Nobody steals from Hook. And `shout` is heard in the next rooms too, even from the cells.
 
@@ -302,6 +304,7 @@ Gallowmere isn't a nice town, but it has rules.
 | Crime | `steal rope` (in a shop), `shout help` |
 | The sky | `weather` |
 | Tonight | `hint`, `fill bucket`, `throw water`, `loot cart`, `buy charm` |
+| Vesna's inner gate | `give oil to jessamy`, `read lanterns`, `knock` |
 | The noticeboard | `read notices`, `pin selling rope, cheap`, `unpin` |
 | The gate of Vesna | `knock`, `ask osmund for a letter`, `ask hook about vesna`, `answer <words>` |
 | Who's in town | `who` |

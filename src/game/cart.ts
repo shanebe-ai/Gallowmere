@@ -71,6 +71,7 @@ export class PlagueCart {
     this.tolled.clear();
     this.room = null;
     this.game.broadcast(c.system("The temple bell tolls, slow and heavy. Somewhere a cart's wheels begin to turn."));
+    this.game.soundAll('bell');
     this.later(this.opts.warnMs ?? 2 * 60_000, () => this.advance());
   }
 
@@ -89,6 +90,7 @@ export class PlagueCart {
       roomId,
       c.npc('The plague cart creaks into view, piled high with shapes under sacking. Two cart men walk beside it with hooks and lanterns. The driver does not look at you.'),
     );
+    this.game.soundRoom(roomId, 'cart');
     // The rooms around hear it coming.
     for (const near of this.game.world.room(roomId).exits) {
       if (near.to !== prev) this.game.toRoom(near.to, c.dim('Close by, the slow creak of cart wheels and the clink of a hand bell.'));

@@ -53,6 +53,7 @@ export class NightEvents {
     switch (kind) {
       case 'fire':
         this.game.broadcast(c.error('A bell clangs down at the docks, and then shouting: FIRE! Smoke is rising over the fish market.'));
+        this.game.soundAll('bell', true);
         this.game.toRoom(FIRE_ROOM, c.error('Flames climb a stack of crates and lick at the net loft above. Folk run past with nothing in their hands. Water from the river: fill bucket at the River Docks, throw water here.'));
         break;
       case 'drowned':
@@ -141,6 +142,7 @@ export class NightEvents {
     ev.thrown++;
     ev.helpers.set(p.id, (ev.helpers.get(p.id) ?? 0) + 1);
     const left = FIRE_THROWS - ev.thrown;
+    this.game.soundRoom(p.roomId, 'splash');
     s.out(left > 0 ? `You hurl the water into the flames. They hiss and fall back, and come again. ${left} more might do it.` : 'You hurl the last bucket and the fire dies in a great white roar of steam.');
     this.game.toRoom(p.roomId, `${c.player(p.name)} throws a bucket of water on the fire.`, s);
     if (left > 0) return;

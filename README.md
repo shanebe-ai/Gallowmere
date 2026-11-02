@@ -81,6 +81,8 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 * It matters: at night the forest is black without a light, rain can put out a torch or candle (a lamp is shielded), the ferryman stays home in a storm, and the fish bite best in the rain. The AI townsfolk are told the hour and the weather and talk about it. Admins can set it: `weather rain night`, `weather reset`
 * The town talks about you: what you do (a crime someone saw, a big purchase, a bounty, the pike, the gate of Vesna) is written down with who saw it. Witnesses know at once, then it travels along the gossip chain, Morda to Hamo to Maud to Osmund, one townsperson an hour. Dace hears every crime at once and Hook every theft; the light characters only hear market talk. A townsperson who has heard something new about you may bring it up when you walk in, once per story, and it fades after three days
 * Something happens most nights: once a night, at a 40 percent chance with someone online, code starts one event for 20 to 40 minutes. A fire at the fish market (fill buckets at the river, throw water; the harbourmaster pays by the bucket), a body washed up on the mere (bury it and follow the note in its pocket), the plague cart stuck on a broken axle (pickings for the bold, theft for the watch), or a stranger from Vesna at the Drowned Rat selling lantern charms. Events never kill and never take anyone's goods. `hint` says what is happening; admins can start one with `event fire`
+* Sound in the browser, off by default: a speaker button in the status bar turns it on and remembers. Every sound is synthesised in the browser with the Web Audio API, so there are no audio files and no licences: the temple bell, cart wheels, thunder, a hit, a coin, the death bell, a splash, the gate, plus beds of rain, storm, wind, tavern noise and fire that follow where you stand. Telnet stays quiet
+* The inner gate of Vesna opens for those who went through the outer gate, brought Old Jessamy three flasks of Gallowmere lamp oil, and read their own name on a lantern at dusk. Behind it: the Lamp Hall, the Archive of Names with the Archivist (a full AI character who tells the truth in pieces), a walled garden with a chained well, and the Keeper's Stair to a door that stays shut. Better questions, not answers
 
 **Playing**
 * A `hint` command with directions to wherever you need to go next
@@ -201,7 +203,7 @@ First time setup on a new server:
 
 ## Admin MCP server
 
-A read only MCP server over stdio lets an assistant check on the game without touching it: `game_health` (the `/health` answer, players online, AI voices and their last call), `player_counts` (characters, new and recent, who the watch wants), `recent_errors` (the tail of the pm2 error log) and `economy_summary` (coin in purses and banks, the day's biggest ledger movements). It never writes. On the server:
+A read only MCP server over stdio lets an assistant check on the game without touching it: `game_health` (the `/health` answer, players online, AI voices and their last call), `player_counts` (characters, new and recent, who the watch wants), `recent_errors` (the tail of the pm2 error log) and `world_state` (the sky, the hour and tonight's event) and `economy_summary` (coin in purses and banks, the day's biggest ledger movements). It never writes. On the server:
 
     node dist/admin/mcp.js
 
@@ -212,7 +214,8 @@ A read only MCP server over stdio lets an assistant check on the game without to
 3. **Blood and the cart.** Street folk, sewer beasts, combat, death and rebirth, the plague cart, and ways to earn by the sword and the shovel. *Done.*
 3.5. **Beyond the wall.** The north road, the forest, the shrine, beasts and brigands, fishing and crafting, the Gatherers' Hall, drink and an inn, rumours, and a few surprises. *Done.*
 4. **The law and Vesna.** Accented names, heat and witnesses, the watch and the cells, a noticeboard with bounties and specials, stealing, the gate of Vesna and its outer ward, and a read only admin MCP server. *Done.*
-5. **See where it goes.** Guilds, more NPCs, a second area, real players.
+5. **Atmosphere.** Weather and the hour, the town gossiping about you, night events, sound in the browser, and the inner gate of Vesna. *Done.*
+6. **See where it goes.** Guilds, more NPCs, a second area, real players.
 
 Combat and economy mechanics are inspired by classic LPMuds such as Moral Decay. No rooms, text, names or maps are borrowed.
 

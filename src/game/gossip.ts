@@ -13,7 +13,7 @@ import type { Npc } from './world.js';
 export const CHAIN = ['morda', 'hamo', 'maud', 'osmund'];
 export const HOUR = 60 * 60_000;
 export const STORY_DAYS = 3;
-const FULL_AI = new Set([...CHAIN, 'dace', 'hook', 'wenna']);
+const FULL_AI = new Set([...CHAIN, 'dace', 'hook', 'wenna', 'archivist']);
 
 export type StoryKind = 'deed' | 'crime' | 'theft';
 
