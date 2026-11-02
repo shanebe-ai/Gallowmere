@@ -252,3 +252,21 @@ CREATE TABLE IF NOT EXISTS notices (
   text      TEXT NOT NULL,
   at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Milestone 5: the town talks. Stories about players, who saw them, and who has already said so.
+CREATE TABLE IF NOT EXISTS stories (
+  id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  text      TEXT NOT NULL,
+  kind      TEXT NOT NULL,
+  room_id   TEXT NOT NULL,
+  district  TEXT NOT NULL DEFAULT '',
+  witnesses JSONB NOT NULL DEFAULT '[]',
+  at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS stories_player_idx ON stories (player_id, at DESC);
+CREATE TABLE IF NOT EXISTS story_greetings (
+  story_id BIGINT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  npc_id   TEXT NOT NULL,
+  PRIMARY KEY (story_id, npc_id)
+);

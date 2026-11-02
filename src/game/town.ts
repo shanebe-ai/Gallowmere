@@ -539,6 +539,7 @@ export class Town {
 
   async rumour(playerId: number | null, text: string): Promise<void> {
     await query('INSERT INTO rumours (player_id, text) VALUES ($1,$2)', [playerId, text]);
+    if (playerId) await this.game.gossip.tell(playerId, text, 'deed', this.game.playerRoom(playerId) ?? 'market_square');
     this.rumourCache.unshift({ playerId, text, at: Date.now() });
     this.rumourCache = this.rumourCache.filter((r) => Date.now() - r.at < RUMOUR_MS).slice(0, 10);
   }

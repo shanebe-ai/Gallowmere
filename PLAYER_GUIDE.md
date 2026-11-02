@@ -253,6 +253,7 @@ You'll want to know about fighting. Everyone does.
 
 Gallowmere isn't a nice town, but it has rules.
 
+* **Word gets around.** Do something worth talking about and the people who saw it know at once. Within a few hours the rest of the town has heard, one tongue at a time, and somebody will mention it when you walk in.
 * **The townsfolk remember.** Morda, Dace, Hamo, Maud, Father Osmund and Hook all keep notes on you. What you say, what you do, how you paid. It follows you between visits.
 * **Some words don't get said here.** Slurs catch in your throat and go nowhere. Try it and the attempt is noted.
 * **Don't flood.** More than ten commands a second and the fog tells you to slow down, and drops the rest.

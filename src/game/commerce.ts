@@ -51,6 +51,8 @@ export interface GameHooks {
   extraLoad?(playerId: number): number;
   onConsume?(s: Session, template: Item['template']): void;
   gearLines?(s: Session): Promise<string[]>;
+  /** A purchase big enough for the town to talk about. */
+  bigSpend?(s: Session, text: string): void;
   /** A shopkeeper may refuse a sale: Morda and the very drunk. */
   refuseSale?(s: Session, npc: Npc, templateId: string): string | null;
   /** Giving something special to someone special (fish to Morda). True when handled. */
@@ -639,6 +641,7 @@ export class Commerce {
     }
     await nudgeStanding(npc.id, p.id, 1, true);
     s.out(`You buy ${t.name} for ${price} coin.`);
+    if (price >= 20) this.game.bigSpend?.(s, `${p.name} paid ${npc.name} ${price} coin for ${t.name}`);
     this.game.toRoom(p.roomId, `${c.player(p.name)} buys ${t.name} from ${npc.name}.`, s);
     this.game.updateStatus(s);
   }

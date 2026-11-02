@@ -989,3 +989,30 @@ describe('light fingers, shouting, and a fuller noticeboard (milestone 4 leftove
     expect((bad!.result as { isError: boolean }).isError).toBe(true);
   });
 });
+
+describe('the town talks about you (milestone 5)', () => {
+  it('rob Maud and Hamo hears an hour later, greets you with it once, and it is in his prompt', async () => {
+    await (await create('Gossa')).close();
+    const id = (await query('SELECT id FROM players WHERE name = $1', ['Gossa'])).rows[0].id as number;
+    const p = await login('Gossa', 'maud_shop');
+    await app.game.law.steal(app.game.sessionOf(id)!, 'candle', 0.99);
+    await p.waitFor(/Thief/);
+    const hamo = app.game.world.npcs.get('hamo')!;
+    expect(await app.game.gossip.noteFor(hamo, { id, name: 'Gossa' })).toBeUndefined();
+    expect(await app.game.gossip.noteFor(app.game.world.npcs.get('dace')!, { id, name: 'Gossa' })).toMatch(/Gossa stole from Maud/i);
+    await query("UPDATE stories SET at = at - interval '4 hours' WHERE player_id = $1", [id]);
+    expect(await app.game.gossip.noteFor(hamo, { id, name: 'Gossa' })).toMatch(/What you have heard about Gossa: Gossa stole from Maud/);
+    const calls = groq.calls.length;
+    await app.game.placePlayer(app.game.sessionOf(id)!, hamo.roomId, '');
+    await app.game.gossip.greet(app.game.sessionOf(id)!);
+    await p.waitFor(/./);
+    await new Promise((r) => setTimeout(r, 300));
+    expect(groq.calls.length).toBeGreaterThan(calls);
+    expect(groq.calls.at(-1)!.user).toMatch(/You have heard that Gossa stole from Maud/);
+    const before = groq.calls.length;
+    await app.game.gossip.greet(app.game.sessionOf(id)!);
+    await new Promise((r) => setTimeout(r, 300));
+    expect(groq.calls.length).toBe(before);
+    await p.close();
+  });
+});

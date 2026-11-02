@@ -9,6 +9,7 @@ import { Town } from './town.js';
 import { Law } from './law.js';
 import { Vesna } from './vesna.js';
 import { Weather, SKIES, type Sky, type Phase } from './weather.js';
+import { Gossip } from './gossip.js';
 import { Wilds } from './wilds.js';
 import { SOCIALS, socialEvent, socialLines } from './socials.js';
 import { PlagueCart, type CartOptions } from './cart.js';
@@ -258,6 +259,7 @@ export class Game {
   law: Law;
   vesna: Vesna;
   weather = new Weather();
+  gossip = new Gossip(this);
   private lastSky = '';
   wilds: Wilds;
   private townTimer: NodeJS.Timeout | null = null;
@@ -357,6 +359,11 @@ export class Game {
       if (line && room && Weather.openAir(room)) s.out(c.dim(line));
       this.updateStatus(s);
     }
+  }
+
+  /** A purchase big enough for the town to talk about. */
+  bigSpend(s: Session, text: string): void {
+    void this.gossip.tell(s.player!.id, text, 'deed', s.player!.roomId);
   }
 
   /** weather: what it is like out. Admins can set it: weather rain, weather clear night, weather reset. */
@@ -1258,6 +1265,7 @@ export class Game {
     this.updateStatus(s);
     this.combat.onArrive(s);
     await this.wilds.onArrive(s, room.id);
+    void this.gossip.greet(s).catch(() => undefined);
     return true;
   }
 
@@ -1868,7 +1876,7 @@ export class Game {
         },
         player: { id: p.id, name: p.name },
         memory,
-        room: { title: this.world.room(roomId).title, others, note: [this.weather.note(), this.cart.note(), this.town.noteFor(npc, p.id), await this.law.noteFor(npc, p)].filter(Boolean).join(' ') || undefined },
+        room: { title: this.world.room(roomId).title, others, note: [this.weather.note(), this.cart.note(), this.town.noteFor(npc, p.id), await this.law.noteFor(npc, p), await this.gossip.noteFor(npc, p)].filter(Boolean).join(' ') || undefined },
         recent: this.recent.get(key) ?? [],
         playerLine,
         kind,

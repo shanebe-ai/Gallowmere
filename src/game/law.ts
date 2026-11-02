@@ -158,6 +158,11 @@ export class Law {
         'INSERT INTO crimes (player_id, kind, room_id, victim, witnesses, seen, heat) VALUES ($1,$2,$3,$4,$5,$6,$7)',
         [playerId, kind, roomId, victim, JSON.stringify(witnesses), seen, heat],
       );
+      if (seen) {
+        const name = this.game.sessionOf(playerId)?.player?.name ?? (await query('SELECT name FROM players WHERE id = $1', [playerId])).rows[0]?.name ?? 'someone';
+        const saw = witnesses.filter((w) => w.kind !== 'player').map((w) => w.id);
+        await this.game.gossip.tell(playerId, `${name} ${VERBS[kind].toLowerCase()} ${victim} in ${this.game.world.room(roomId).title}`, kind === 'theft' ? 'theft' : 'crime', roomId, saw);
+      }
     } catch {
       /* the watch book is not worth a broken fight */
     }

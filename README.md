@@ -79,6 +79,7 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 **Atmosphere (Milestone 5)**
 * Weather and the hour: a game day runs four real hours, and the sky turns every 45 minutes (clear, fog, rain, storm, frost) from a seeded roll weighted by a slow season cycle, so everyone sees the same sky. Rooms under the sky describe it, rooms with a roof hear it, and the status bar shows it ("Dusk, rain")
 * It matters: at night the forest is black without a light, rain can put out a torch or candle (a lamp is shielded), the ferryman stays home in a storm, and the fish bite best in the rain. The AI townsfolk are told the hour and the weather and talk about it. Admins can set it: `weather rain night`, `weather reset`
+* The town talks about you: what you do (a crime someone saw, a big purchase, a bounty, the pike, the gate of Vesna) is written down with who saw it. Witnesses know at once, then it travels along the gossip chain, Morda to Hamo to Maud to Osmund, one townsperson an hour. Dace hears every crime at once and Hook every theft; the light characters only hear market talk. A townsperson who has heard something new about you may bring it up when you walk in, once per story, and it fades after three days
 
 **Playing**
 * A `hint` command with directions to wherever you need to go next

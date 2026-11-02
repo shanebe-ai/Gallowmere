@@ -347,3 +347,27 @@ describe('weather and the hour', () => {
     expect(w.fishingFactor()).toBeGreaterThan(1);
   });
 });
+
+import { heardAt, HOUR } from '../src/game/gossip.js';
+
+describe('gossip travels by code', () => {
+  const base = { id: 1, playerId: 1, text: 'x', roomId: 'maud_shop', district: 'market', at: 1000 };
+  it('witnesses hear at once, then the chain one townsperson an hour; Dace hears crimes, Hook thefts', () => {
+    const theft = { ...base, kind: 'theft' as const, witnesses: ['maud'] };
+    expect(heardAt(theft, 'maud')).toBe(1000);
+    expect(heardAt(theft, 'osmund')).toBe(1000 + HOUR);
+    expect(heardAt(theft, 'morda')).toBe(1000 + 2 * HOUR);
+    expect(heardAt(theft, 'hamo')).toBe(1000 + 3 * HOUR);
+    expect(heardAt(theft, 'dace')).toBe(1000);
+    expect(heardAt(theft, 'hook')).toBe(1000);
+    expect(heardAt(theft, 'wenna')).toBeNull();
+    expect(heardAt(theft, 'tilly')).toBe(1000);
+  });
+  it('a deed nobody on the chain saw reaches the Drowned Rat within the hour; light folk only hear market talk', () => {
+    const deed = { ...base, kind: 'deed' as const, district: 'moor', witnesses: [] };
+    expect(heardAt(deed, 'morda')).toBe(1000 + HOUR);
+    expect(heardAt(deed, 'hamo')).toBe(1000 + 2 * HOUR);
+    expect(heardAt(deed, 'dace')).toBeNull();
+    expect(heardAt(deed, 'tilly')).toBeNull();
+  });
+});
