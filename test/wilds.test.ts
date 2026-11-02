@@ -701,3 +701,89 @@ describe('weather in the wilds (milestone 5)', () => {
     await p.close();
   });
 });
+
+describe('night events (milestone 5)', () => {
+  it('a fire at the docks: two players carry water, it goes out, the harbourmaster pays each by their buckets', async () => {
+    const a = await create('Bucka', 'river_docks', { old: true, coin: 0 });
+    const b = await create('Buckb', 'river_docks', { old: true, coin: 0 });
+    await app.game.events.start('fire');
+    await a.do('throw water', /fire is at the fish market/);
+    for (let i = 0; i < 5; i++) {
+      const who = i % 2 ? b : a;
+      await who.do('fill bucket', /haul it up full/);
+      await who.do('e', /Fish Market/);
+      await who.do('throw water', i < 4 ? /more might do it/ : /dies in a great white roar/);
+      await who.do('w', /River Docks/);
+    }
+    expect(await coinOf('Bucka')).toBe(3 + 2 * 3);
+    expect(await coinOf('Buckb')).toBe(3 + 2 * 2);
+    expect(app.game.events.current).toBeNull();
+    await a.close();
+    await b.close();
+  });
+
+  it('the drowned stranger: bury the body, follow the note, dig up the stash once', async () => {
+    const p = await create('Digger', 'mere_shore', { old: true, coin: 0 });
+    await app.game.events.start('drowned');
+    await p.do('look', /corpse of a drowned stranger/);
+    await p.do('take corpse', /heave/);
+    await app.game.placePlayer(app.game.sessionOf(await idOf('Digger'))!, 'nave', '');
+    await p.do('give corpse to osmund', /Under the turned stone/);
+    const stash = (await query("SELECT value FROM player_flags WHERE flag = 'stash' AND player_id = $1", [await idOf('Digger')])).rows[0].value;
+    await app.game.placePlayer(app.game.sessionOf(await idOf('Digger'))!, stash, '');
+    const before = await coinOf('Digger');
+    await p.do('dig', /twelve coins and a silver locket/);
+    expect(await coinOf('Digger')).toBe(before + 12);
+    await p.do('i', /silver locket/);
+    await p.do('dig', /./);
+    expect(await coinOf('Digger')).toBe(before + 12);
+    await p.close();
+  });
+
+  it('the broken axle keeps the cart where it is, and picking it over is theft', async () => {
+    const p = await create('Picker', 'wet_lane', { old: true, coin: 0 });
+    app.game.cart.out = true;
+    app.game.cart.room = 'wet_lane';
+    await app.game.events.start('axle');
+    expect(app.game.cart.broken).toBe(true);
+    await p.do('loot cart', /go through the sacking/);
+    await p.do('loot cart', /had your pickings/);
+    expect(await coinOf('Picker')).toBeGreaterThan(0);
+    const { rows } = await query("SELECT kind, victim FROM crimes WHERE player_id = $1", [await idOf('Picker')]);
+    expect(rows[0]).toMatchObject({ kind: 'theft', victim: 'the plague cart' });
+    await app.game.events.end(true);
+    expect(app.game.cart.broken).toBe(false);
+    app.game.cart.out = false;
+    app.game.cart.room = null;
+    await p.close();
+  });
+
+  it('a stranger at the Drowned Rat sells one lantern charm each and leaves at the end', async () => {
+    const p = await create('Charmed', 'drowned_rat', { old: true, coin: 10 });
+    await app.game.events.start('stranger');
+    await p.do('look', /stranger from Vesna/);
+    await p.do('hint', /Tonight: A stranger from Vesna/);
+    await p.do('buy charm', /tiny tin lantern/);
+    await p.do('buy charm', /One each/);
+    expect(await coinOf('Charmed')).toBe(2);
+    await app.game.events.end(false);
+    expect(app.game.world.npcs.has('night_stranger')).toBe(false);
+    await p.close();
+  });
+
+  it('events start only at night, at most once a night', async () => {
+    const ev = new (await import('../src/game/events.js')).NightEvents(app.game, () => 0);
+    const p = await create('Owl', 'market_square', { old: true });
+    app.game.weather.force('clear', 'day');
+    await ev.tick();
+    expect(ev.current).toBeNull();
+    app.game.weather.force('clear', 'night');
+    await ev.tick();
+    expect(ev.current?.kind).toBe('fire');
+    await ev.end(true);
+    await ev.tick();
+    expect(ev.current).toBeNull();
+    app.game.weather.force('clear', 'day');
+    await p.close();
+  });
+});

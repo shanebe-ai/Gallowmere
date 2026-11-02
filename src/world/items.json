@@ -1384,5 +1384,30 @@
     "weight": 1,
     "price": 0,
     "look": "Oilcloth and broken black wax, a map of the sewers in a stranger's hand, and a dried rose. Nobody will take it now."
+  },
+  {
+    "id": "silver_locket",
+    "name": "a silver locket",
+    "keywords": [
+      "locket",
+      "silver"
+    ],
+    "kind": "valuable",
+    "weight": 0,
+    "price": 15,
+    "look": "A tarnished silver locket on a broken chain. Inside, a painted face you do not know, and a name too small to read without a glass."
+  },
+  {
+    "id": "lantern_charm",
+    "name": "a lantern charm",
+    "keywords": [
+      "charm",
+      "lantern",
+      "tin"
+    ],
+    "kind": "valuable",
+    "weight": 0,
+    "price": 12,
+    "look": "A tin lantern no bigger than a thimble, warm in the hand. There is a tiny wick inside, and it is lit, though nothing feeds it."
   }
 ]

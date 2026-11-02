@@ -10,6 +10,7 @@ import { Law } from './law.js';
 import { Vesna } from './vesna.js';
 import { Weather, SKIES, type Sky, type Phase } from './weather.js';
 import { Gossip } from './gossip.js';
+import { NightEvents, EVENT_KINDS, type EventKind } from './events.js';
 import { Wilds } from './wilds.js';
 import { SOCIALS, socialEvent, socialLines } from './socials.js';
 import { PlagueCart, type CartOptions } from './cart.js';
@@ -218,6 +219,7 @@ const HELP: Record<string, string> = {
   gatherers: "The Gatherers' Hall, east off Butcher's Alley: join gatherers (1 coin), then deliver bodies to Warden Crane for pay by the body, more for fresh ones and for higher ranks. board: who wants which bodies this hour.",
   notices: 'notices (or read notices, in the market square): the noticeboard. Who the watch wants and the bounty on them, what the town is saying, and notes players pin. pin <words> to put up a note of your own for a day, unpin to take it down. Bring down a wanted player and the watch pays you the bounty.',
   vesna: 'knock, at the shut gate at the end of the north road: the voice behind the hatch wants a letter of passage from Father Osmund, a clean name with the watch, and a sealed parcel from Hook. Then it asks a riddle: answer <words>, one guess an hour. Get it right and the gate opens for you for good.',
+  events: 'Most nights something happens: a fire at the docks (fill bucket at the River Docks, throw water at the fish market), a body washed up on the mere, the plague cart stuck with a broken axle, or a stranger at the Drowned Rat. hint tells you what is going on tonight.',
   weather: 'weather: the hour and what it is like out. A game day runs four real hours. At night the forest is dark without a light, rain can put out a torch, fog hides the way, the ferryman stays home in a storm, and the fish bite best in the rain.',
   steal: 'steal <item>, in a shop: lift something off the counter. A keeper who notices catches you and calls you a thief, and the watch hears of it. One who does not may still have customers watching. Nobody steals from Hook.',
   shout: 'shout <words>: heard in this room and every room next to it. Works from the cells too.',
@@ -260,6 +262,7 @@ export class Game {
   vesna: Vesna;
   weather = new Weather();
   gossip = new Gossip(this);
+  events = new NightEvents(this);
   private lastSky = '';
   wilds: Wilds;
   private townTimer: NodeJS.Timeout | null = null;
@@ -330,6 +333,7 @@ export class Game {
     await this.town.tick();
     this.wilds.tick();
     this.weatherBeat();
+    await this.events.tick();
   }
 
   /** When the sky or the light changes, everyone under it notices, and the status bar follows. */
@@ -897,6 +901,8 @@ export class Game {
     if (s.player!.roomId === 'market_square' && /^(read|look|l|x|examine)\s+(at\s+)?(the\s+)?(notice ?board|notices|posters?|board)$/i.test(line)) {
       return this.law.noticeboard(s);
     }
+    if ((verb === 'loot' || verb === 'search') && /cart/i.test(rest) && this.events.current?.kind === 'axle') return this.events.lootCart(s);
+    if ((verb === 'buy' || verb === 'purchase') && (await this.events.buyCharm(s, rest))) return;
     // Stealing is only a crime at a shop counter; elsewhere steal means take, as it always has.
     if (['steal', 'pocket', 'swipe'].includes(verb) && rest && this.commerce.shopIn(s.player!.roomId)) return this.law.steal(s, rest);
     // The gate of Vesna: the quest's checks are all code.
@@ -991,6 +997,7 @@ export class Game {
       case 'cast':
         return this.wilds.fish(s);
       case 'dig':
+        if (await this.events.dig(s)) return;
         return this.wilds.dig(s);
       case 'make':
       case 'craft':
@@ -1036,6 +1043,22 @@ export class Game {
       case 'weather':
       case 'sky':
         return this.weatherCommand(s, rest);
+      case 'fill':
+        if (/bucket|water/i.test(rest) || !rest) return this.events.fill(s);
+        break;
+      case 'throw':
+      case 'douse':
+        if (/water|bucket|fire/i.test(rest) || !rest) return this.events.throwWater(s);
+        break;
+      case 'event':
+        if (this.isAdmin(s)) {
+          const kind = rest.trim().toLowerCase() as EventKind;
+          if (kind === ('end' as EventKind)) { await this.events.end(true); return s.out('Event ended.'); }
+          if (!EVENT_KINDS.includes(kind)) return s.out(`event <${EVENT_KINDS.join('|')}>, or event end.`);
+          await this.events.start(kind);
+          return s.out(`Started: ${kind}.`);
+        }
+        break;
       case 'shout':
       case 'yell':
         return this.law.shout(s, rest);
@@ -1139,8 +1162,11 @@ export class Game {
       case 'job':
         return this.commerce.work(s);
       case 'hint':
-      case 'hints':
+      case 'hints': {
+        const tonight = this.events.hint();
+        if (tonight) s.out(c.system(`Tonight: ${tonight}`));
         return this.commerce.hint(s);
+      }
       case 'talk':
       case 'tell':
         return this.talk(s, rest);
@@ -1979,7 +2005,7 @@ export class Game {
       attack: 'fight', kill: 'fight', flee: 'fight', combat: 'fight', die: 'death', dead: 'death', corpse: 'corpses', loot: 'corpses', bounty: 'corpses', plague: 'cart', bell: 'cart',
       forest: 'road', north: 'road', brigands: 'road', vesna: 'road', fog: 'road', fish: 'fishing', rod: 'fishing', bait: 'fishing', worms: 'fishing',
       make: 'crafting', craft: 'crafting', recipes: 'crafting', snare: 'crafting', torch: 'crafting', dark: 'crafting', light: 'crafting',
-      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', heat: 'wanted', law: 'wanted', surrender: 'jail', bail: 'jail', fine: 'jail', sentence: 'jail', cells: 'jail', lockup: 'jail', arrest: 'jail', noticeboard: 'notices', gate: 'vesna', riddle: 'vesna', answer: 'vesna', parcel: 'vesna', knock: 'vesna', ward: 'vesna', pin: 'notices', unpin: 'notices', posters: 'notices', bounties: 'notices', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
+      guild: 'gatherers', deliver: 'gatherers', board: 'gatherers', heat: 'wanted', law: 'wanted', surrender: 'jail', bail: 'jail', fine: 'jail', sentence: 'jail', cells: 'jail', lockup: 'jail', arrest: 'jail', noticeboard: 'notices', gate: 'vesna', riddle: 'vesna', answer: 'vesna', parcel: 'vesna', knock: 'vesna', ward: 'vesna', fire: 'events', bucket: 'events', night: 'events', stranger: 'events', pin: 'notices', unpin: 'notices', posters: 'notices', bounties: 'notices', ale: 'drink', gin: 'drink', drunk: 'drink', sleep: 'inn', bed: 'inn', rent: 'inn', chest: 'inn',
       fortune: 'shrine', pray: 'shrine', ritual: 'shrine',
     };
     const key = DIR_SHORT[t] ? 'move' : t === 'l' ? 'look' : alias[t] ?? t;

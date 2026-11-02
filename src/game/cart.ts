@@ -30,6 +30,8 @@ export class PlagueCart {
   /** Who has paid this round: the cart passes some rooms twice, but takes the toll once. */
   private tolled = new Set<number>();
   private timer: NodeJS.Timeout | null = null;
+  /** A broken axle (a night event): the cart stays where it is until mended. */
+  broken = false;
 
   constructor(private game: Game, private combat: Combat, private opts: CartOptions = {}) {}
 
@@ -74,6 +76,10 @@ export class PlagueCart {
 
   /** The cart moves to its next room and does its work there. */
   async advance(): Promise<void> {
+    if (this.broken && this.room) {
+      this.game.toRoom(this.room, c.dim('The plague cart sits lopsided on its broken axle. The cart men argue over it.'));
+      return this.later(this.opts.stepMs ?? 40_000, () => this.advance());
+    }
     if (this.step >= ROUTE.length) return this.finish();
     const prev = this.room;
     const roomId = ROUTE[this.step++];
@@ -89,6 +95,14 @@ export class PlagueCart {
     }
     await this.work(roomId);
     this.later(this.opts.stepMs ?? 40_000, () => this.advance());
+  }
+
+  breakDown(): void {
+    this.broken = true;
+  }
+
+  mend(): void {
+    this.broken = false;
   }
 
   private finish(): void {

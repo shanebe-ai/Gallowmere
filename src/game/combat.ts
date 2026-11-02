@@ -827,7 +827,7 @@ export class Combat {
     return corpseId;
   }
 
-  private async makeCorpse(kind: 'player' | 'street' | 'rat' | 'beast', playerId: number | null, name: string, roomId: string, coin: number, items: string[], ownerMs: number, mobKind?: string): Promise<number> {
+  async makeCorpse(kind: 'player' | 'street' | 'rat' | 'beast', playerId: number | null, name: string, roomId: string, coin: number, items: string[], ownerMs: number, mobKind?: string): Promise<number> {
     return tx(async (cl) => {
       const { rows } = await cl.query(
         `INSERT INTO corpses (kind, player_id, name, room_id, coin, open_at, expires_at, mob_kind)
@@ -1017,6 +1017,7 @@ export class Combat {
     }
     this.game.toRoom(p.roomId, `${c.player(p.name)} lays the corpse of ${k.name} down for burial.`, s);
     this.game.updateStatus(s);
+    await this.game.events.onBury(s, k.name);
   }
 
   /** sell corpse to butcher: better paid, no questions, and word sometimes gets around. */
