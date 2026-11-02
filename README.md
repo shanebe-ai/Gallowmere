@@ -95,7 +95,7 @@ Every NPC line is logged to `ai_usage` with provider, tokens, latency and whethe
 
 Built to run on free tiers. Groq's free tier allows roughly 30 requests a minute and 14,400 a day on Llama 3.1 8B, Gemini Flash Lite adds a backup pool, and scripted lines cover anything past that. Caps keep it there:
 
-* 200 AI lines per player per day, across all six characters
+* 200 AI lines per player per day, across all seven full characters
 * 5,000 AI lines across all players per day
 * Rate guards set just under each provider's per minute limit
 
