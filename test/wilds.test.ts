@@ -686,3 +686,18 @@ describe('Milestone 3.5 end to end', () => {
     await p.close();
   });
 });
+
+describe('weather in the wilds (milestone 5)', () => {
+  it('night blacks out the forest without a light, a storm keeps the ferryman home, and look shows the sky', async () => {
+    const p = await create('Stormy', 'mere_jetty', { old: true, coin: 3 });
+    app.game.weather.force('storm', 'day');
+    await p.do('ferry', /Not in this/);
+    await p.do('look', /storm|Whitecaps/i);
+    await p.do('weather', /Day, storm/);
+    app.game.weather.force('clear', 'night');
+    await p.do('look', /too dark to see/);
+    app.game.weather.force('clear', 'day');
+    await p.do('look', /Exits:/);
+    await p.close();
+  });
+});

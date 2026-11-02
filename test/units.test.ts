@@ -312,3 +312,38 @@ describe('bounties (milestone 4 step 4)', () => {
   });
 });
 
+
+import { phaseAt, hourAt, skyAt, DAY_MS, SKY_MS, SKIES, Weather } from '../src/game/weather.js';
+
+describe('weather and the hour', () => {
+  it('a game day runs four real hours: dawn, day, dusk, night, with the hour following', () => {
+    expect(phaseAt(0)).toBe('dawn');
+    expect(hourAt(0)).toBe(5);
+    expect(phaseAt(DAY_MS * 0.3)).toBe('day');
+    expect(phaseAt(DAY_MS * 0.65)).toBe('dusk');
+    expect(phaseAt(DAY_MS * 0.9)).toBe('night');
+    expect(phaseAt(DAY_MS * 1.3)).toBe('day');
+  });
+
+  it('the sky is the same for everyone in a slot, changes between slots, and every kind turns up', () => {
+    const t = Math.floor(1_800_000_000_000 / SKY_MS) * SKY_MS;
+    expect(skyAt(t)).toBe(skyAt(t + SKY_MS / 3));
+    const seen = new Set<string>();
+    for (let i = 0; i < 2000; i++) seen.add(skyAt(t + i * SKY_MS));
+    expect([...seen].sort()).toEqual([...SKIES].sort());
+  });
+
+  it('describes open rooms by sky and hour, muffles indoor rooms, and says nothing in the sewers', () => {
+    const w = new Weather(() => 0);
+    w.force('rain', 'night');
+    const street = { id: 'x', district: 'docks', title: '', description: '', flags: ['street'], features: [], exits: [], locks: {} };
+    const inn = { ...street, flags: ['inn'] };
+    const sewer = { ...street, flags: ['sewer'] };
+    expect(w.line(street as never)).toMatch(/[Rr]ain[\s\S]*river is pocked/);
+    expect(w.line(inn as never)).toMatch(/drums on the roof/);
+    expect(w.line(sewer as never)).toBe('');
+    expect(w.label()).toBe('Night, rain');
+    expect(w.note()).toMatch(/11pm \(night\).*rain/);
+    expect(w.fishingFactor()).toBeGreaterThan(1);
+  });
+});

@@ -241,6 +241,8 @@ You'll want to know about fighting. Everyone does.
 
 **The watch.** Hurt people inside the walls where someone can see and the watch writes it down. `wanted` shows your heat, which cools by half every two hours. Let it run high inside the walls and a patrol comes for you, one street at a time: run for the gate, or `surrender` and serve less. In the lockup the cage door answers most things. `sentence` shows the time left, `pay fine` buys you out, and anyone can `bail` you from the watch house. Serving your time, paying or being bailed wipes the slate.
 
+**Weather and the hour.** A day in Gallowmere runs about four real hours, dawn to night, and the sky changes every three quarters of an hour. Type `weather` to look up. It is not just scenery: at night the forest is black without a light, rain will put out a torch or a candle (a lamp keeps burning), the ferryman will not row in a storm, and the fish bite best in the rain. The townsfolk notice it too.
+
 **Light fingers.** In a shop, `steal rope` tries to lift it off the counter. Cheap small things are easier. Get caught and the keeper calls you a thief, likes you less, and the watch hears of it. Get away with it and anyone else watching may still talk. Nobody steals from Hook. And `shout` is heard in the next rooms too, even from the cells.
 
 **The noticeboard.** In the market square: `read notices`. Who the watch wants and the bounty on their head, what the town is saying, notes other players pin for a day (`pin` and `unpin`), one thing from each shop's shelf today, and an old notice about the road to Vesna. Bring down a wanted player and the watch pays the bounty, and no crime is written down.
@@ -295,6 +297,7 @@ Gallowmere isn't a nice town, but it has rules.
 | The inn | `rent bed`, `rent room`, `sleep`, `store bread`, `retrieve bread` |
 | The watch | `wanted`, `surrender`, `sentence`, `pay fine`, `bail noelle` |
 | Crime | `steal rope` (in a shop), `shout help` |
+| The sky | `weather` |
 | The noticeboard | `read notices`, `pin selling rope, cheap`, `unpin` |
 | The gate of Vesna | `knock`, `ask osmund for a letter`, `ask hook about vesna`, `answer <words>` |
 | Who's in town | `who` |

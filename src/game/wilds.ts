@@ -10,6 +10,7 @@ import type { Session } from './session.js';
 import { c, capitalize } from './text.js';
 import { cleanTarget, type Exit, type Room } from './world.js';
 import type { Game } from './game.js';
+import { Weather, WILD_DISTRICTS } from './weather.js';
 
 export const SHRINE = 'shrine';
 const STEPS = ['offer', 'ring', 'bow', 'bow', 'clap', 'clap', 'pray', 'bow'] as const;
@@ -212,6 +213,14 @@ export class Wilds {
   async onArrive(s: Session, from: string | null): Promise<void> {
     const p = s.player!;
     const now = Date.now();
+    // Rain and storm can put out an open flame; a lamp is shielded.
+    const st = this.st(s);
+    const sky = this.game.weather.now().sky;
+    if (st && st.lightUntil > now && (st.lightKind === 'torch' || st.lightKind === 'candle' || st.lightKind === 'tallow_stub')
+      && (sky === 'rain' || sky === 'storm') && Weather.openAir(this.here(s)) && this.r() < (sky === 'storm' ? 0.5 : 0.25)) {
+      st.lightUntil = 0;
+      s.out(c.error('A gust of wet wind and your flame hisses out. You are holding a smoking stick.'));
+    }
     if (p.roomId === 'shrine_basin' && from === 'shrine_gates') {
       if ((this.side.get(p.id) ?? 0) < now) {
         s.out(c.npc('Ahead at the shrine, the old keeper looks up from her sweeping and catches your eye. Smiling, she draws a line in the air along the edge of the path. The middle is the god\'s; walkers keep to the side.'));
@@ -394,7 +403,10 @@ export class Wilds {
   // ---------------------------------------------------------------- light and dark
 
   isDark(roomId: string): boolean {
-    return this.game.world.room(roomId).flags.includes('dark');
+    const room = this.game.world.room(roomId);
+    if (room.flags.includes('dark')) return true;
+    // At night the forest is black unless a fire burns there.
+    return this.game.weather.isNight() && WILD_DISTRICTS.has(room.district) && !room.flags.includes('fire');
   }
 
   /** A lit light, or the fox fire that never goes out. */
@@ -419,6 +431,7 @@ export class Wilds {
     const now = Date.now();
     const burn = (ms: number) => {
       st.lightUntil = Math.max(st.lightUntil, now) + ms;
+      st.lightKind = item.template.id;
     };
     switch (item.template.id) {
       case 'fox_fire':
@@ -621,7 +634,7 @@ export class Wilds {
       }
       return s.out(c.error('The float goes under. You pull, and something pulls back, and then it lets go of the line and bites your hand instead, and is gone. Some things are better left in the water.'));
     }
-    if (this.r() >= chance) return s.out('Nothing. The float bobs, and bobs, and nothing takes it. The bait is gone.');
+    if (this.r() >= Math.min(0.95, chance * this.game.weather.fishingFactor())) return s.out('Nothing. The float bobs, and bobs, and nothing takes it. The bait is gone.');
     const total = table.reduce((n, [, w]) => n + w, 0);
     let roll = this.r() * total;
     let pick = table[0][0];
@@ -665,6 +678,7 @@ export class Wilds {
       return this.game.placePlayer(s, 'mere_jetty', `The ferryman's boat bumps the jetty and ${c.player(p.name)} climbs out.`);
     }
     if (!this.game.world.npcsIn(p.roomId).some((n) => n.id === 'ferryman')) return s.out('The ferryman keeps his boat at the jetty on the mere.');
+    if (this.game.weather.now().sky === 'storm') return s.out(c.npc('The ferryman looks at the whitecaps on the mere, then at you, and goes back to mending his net. Not in this.'));
     try {
       await tx((cl) => moveCoin(cl, p.id, -1, 0, 'ferry to the island'));
     } catch (err) {

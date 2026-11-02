@@ -47,6 +47,8 @@ export interface PlayerState {
   outUntil: number;
   /** Carrying a lit light until then. */
   lightUntil: number;
+  /** What is burning: a torch or candle can be rained out, a lamp is shielded. */
+  lightKind?: string;
   /** The shrine's fox: a steadier hand until then. */
   favourUntil: number;
   /** A bad fortune kept: a shakier hand until then. */

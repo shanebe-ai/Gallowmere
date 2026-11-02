@@ -237,7 +237,7 @@ socket.on('session', (token: string | null) => {
   }
 });
 
-socket.on('status', (s: { name: string; room: string; online: number; exits: string[]; coin?: number; health?: number; maxHealth?: number }) => {
+socket.on('status', (s: { name: string; room: string; online: number; exits: string[]; coin?: number; health?: number; maxHealth?: number; weather?: string }) => {
   const name = document.createElement('b');
   name.textContent = s.name;
   const parts: Node[] = [name];
@@ -250,7 +250,8 @@ socket.on('status', (s: { name: string; room: string; online: number; exits: str
     parts.push(document.createTextNode(' · '), hp);
   }
   const coin = typeof s.coin === 'number' ? ` · ${s.coin} coin` : '';
-  parts.push(document.createTextNode(`${coin} · ${s.room} · ${s.online} online`));
+  const sky = s.weather ? ` · ${s.weather}` : '';
+  parts.push(document.createTextNode(`${coin} · ${s.room}${sky} · ${s.online} online`));
   statusInfo.replaceChildren(...parts);
   renderExits(s.exits);
 });

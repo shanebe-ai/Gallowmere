@@ -15,6 +15,7 @@ export default defineConfig({
       NEW_CHARS_PER_HOUR: '1000',
       MAX_CONNECTIONS_PER_IP: '1000',
       TELNET_PORT: '0',
+      GALLOWMERE_FIXED_WEATHER: 'day,clear',
     },
   },
 });

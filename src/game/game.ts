@@ -8,6 +8,7 @@ import { Combat, MAX_LEVEL, maxHealthFor, xpForLevel } from './combat.js';
 import { Town } from './town.js';
 import { Law } from './law.js';
 import { Vesna } from './vesna.js';
+import { Weather, SKIES, type Sky, type Phase } from './weather.js';
 import { Wilds } from './wilds.js';
 import { SOCIALS, socialEvent, socialLines } from './socials.js';
 import { PlagueCart, type CartOptions } from './cart.js';
@@ -216,6 +217,7 @@ const HELP: Record<string, string> = {
   gatherers: "The Gatherers' Hall, east off Butcher's Alley: join gatherers (1 coin), then deliver bodies to Warden Crane for pay by the body, more for fresh ones and for higher ranks. board: who wants which bodies this hour.",
   notices: 'notices (or read notices, in the market square): the noticeboard. Who the watch wants and the bounty on them, what the town is saying, and notes players pin. pin <words> to put up a note of your own for a day, unpin to take it down. Bring down a wanted player and the watch pays you the bounty.',
   vesna: 'knock, at the shut gate at the end of the north road: the voice behind the hatch wants a letter of passage from Father Osmund, a clean name with the watch, and a sealed parcel from Hook. Then it asks a riddle: answer <words>, one guess an hour. Get it right and the gate opens for you for good.',
+  weather: 'weather: the hour and what it is like out. A game day runs four real hours. At night the forest is dark without a light, rain can put out a torch, fog hides the way, the ferryman stays home in a storm, and the fish bite best in the rain.',
   steal: 'steal <item>, in a shop: lift something off the counter. A keeper who notices catches you and calls you a thief, and the watch hears of it. One who does not may still have customers watching. Nobody steals from Hook.',
   shout: 'shout <words>: heard in this room and every room next to it. Works from the cells too.',
   jail: 'surrender, pay fine, bail <name>, sentence: when the watch wants you, surrender to a patrol or at the watch house and serve less time. In the cells, pay fine to buy your way out, or wait it out; sentence shows how long is left. Anyone can bail <name> a prisoner from the watch house or the lockup.',
@@ -255,6 +257,8 @@ export class Game {
   town: Town;
   law: Law;
   vesna: Vesna;
+  weather = new Weather();
+  private lastSky = '';
   wilds: Wilds;
   private townTimer: NodeJS.Timeout | null = null;
   private stockDay = '';
@@ -323,6 +327,55 @@ export class Game {
   async lifeBeat(): Promise<void> {
     await this.town.tick();
     this.wilds.tick();
+    this.weatherBeat();
+  }
+
+  /** When the sky or the light changes, everyone under it notices, and the status bar follows. */
+  weatherBeat(): void {
+    const now = this.weather.now();
+    const key = `${now.sky}:${now.phase}`;
+    if (key === this.lastSky) return;
+    const first = !this.lastSky;
+    const [oldSky, oldPhase] = this.lastSky.split(':');
+    this.lastSky = key;
+    if (first) return;
+    const SKY_TURNS: Record<string, string> = {
+      clear: 'The weather clears. The clouds pull back.',
+      fog: 'Fog comes rolling in off the river.',
+      rain: 'It starts to rain.',
+      storm: 'Thunder cracks overhead and a storm comes down on the town.',
+      frost: 'The air turns bitter. Frost creeps over every surface.',
+    };
+    const LIGHT_TURNS: Record<string, string> = {
+      dawn: 'The sky greys towards dawn.', day: 'Full day comes up over Gallowmere.',
+      dusk: 'The light goes amber, then grey. Dusk.', night: 'Night comes down. Lamps flicker on along the streets.',
+    };
+    const line = oldSky !== now.sky ? SKY_TURNS[now.sky] : oldPhase !== now.phase ? LIGHT_TURNS[now.phase] : '';
+    for (const s of this.byPlayer.values()) {
+      if (s.state !== 'playing' || !s.player) continue;
+      const room = this.world.rooms.get(s.player.roomId);
+      if (line && room && Weather.openAir(room)) s.out(c.dim(line));
+      this.updateStatus(s);
+    }
+  }
+
+  /** weather: what it is like out. Admins can set it: weather rain, weather clear night, weather reset. */
+  private weatherCommand(s: Session, rest: string): void {
+    const words = rest.toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length && this.isAdmin(s)) {
+      if (words[0] === 'reset') { this.weather.force(null); s.out('Weather back to its own devices.'); }
+      else {
+        const sky = words.find((w) => (SKIES as string[]).includes(w)) as Sky | undefined;
+        const phase = words.find((w) => ['dawn', 'day', 'dusk', 'night'].includes(w)) as Phase | undefined;
+        if (!sky && !phase) return s.out(`weather <${SKIES.join('|')}> [dawn|day|dusk|night], or weather reset.`);
+        this.weather.force(sky ?? null, phase);
+        s.out(`Weather set: ${this.weather.label()} for an hour.`);
+      }
+      this.weatherBeat();
+      return;
+    }
+    const room = this.world.room(s.player!.roomId);
+    s.out(`${this.weather.label()}. ${this.weather.line(room) || 'Down here you cannot tell.'}`);
   }
 
   /** Drops expired tokens and stale rate limit entries so memory stays flat. */
@@ -758,6 +811,7 @@ export class Game {
           coin,
           health: st?.health,
           maxHealth: st ? maxHealthFor(st.level) : undefined,
+          weather: this.weather.label(),
         });
       })
       .catch(() => undefined);
@@ -778,6 +832,8 @@ export class Game {
     const floor = await this.commerce.roomItems(room.id);
     s.out(c.title(room.title));
     s.out(room.description);
+    const sky = this.weather.line(room);
+    if (sky) s.out(c.dim(sky));
     // Who and what is here, one scannable line each. Every name can be clicked to look at it.
     const npcs = this.world.npcsIn(room.id).map((n) => n.card.listName ?? n.name);
     const players = this.playersIn(room.id, s).map((p) => p.player!.name);
@@ -970,6 +1026,9 @@ export class Game {
       case 'notices':
       case 'noticeboard':
         return this.law.noticeboard(s);
+      case 'weather':
+      case 'sky':
+        return this.weatherCommand(s, rest);
       case 'shout':
       case 'yell':
         return this.law.shout(s, rest);
@@ -1350,7 +1409,7 @@ export class Game {
         npc: { name: who.name, job: card.job, personality: card.personality, speech: card.speech, wants: card.wants, knows: card.knows, quirks: card.quirks, scripted: card.scripted, light: true },
         player: { id: listener.player!.id, name: to.name },
         memory: { notes: [], summary: '' },
-        room: { title: this.world.room(roomId).title, others: [listener.player!.name], note: this.cart.note() },
+        room: { title: this.world.room(roomId).title, others: [listener.player!.name], note: [this.cart.note(), this.weather.note()].filter(Boolean).join(' ') },
         recent: [],
         playerLine: said,
         kind,
@@ -1809,7 +1868,7 @@ export class Game {
         },
         player: { id: p.id, name: p.name },
         memory,
-        room: { title: this.world.room(roomId).title, others, note: [this.cart.note(), this.town.noteFor(npc, p.id), await this.law.noteFor(npc, p)].filter(Boolean).join(' ') || undefined },
+        room: { title: this.world.room(roomId).title, others, note: [this.weather.note(), this.cart.note(), this.town.noteFor(npc, p.id), await this.law.noteFor(npc, p)].filter(Boolean).join(' ') || undefined },
         recent: this.recent.get(key) ?? [],
         playerLine,
         kind,

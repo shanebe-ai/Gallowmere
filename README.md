@@ -76,6 +76,10 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 * The noticeboard in the market square (`read notices`): who the watch wants and the bounty on them, the town's rumours, notes players `pin` for a day, a special from each shop's real stock, and an old notice about the road to Vesna. Bringing down a wanted player pays the bounty from the watch's daily purse, and is no crime
 * The gate of Vesna opens for those who earn it: a letter from Father Osmund (only for someone who has buried the dead), a clean name with the watch, Hook's parcel delivered sealed, and the answer to a riddle the voice will not be talked out of. Beyond it lies the outer ward: a gatehouse yard, Shuttered Street, the Old Well, the Chapel of the Lamp, the Lantern Market, the Stopped Clock and the ward wall, with a second gate that stays shut for now
 
+**Atmosphere (Milestone 5)**
+* Weather and the hour: a game day runs four real hours, and the sky turns every 45 minutes (clear, fog, rain, storm, frost) from a seeded roll weighted by a slow season cycle, so everyone sees the same sky. Rooms under the sky describe it, rooms with a roof hear it, and the status bar shows it ("Dusk, rain")
+* It matters: at night the forest is black without a light, rain can put out a torch or candle (a lamp is shielded), the ferryman stays home in a storm, and the fish bite best in the rain. The AI townsfolk are told the hour and the weather and talk about it. Admins can set it: `weather rain night`, `weather reset`
+
 **Playing**
 * A `hint` command with directions to wherever you need to go next
 
