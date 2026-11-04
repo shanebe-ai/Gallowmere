@@ -89,37 +89,21 @@ The result: NPCs that feel alive, in a game that can't be talked out of its own 
 
 ## How an NPC line happens
 
-1. A player says something to Morda, or does something in front of her.
-2. The NPC brain gathers her character card, her notes on this player, the room and the last few lines of the exchange.
-3. The system prompt holds only the card and the rules. Everything that came from players, directly or through earlier replies, goes in the user message, so it can't pose as instructions.
-4. The model replies with JSON: `say`, `emote` and one `action` from an allow list. Talk gets `none`, `remember` or `refuse`. A haggle adds `offer_price`, `accept_price`, `end_haggle` and `refuse_service`.
-5. The engine parses and validates the reply, strips escape codes, caps the lengths and runs a word filter. A bad reply gets one retry.
-6. Groq answers first. If it's slow, rate limited or down, Gemini Flash Lite takes over. If both are out, Morda falls back to scripted lines. The game never goes silent.
-7. The engine applies the action: a `remember` note is saved, a `refuse` makes them ignore that player for a minute. A price is clamped to the band the engine set for this haggle, and anything the model tried outside it is logged. Coin and items move only through code, in a transaction, after the player accepts.
+A player says something to Morda, or does something in front of her. Her brain gathers her character card, her notes on this player, the room she is standing in and the last few lines of the exchange, and builds the call. The system prompt holds only the card and the rules. Everything that came from players, directly or through earlier replies, goes into the user message, where it cannot pose as instructions.
 
-Every NPC line is logged to `ai_usage` with provider, tokens, latency and whether a fallback was used. The admin can type `aistats` in game to see lines per player per hour, fallback rate, latency and what it would cost on paid Groq. `aibench` runs the same short chat with Tilly on several ai& models and shows speed and what each said; `aimodel <model>` switches the live model until restart.
+The model answers in JSON: a line of speech, an optional emote, and one action from a short allow list. Plain talk gets `none`, `remember` or `refuse`; a haggle adds `offer_price`, `accept_price`, `end_haggle` and `refuse_service`. The engine parses and validates the reply, strips escape codes, caps the lengths and runs a word filter, and a bad reply gets one retry. Then the engine applies whatever survived: a `remember` note is saved, a `refuse` makes the character ignore that player for a minute, and a price is clamped to the band the engine set for the haggle, with anything the model tried outside the band logged. Coin and items move only through code, in a transaction, after the player accepts.
+
+The answering order is ai& first when its key is set, then Groq, then Gemini Flash Lite, and scripted lines if every provider is slow, rate limited or down. The game never goes silent. Every line is logged to `ai_usage` with its provider, tokens, latency and whether a fallback was used. In game, `aistats` shows lines per player per hour, the fallback rate, latency and what the traffic would cost on paid Groq. `aibench` runs the same short chat with Tilly on several ai& models and shows speed and what each one said, and `aimodel <model>` switches the live model until restart.
 
 ## Cost
 
-Built to run on free tiers. Groq's free tier allows roughly 30 requests a minute and 14,400 a day on Llama 3.1 8B, Gemini Flash Lite adds a backup pool, and scripted lines cover anything past that. Caps keep it there:
-
-* 200 AI lines per player per day, across all seven full characters
-* 5,000 AI lines across all players per day
-* Rate guards set just under each provider's per minute limit
+Built to run on free tiers. Groq's free tier allows roughly 30 requests a minute and 14,400 a day on Llama 3.1 8B, Gemini Flash Lite adds a backup pool, and scripted lines cover anything past that. Two caps keep it there: 200 AI lines per player per day across all seven full characters, and 5,000 a day across all players, with rate guards set just under each provider's per minute limit.
 
 ## Security
 
-* Passwords hashed with bcrypt
-* Wrong passwords limited per address (5 a minute) and per character (10 in 15 minutes, then a short lock)
-* New characters limited to 3 per address per hour, open connections to 8 per address
-* Login prompts time out after 2 minutes, idle telnet sessions after an hour
-* Player input capped at 300 characters, with escape codes and control characters stripped
-* Ten commands a second per connection, then the rest are dropped
-* Player text kept out of the system prompt; NPC actions limited to an allow list
-* Content filter on player and NPC text, with flagged lines logged for review
-* Security headers on the web page: CSP, no framing, nosniff, no referrer
-* Reconnect tokens revoked on quit
-* Admin commands limited to player 1 by default
+Passwords are hashed with bcrypt, and guessing them is throttled two ways: five wrong tries a minute per address, ten in fifteen minutes per character before a short lock. New characters are limited to three per address per hour and open connections to eight per address. Login prompts time out after two minutes and idle telnet sessions after an hour.
+
+Player input is capped at 300 characters with escape codes and control characters stripped, and a connection gets ten commands a second before the rest are dropped. Player text never reaches the system prompt, NPC actions are limited to the allow list, and a content filter watches player and NPC text with flagged lines logged for review. The web page sends CSP, no framing, nosniff and no referrer headers, reconnect tokens are revoked on quit, and admin commands are limited to player 1 by default.
 
 Telnet is plain text by design, passwords included. The browser is the safer door.
 
