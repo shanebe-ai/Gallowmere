@@ -124,6 +124,9 @@ describe('Gallowmere end to end', () => {
   it('serves the health check and the client page', async () => {
     const health = await (await fetch(`${url}/health`)).json();
     expect(health.ok).toBe(true);
+    expect(health.played.total).toBeGreaterThanOrEqual(0);
+    expect(health.played.week).toBeLessThanOrEqual(health.played.total);
+    expect(JSON.stringify(health.played)).not.toMatch(/[A-Za-z]{3,}"?:\s*"/);
     const page = await (await fetch(url)).text();
     expect(page).toContain('GALLOWMERE');
   });

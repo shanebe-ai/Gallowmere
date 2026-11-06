@@ -34,7 +34,9 @@ async function players(): Promise<Json> {
       count(*)::int AS total,
       count(*) FILTER (WHERE created_at > now() - interval '1 day')::int AS new_today,
       count(*) FILTER (WHERE last_seen > now() - interval '1 hour')::int AS seen_last_hour,
-      count(*) FILTER (WHERE last_seen > now() - interval '1 day')::int AS seen_last_day
+      count(*) FILTER (WHERE last_seen > now() - interval '1 day')::int AS seen_last_day,
+      count(*) FILTER (WHERE last_seen > now() - interval '7 days')::int AS seen_last_week,
+      count(*) FILTER (WHERE last_seen > now() - interval '7 days' AND created_at < now() - interval '7 days')::int AS came_back_this_week
     FROM players`);
   const wanted = await query(`SELECT p.name, round(sum(c.heat * power(0.5, extract(epoch FROM now() - c.at) / 7200)))::int AS heat
     FROM crimes c JOIN players p ON p.id = c.player_id WHERE NOT c.cleared GROUP BY p.name HAVING sum(c.heat * power(0.5, extract(epoch FROM now() - c.at) / 7200)) >= 40 ORDER BY heat DESC LIMIT 10`);

@@ -103,10 +103,23 @@ export async function createApp(
     );
     next();
   });
-  app.get('/health', (_req, res) => {
+  // How many people played lately: counts only, never names, refreshed at most once a minute.
+  let played: { today: number; week: number; total: number } | null = null;
+  let playedAt = 0;
+  async function playedLately() {
+    if (Date.now() - playedAt < 60_000 && played) return played;
+    playedAt = Date.now();
+    try {
+      const { rows } = await query(`SELECT count(*) FILTER (WHERE last_seen > now() - interval '1 day')::int AS today,
+        count(*) FILTER (WHERE last_seen > now() - interval '7 days')::int AS week, count(*)::int AS total FROM players`);
+      played = rows[0];
+    } catch { /* the database is down; health still answers */ }
+    return played;
+  }
+  app.get('/health', async (_req, res) => {
     // Which AI voices are on and how their last call went: names, models and timings only, never keys or error text.
     const providers = ai.status().map((p) => ({ name: p.name, model: p.model, configured: p.configured, lastOk: p.last?.ok, lastAt: p.last?.at, latencyMs: p.last?.latencyMs }));
-    res.json({ ok: true, online: game.onlineNames().length, ai: ai.hasProvider(), providers, weather: game.weather.label(), event: game.events.current?.kind ?? null });
+    res.json({ ok: true, online: game.onlineNames().length, played: await playedLately(), ai: ai.hasProvider(), providers, weather: game.weather.label(), event: game.events.current?.kind ?? null });
   });
   app.use(express.static(path.join(here, '..', 'public'), { index: 'index.html', maxAge: '1h' }));
 

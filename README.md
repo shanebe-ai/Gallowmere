@@ -187,7 +187,7 @@ First time setup on a new server:
 
 ## Admin MCP server
 
-A read only MCP server over stdio lets an assistant check on the game without touching it: `game_health` (the `/health` answer, players online, AI voices and their last call), `player_counts` (characters, new and recent, who the watch wants), `recent_errors` (the tail of the pm2 error log) and `world_state` (the sky, the hour and tonight's event) and `economy_summary` (coin in purses and banks, the day's biggest ledger movements). It never writes. On the server:
+A read only MCP server over stdio lets an assistant check on the game without touching it: `game_health` (the `/health` answer, players online, AI voices and their last call), `player_counts` (characters, new and recent, who came back this week, who the watch wants), `recent_errors` (the tail of the pm2 error log) and `world_state` (the sky, the hour and tonight's event) and `economy_summary` (coin in purses and banks, the day's biggest ledger movements). It never writes. On the server:
 
     node dist/admin/mcp.js
 
@@ -199,7 +199,9 @@ A read only MCP server over stdio lets an assistant check on the game without to
 3.5. **Beyond the wall.** The north road, the forest, the shrine, beasts and brigands, fishing and crafting, the Gatherers' Hall, drink and an inn, rumours, and a few surprises. *Done.*
 4. **The law and Vesna.** Accented names, heat and witnesses, the watch and the cells, a noticeboard with bounties and specials, stealing, the gate of Vesna and its outer ward, and a read only admin MCP server. *Done.*
 5. **Atmosphere.** Weather and the hour, the town gossiping about you, night events, sound in the browser, and the inner gate of Vesna. *Done.*
-6. **See where it goes.** Guilds, more NPCs, a second area, real players.
+6. **See where it goes.** Guilds with ranks and quests, the heart of Vesna and the truth about the names, events that need several players at once, real players.
+
+On hold after Milestone 5, waiting to see how players take to it. `/health` counts how many people played today and this week (counts only, never names).
 
 Combat and economy mechanics are inspired by classic LPMuds such as Moral Decay. No rooms, text, names or maps are borrowed.
 
